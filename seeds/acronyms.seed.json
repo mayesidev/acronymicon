@@ -1,0 +1,60 @@
+{
+  "entries": [
+    {
+      "acronym": "API",
+      "definition": "Application Programming Interface",
+      "notes": "A contract that lets software systems communicate with each other.",
+      "category": "Technology",
+      "tags": ["software", "integration"]
+    },
+    {
+      "acronym": "API",
+      "definition": "Annual Performance Index",
+      "notes": "A metric name used in some business and reporting contexts.",
+      "category": "Business",
+      "tags": ["reporting", "metrics"]
+    },
+    {
+      "acronym": "ATO",
+      "definition": "Authority to Operate",
+      "notes": "A formal authorization for an information system to operate.",
+      "category": "Government",
+      "tags": ["security", "compliance"]
+    },
+    {
+      "acronym": "COOP",
+      "definition": "Continuity of Operations",
+      "notes": "Planning for continued essential functions during disruption.",
+      "category": "Government",
+      "tags": ["planning", "resilience"]
+    },
+    {
+      "acronym": "KPI",
+      "definition": "Key Performance Indicator",
+      "notes": "A measurable value used to track progress toward an objective.",
+      "category": "Business",
+      "tags": ["metrics", "reporting"]
+    },
+    {
+      "acronym": "MOU",
+      "definition": "Memorandum of Understanding",
+      "notes": "A document describing an agreement or shared understanding between parties.",
+      "category": "Business",
+      "tags": ["agreement", "governance"]
+    },
+    {
+      "acronym": "PII",
+      "definition": "Personally Identifiable Information",
+      "notes": "Information that can identify a specific person.",
+      "category": "Compliance",
+      "tags": ["privacy", "security"]
+    },
+    {
+      "acronym": "SLA",
+      "definition": "Service Level Agreement",
+      "notes": "An agreement that defines expected service commitments.",
+      "category": "Business",
+      "tags": ["operations", "agreement"]
+    }
+  ]
+}

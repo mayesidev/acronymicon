@@ -54,6 +54,22 @@ npm run db:migrate
 
 Local database files under `data/` are ignored by git.
 
+## Seed And Import
+
+Load the demo seed data:
+
+```bash
+npm run db:seed
+```
+
+Import another JSON file:
+
+```bash
+npm run import:acronyms -- path/to/acronyms.json
+```
+
+The import command accepts either an array of entries or an object with an `entries` array. Exact duplicates are skipped using normalized `acronym + definition`.
+
 ## Verification
 
 Run typecheck:
