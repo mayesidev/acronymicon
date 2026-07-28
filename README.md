@@ -70,6 +70,24 @@ npm run import:acronyms -- path/to/acronyms.json
 
 The import command accepts either an array of entries or an object with an `entries` array. Exact duplicates are skipped using normalized `acronym + definition`.
 
+## Authentication
+
+Browsing does not require login. Submission routes require a signed-in user once they are added.
+
+OIDC configuration is provider-neutral. Keycloak can be used for local development, but production can use any compatible provider.
+
+Required OIDC environment variables:
+
+```txt
+SESSION_SECRET
+OIDC_ISSUER_URL
+OIDC_CLIENT_ID
+OIDC_CLIENT_SECRET
+OIDC_REDIRECT_URI
+```
+
+Optional claim mapping variables are documented in `.env.example`.
+
 ## Verification
 
 Run typecheck:
