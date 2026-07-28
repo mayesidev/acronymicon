@@ -47,8 +47,8 @@ The dictionary should be general purpose. It is expected to include business and
 Users should be able to search by:
 
 - Acronym, such as `API`.
-- Expansion, such as `Application Programming Interface`.
-- Definition text.
+- Definition, such as `Application Programming Interface`.
+- Notes or contextual text.
 - Category or domain.
 - Tags, if tags are included in the data model.
 
@@ -70,8 +70,8 @@ Useful browse controls may include:
 Each entry should show:
 
 - Acronym.
-- Expansion.
-- Short definition.
+- Definition, meaning the full phrase the acronym stands for.
+- Optional notes or contextual explanation.
 - Category or domain.
 - Tags, if available.
 
@@ -92,8 +92,8 @@ Internal users should be able to submit new acronym definitions in the MVP.
 The submission form should collect:
 
 - Acronym.
-- Expansion, meaning the full phrase the acronym stands for.
-- Definition or contextual notes.
+- Definition, meaning the full phrase the acronym stands for.
+- Optional notes or contextual explanation.
 - Optional category.
 - Optional tags.
 - Optional source link or source note.
@@ -132,8 +132,8 @@ Approval-required moderation is not part of the MVP and is less likely than post
 type AcronymEntry = {
   id: string;
   acronym: string;
-  expansion: string;
-  definition?: string;
+  definition: string;
+  notes?: string;
   category?: string;
   tags?: string[];
   aliases?: string[];
@@ -151,8 +151,8 @@ type AcronymEntry = {
 
 - `id` should be stable and unique.
 - `acronym` is the short form users search for.
-- `expansion` is the expanded phrase.
-- `definition` explains the meaning in context.
+- `definition` is the full phrase the acronym stands for.
+- `notes` can explain context, usage, or additional meaning.
 - `category` groups entries by broad domain.
 - `tags` support more flexible filtering.
 - `aliases` can support alternate spellings or related short forms.
@@ -235,7 +235,7 @@ MVP rules:
 - Block exact duplicate acronym definitions.
 - Show multiple meanings clearly in search and browse results.
 
-Open implementation detail: define exact duplicate matching as normalized acronym plus normalized expansion, with definition comparison considered if needed.
+Open implementation detail: define exact duplicate matching as normalized acronym plus normalized definition, with notes comparison considered if needed.
 
 Post-MVP possibilities:
 
@@ -247,7 +247,7 @@ Post-MVP possibilities:
 
 Sources and citations are optional.
 
-They should not be required or strongly emphasized in the MVP because many internal acronym definitions may not have a useful source. The form can include a source field, but it should not distract from the core acronym, expansion, and definition fields.
+They should not be required or strongly emphasized in the MVP because many internal acronym definitions may not have a useful source. The form can include a source field, but it should not distract from the core acronym, definition, and notes fields.
 
 ## Seed Data
 
@@ -263,6 +263,10 @@ Seed data goals:
 The seed mechanism may later be reused for bulk import, but CSV import/export is not required for MVP.
 
 Seed data should live in an importable file rather than only in a database migration. This keeps the path open for future bulk import without making migrations responsible for content management.
+
+Seed/import data should use JSON rather than CSV. JSON is more maintainable for optional fields, tags, and future metadata.
+
+The MVP should include a reusable import command, even if its first use is loading demo and test seed data.
 
 ## Expected Scale
 
@@ -461,8 +465,8 @@ SEO is not important for this app because it is intended for protected-network i
 3. Which OIDC groups or claims should map to future admin and moderator roles?
 4. Should submitters be able to edit their own entries in the first post-MVP release?
 5. Does the target environment provide shared database infrastructure, or should the app own its database?
-6. Should exact duplicate detection use acronym plus expansion only, or acronym plus expansion plus definition?
-7. What importable seed-data format should we use, such as JSON or CSV?
-8. Should the MVP include a reusable import command or only a development seed command?
+6. Should exact duplicate detection use acronym plus definition only, or acronym plus definition plus notes?
+7. Should the JSON import file support only seed data, or should it be treated as the first version of a general bulk import format?
+8. Should importing duplicate records skip, fail the import, or report per-record errors?
 9. Do we need a visible "suggested similar entries" area on the submission form?
 10. Should ranking or upvoting duplicate acronym meanings be part of the first post-MVP release?
