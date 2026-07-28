@@ -101,3 +101,38 @@ Build for production:
 ```bash
 npm run build
 ```
+
+## Docker
+
+Build and run the app with local Keycloak:
+
+```bash
+docker compose up --build
+```
+
+App:
+
+```txt
+http://localhost:3000
+```
+
+Keycloak:
+
+```txt
+http://keycloak.localtest.me:8080
+```
+
+Local Keycloak admin:
+
+```txt
+admin / admin
+```
+
+Seeded local users:
+
+```txt
+user / password
+admin-user / password
+```
+
+The app container stores SQLite data in the `acronymicon-data` Docker volume at `/data/acronymicon.sqlite`.

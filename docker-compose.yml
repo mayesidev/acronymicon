@@ -1,0 +1,42 @@
+services:
+  app:
+    build: .
+    depends_on:
+      - keycloak
+    environment:
+      DATABASE_PATH: /data/acronymicon.sqlite
+      SESSION_SECRET: local-development-session-secret-change-me
+      SESSION_COOKIE_SECURE: "false"
+      OIDC_ISSUER_URL: http://keycloak.localtest.me:8080/realms/acronymicon
+      OIDC_CLIENT_ID: acronymicon
+      OIDC_CLIENT_SECRET: local-development-client-secret
+      OIDC_REDIRECT_URI: http://localhost:3000/auth/callback
+      OIDC_SCOPES: openid profile email
+      OIDC_CLAIM_USER_ID: sub
+      OIDC_CLAIM_USERNAME: preferred_username
+      OIDC_CLAIM_DISPLAY_NAME: name
+      OIDC_CLAIM_EMAIL: email
+      OIDC_CLAIM_GROUPS: groups
+    ports:
+      - "3000:3000"
+    volumes:
+      - acronymicon-data:/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://keycloak.localtest.me:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-acronymicon.json:/opt/keycloak/data/import/realm-acronymicon.json:ro
+    networks:
+      default:
+        aliases:
+          - keycloak.localtest.me
+
+volumes:
+  acronymicon-data:

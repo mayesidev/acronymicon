@@ -1,0 +1,73 @@
+{
+  "realm": "acronymicon",
+  "enabled": true,
+  "displayName": "Acronymicon",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "clients": [
+    {
+      "clientId": "acronymicon",
+      "name": "Acronymicon",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-development-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/auth/callback",
+        "http://localhost:5173/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:5173"
+      ],
+      "defaultClientScopes": ["web-origins", "acr", "profile", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"]
+    }
+  ],
+  "groups": [
+    {
+      "name": "acronymicon-admin"
+    },
+    {
+      "name": "acronymicon-moderator"
+    }
+  ],
+  "users": [
+    {
+      "username": "user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "User",
+      "email": "user@example.test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "admin-user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Admin",
+      "email": "admin@example.test",
+      "groups": ["/acronymicon-admin"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
