@@ -24,6 +24,7 @@ This project is in requirements definition. Git is initialized and changes shoul
 
 - Public internet access.
 - Moderation workflows.
+- Approval-required submissions.
 - Voting, comments, or social features.
 - Complex analytics.
 - Full CMS integration.
@@ -98,11 +99,11 @@ The submission form should collect:
 
 Submissions should be associated with an authenticated submitter for traceability and context.
 
-Open decision: whether MVP submissions are published immediately or stored as pending entries for later review.
+MVP submissions should publish immediately.
 
 In this spec, `pending` means a submitted entry is saved but does not appear in normal search and browse results until someone approves it. A pending workflow is a lightweight moderation queue.
 
-If moderation is deferred, the app should still avoid technical choices that make moderation difficult to add later.
+Approval-required moderation is not part of the MVP and is less likely than post-publication moderation. The app should still keep a status field so future admin or moderator workflows can remove, hide, or review entries without a schema redesign.
 
 ## Possible Future Features
 
@@ -114,6 +115,9 @@ If moderation is deferred, the app should still avoid technical choices that mak
 - Editing existing entries.
 - Review or approval workflow.
 - Role-based admin capabilities.
+- Admin removal or hiding of published entries.
+- Submitter editing of their own entries.
+- Moderator editing of submitted entries.
 
 ## Data Model Draft
 
@@ -127,8 +131,10 @@ type AcronymEntry = {
   tags?: string[];
   aliases?: string[];
   source?: string;
-  status?: "pending" | "published" | "rejected";
+  status?: "pending" | "published" | "removed";
   submittedByUserId?: string;
+  submittedByUsername?: string;
+  submittedByDisplayName?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -144,11 +150,13 @@ type AcronymEntry = {
 - `tags` support more flexible filtering.
 - `aliases` can support alternate spellings or related short forms.
 - `source` is optional but useful if entries need attribution or verification.
-- `status` allows submissions to become a moderation queue later.
+- `status` allows future admin or moderator workflows to hide, remove, or review entries later.
 - `submittedByUserId` connects an entry to the authenticated submitter.
+- `submittedByUsername` provides a stable human-readable reference from the auth provider.
+- `submittedByDisplayName` can be stored if provided by the auth provider.
 - `createdAt` and `updatedAt` are useful if entries become editable later.
 
-Additional user profile fields may be stored separately if the auth provider exposes useful claims, such as display name, email, organization, or department.
+Additional user profile fields may be stored separately if the auth provider exposes useful claims, such as email, organization, or department.
 
 ## Authentication
 
@@ -157,16 +165,20 @@ The protected network can provide authentication or SSO. The app should likely i
 MVP authentication goals:
 
 - Require authentication before submitting an acronym.
+- Allow browsing without app-level login, assuming the protected network controls access.
 - Store a stable provider-backed user ID with each submission.
+- Store at least a username locally for display and traceability.
 - Prefer existing SSO/OIDC over local usernames and passwords.
-- Keep authorization simple unless moderation or admin editing ships in the MVP.
+- Design against generic OIDC.
+- Use Keycloak as a reasonable local development OIDC stand-in if needed.
+- Keep authorization simple unless admin or moderator capabilities ship in the MVP.
 
 Open decisions:
 
 - Which OIDC provider or reverse-proxy auth mechanism will be available?
-- Should browsing require authentication, or only submitting?
-- Which identity claims should be stored locally?
-- Are display name and email acceptable to store for traceability, or should only a stable opaque subject ID be stored?
+- Which exact OIDC claims should be mapped to local username and display name?
+- Should email be stored locally for traceability, or avoided unless needed?
+- Should roles come from OIDC groups/claims in the future, or be managed locally?
 
 ## Content Workflow
 
@@ -187,7 +199,9 @@ Cons:
 - Typos and duplicate submissions become visible right away.
 - Editing or cleanup must be handled later.
 
-### Pending Review
+MVP decision: use immediate publish.
+
+### Pending Review Or Post-Publication Moderation
 
 Users submit entries into a pending state. Published results only include approved entries.
 
@@ -201,7 +215,7 @@ Cons:
 - Requires an admin/review surface earlier.
 - More product and permission decisions are needed.
 
-Initial recommendation: use a database field for status from day one, but decide separately whether the MVP exposes a review queue.
+Initial recommendation: do not build approval-required moderation in MVP. Keep status and submitter metadata from day one, then add post-publication admin or moderator controls later.
 
 ## Storage Options
 
@@ -314,6 +328,7 @@ Choose the stack based on these answers:
 - Does the protected network provide shared database infrastructure?
 - What OIDC or SSO integration is available?
 - Should auth protect the entire app or only submission/admin actions?
+- Are admin/moderator roles sourced from OIDC or managed in the app?
 
 ## Candidate Stacks
 
@@ -357,6 +372,7 @@ Any selected framework should support:
 - OIDC login.
 - Server-side session handling.
 - Authenticated submission actions.
+- Anonymous browsing within the protected network.
 - Database access from server-side code.
 - Containerized deployment.
 
@@ -377,14 +393,14 @@ Provisional recommended starting stack:
 
 This keeps deployment simple while leaving room for future editing, moderation, and migration to Postgres if the app outgrows a single-instance SQLite deployment.
 
-This recommendation should not be considered locked until the auth provider, moderation approach, and deployment constraints are confirmed.
+This recommendation should not be considered locked until the OIDC integration approach and persistence layer are confirmed.
 
 ## Open Questions
 
-1. Should MVP submissions publish immediately, or should they be pending by default?
-2. Which OIDC provider or auth mechanism should the app integrate with?
-3. Should browsing require login, or only submitting and future admin actions?
-4. Which submitter identity fields should be stored locally?
+1. Which OIDC provider or auth mechanism should the app integrate with in production?
+2. Which OIDC claims should map to local user ID, username, display name, and optional email?
+3. Should future admin/moderator roles come from OIDC groups/claims or be managed inside the app?
+4. Should submitters be able to edit their own entries in the first post-MVP release?
 5. Does the target environment provide shared database infrastructure, or should the app own its database?
 6. Roughly how many acronym entries should the first version support?
 7. Does SEO matter inside the protected network?
