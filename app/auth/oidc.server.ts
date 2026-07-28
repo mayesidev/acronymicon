@@ -104,6 +104,10 @@ async function discoverOidcConfig() {
     new URL(requiredEnv("OIDC_ISSUER_URL")),
     requiredEnv("OIDC_CLIENT_ID"),
     requiredEnv("OIDC_CLIENT_SECRET"),
+    undefined,
+    process.env.OIDC_ALLOW_INSECURE_HTTP === "true"
+      ? { execute: [oidc.allowInsecureRequests] }
+      : undefined,
   );
 }
 

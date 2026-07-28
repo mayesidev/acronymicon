@@ -12,6 +12,7 @@ services:
       OIDC_CLIENT_SECRET: local-development-client-secret
       OIDC_REDIRECT_URI: http://localhost:3000/auth/callback
       OIDC_SCOPES: openid profile email
+      OIDC_ALLOW_INSECURE_HTTP: "true"
       OIDC_CLAIM_USER_ID: sub
       OIDC_CLAIM_USERNAME: preferred_username
       OIDC_CLAIM_DISPLAY_NAME: name
