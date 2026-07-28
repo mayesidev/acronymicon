@@ -179,15 +179,24 @@ MVP authentication goals:
 - Prefer existing SSO/OIDC over local usernames and passwords.
 - Design against generic OIDC.
 - Use Keycloak as a reasonable local development OIDC stand-in if needed.
+- Do not tie the app to Keycloak, Microsoft Entra ID, or any other specific production identity provider.
+- Treat Microsoft Entra ID as a possible future production OIDC provider, not a committed dependency.
 - Source future admin and moderator roles from OIDC groups or claims.
 - Keep authorization simple unless admin or moderator capabilities ship in the MVP.
 
 Open decisions:
 
-- Which OIDC provider or reverse-proxy auth mechanism will be available?
+- Which OIDC provider or reverse-proxy auth mechanism will be available in production?
 - Which exact OIDC claims should be mapped to local username and display name?
 - Should email be stored locally for traceability, or avoided unless needed?
 - Which OIDC groups or claims should map to future admin and moderator roles?
+
+Implementation guidance:
+
+- Use configurable OIDC issuer, client ID, client secret, scopes, and callback URL.
+- Keep claim mapping configurable where practical.
+- Shape local Keycloak claims to resemble likely production providers.
+- Avoid provider-specific APIs for MVP auth unless they are isolated behind a small adapter.
 
 ## Content Workflow
 
@@ -436,6 +445,7 @@ Assessment: also a good fit. Next.js may be more familiar and widely hosted; Rem
 Any selected framework should support:
 
 - OIDC login.
+- Provider-neutral OIDC configuration.
 - Server-side session handling.
 - Authenticated submission actions.
 - Anonymous browsing within the protected network.
