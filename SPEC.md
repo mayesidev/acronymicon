@@ -92,7 +92,7 @@ Internal users should be able to submit new acronym definitions in the MVP.
 The submission form should collect:
 
 - Acronym.
-- Expansion.
+- Expansion, meaning the full phrase the acronym stands for.
 - Definition or contextual notes.
 - Optional category.
 - Optional tags.
@@ -178,6 +178,7 @@ MVP authentication goals:
 - Prefer existing SSO/OIDC over local usernames and passwords.
 - Design against generic OIDC.
 - Use Keycloak as a reasonable local development OIDC stand-in if needed.
+- Source future admin and moderator roles from OIDC groups or claims.
 - Keep authorization simple unless admin or moderator capabilities ship in the MVP.
 
 Open decisions:
@@ -185,7 +186,7 @@ Open decisions:
 - Which OIDC provider or reverse-proxy auth mechanism will be available?
 - Which exact OIDC claims should be mapped to local username and display name?
 - Should email be stored locally for traceability, or avoided unless needed?
-- Should roles come from OIDC groups/claims in the future, or be managed locally?
+- Which OIDC groups or claims should map to future admin and moderator roles?
 
 ## Content Workflow
 
@@ -260,6 +261,8 @@ Seed data goals:
 - Avoid implying that seeded examples are authoritative.
 
 The seed mechanism may later be reused for bulk import, but CSV import/export is not required for MVP.
+
+Seed data should live in an importable file rather than only in a database migration. This keeps the path open for future bulk import without making migrations responsible for content management.
 
 ## Expected Scale
 
@@ -377,7 +380,6 @@ Choose the stack based on these answers:
 - Does it need server-side APIs?
 - Where will it be deployed?
 - How large is the expected dataset?
-- Is SEO important?
 - Is single-instance deployment acceptable?
 - Does the protected network provide shared database infrastructure?
 - What OIDC or SSO integration is available?
@@ -402,7 +404,6 @@ Assessment: not enough by itself because MVP submissions need server-side persis
 Good fit if:
 
 - The app may need API routes.
-- SEO matters.
 - Admin editing is likely.
 - Auth or database integration is likely.
 - Server-rendered pages are useful.
@@ -449,15 +450,19 @@ This keeps deployment simple while leaving room for future editing, moderation, 
 
 This recommendation should not be considered locked until the OIDC integration approach and persistence layer are confirmed.
 
+## SEO
+
+SEO is not important for this app because it is intended for protected-network internal use.
+
 ## Open Questions
 
 1. Which OIDC provider or auth mechanism should the app integrate with in production?
 2. Which OIDC claims should map to local user ID, username, display name, and optional email?
-3. Should future admin/moderator roles come from OIDC groups/claims or be managed inside the app?
+3. Which OIDC groups or claims should map to future admin and moderator roles?
 4. Should submitters be able to edit their own entries in the first post-MVP release?
 5. Does the target environment provide shared database infrastructure, or should the app own its database?
 6. Should exact duplicate detection use acronym plus expansion only, or acronym plus expansion plus definition?
-7. Does SEO matter inside the protected network?
-8. Should seed data live in code, SQL migrations, or a separate importable file?
+7. What importable seed-data format should we use, such as JSON or CSV?
+8. Should the MVP include a reusable import command or only a development seed command?
 9. Do we need a visible "suggested similar entries" area on the submission form?
 10. Should ranking or upvoting duplicate acronym meanings be part of the first post-MVP release?
