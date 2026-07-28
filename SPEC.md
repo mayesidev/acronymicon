@@ -12,6 +12,7 @@ This project is in requirements definition. Git is initialized and changes shoul
 
 - Provide a searchable acronym dictionary.
 - Support multiple meanings for the same acronym.
+- Prevent exact duplicate acronym definitions.
 - Make entries easy to scan and compare.
 - Allow internal users to submit acronym definitions.
 - Associate submissions with an authenticated submitter for traceability and context.
@@ -101,6 +102,10 @@ Submissions should be associated with an authenticated submitter for traceabilit
 
 MVP submissions should publish immediately.
 
+If a user submits an acronym that already exists, the app should warn them before submission so they can avoid accidental duplicates. Multiple meanings for the same acronym are allowed.
+
+Exact duplicate acronym definitions should not be allowed.
+
 In this spec, `pending` means a submitted entry is saved but does not appear in normal search and browse results until someone approves it. A pending workflow is a lightweight moderation queue.
 
 Approval-required moderation is not part of the MVP and is less likely than post-publication moderation. The app should still keep a status field so future admin or moderator workflows can remove, hide, or review entries without a schema redesign.
@@ -118,6 +123,8 @@ Approval-required moderation is not part of the MVP and is less likely than post
 - Admin removal or hiding of published entries.
 - Submitter editing of their own entries.
 - Moderator editing of submitted entries.
+- Ranking or upvoting entries when an acronym has multiple meanings.
+- Bulk upload if seed-data import proves reusable.
 
 ## Data Model Draft
 
@@ -217,6 +224,49 @@ Cons:
 
 Initial recommendation: do not build approval-required moderation in MVP. Keep status and submitter metadata from day one, then add post-publication admin or moderator controls later.
 
+## Duplicate Handling
+
+The app should allow the same acronym to have multiple entries when the meanings are genuinely different.
+
+MVP rules:
+
+- Warn users when submitting an acronym that already exists.
+- Block exact duplicate acronym definitions.
+- Show multiple meanings clearly in search and browse results.
+
+Open implementation detail: define exact duplicate matching as normalized acronym plus normalized expansion, with definition comparison considered if needed.
+
+Post-MVP possibilities:
+
+- Let users rank, upvote, or mark the most useful definition.
+- Add admin merge tools for near-duplicate entries.
+- Add stronger duplicate detection for minor wording differences.
+
+## Source And Citation Policy
+
+Sources and citations are optional.
+
+They should not be required or strongly emphasized in the MVP because many internal acronym definitions may not have a useful source. The form can include a source field, but it should not distract from the core acronym, expansion, and definition fields.
+
+## Seed Data
+
+The app should include a small seed dataset for demo and testing purposes.
+
+Seed data goals:
+
+- Provide realistic examples for initial UI development.
+- Include duplicate acronyms with different meanings.
+- Include enough categories and tags to test filtering.
+- Avoid implying that seeded examples are authoritative.
+
+The seed mechanism may later be reused for bulk import, but CSV import/export is not required for MVP.
+
+## Expected Scale
+
+The app should comfortably support hundreds of acronym entries in MVP.
+
+Tens of thousands of entries are considered unlikely unless there is a duplicate-entry problem or the app expands significantly. The initial search and storage design should be simple, but should not make a future move to larger-scale search impossible.
+
 ## Storage Options
 
 ### Static JSON
@@ -254,6 +304,8 @@ Cons:
 - Editing and migrations add complexity.
 
 Assessment: a strong candidate if the app is deployed as a single container with a mounted persistent volume.
+
+For the expected MVP scale of hundreds of entries, SQLite is sufficient from a data-volume perspective.
 
 ### Hosted Postgres
 
@@ -310,6 +362,8 @@ Initial layout:
 - Main area with results list.
 - Filter controls for category and/or tags if the dataset supports them.
 - Entry detail or expanded result rows.
+- Submission form available to authenticated users.
+- Duplicate warning during submission when the entered acronym already exists.
 
 The first screen should be the usable dictionary experience, not a landing page.
 
@@ -402,8 +456,8 @@ This recommendation should not be considered locked until the OIDC integration a
 3. Should future admin/moderator roles come from OIDC groups/claims or be managed inside the app?
 4. Should submitters be able to edit their own entries in the first post-MVP release?
 5. Does the target environment provide shared database infrastructure, or should the app own its database?
-6. Roughly how many acronym entries should the first version support?
+6. Should exact duplicate detection use acronym plus expansion only, or acronym plus expansion plus definition?
 7. Does SEO matter inside the protected network?
-8. Should entries include source links or citations?
-9. Do we need import/export, such as CSV?
-10. Should duplicate acronyms be allowed freely, or should the app warn before submitting another meaning for an existing acronym?
+8. Should seed data live in code, SQL migrations, or a separate importable file?
+9. Do we need a visible "suggested similar entries" area on the submission form?
+10. Should ranking or upvoting duplicate acronym meanings be part of the first post-MVP release?
