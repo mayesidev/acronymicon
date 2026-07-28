@@ -72,7 +72,7 @@ The import command accepts either an array of entries or an object with an `entr
 
 ## Authentication
 
-Browsing does not require login. Submission routes require a signed-in user once they are added.
+Browsing does not require login. Submitting acronyms requires a signed-in user.
 
 OIDC configuration is provider-neutral. Keycloak can be used for local development, but production can use any compatible provider.
 

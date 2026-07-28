@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "./client.server";
 import { normalizeAcronym, normalizeDefinition } from "./normalize";
@@ -45,6 +45,67 @@ export async function listPublishedAcronyms(searchTerm: string) {
   }
 
   return entries.filter((entry) => matchesSearch(entry, normalizedSearch));
+}
+
+export async function findPublishedByAcronym(acronym: string) {
+  return db
+    .select({
+      id: acronymEntries.id,
+      acronym: acronymEntries.acronym,
+      definition: acronymEntries.definition,
+      notes: acronymEntries.notes,
+      category: acronymEntries.category,
+      tags: acronymEntries.tags,
+      aliases: acronymEntries.aliases,
+      source: acronymEntries.source,
+      submittedByUsername: acronymEntries.submittedByUsername,
+      submittedByDisplayName: acronymEntries.submittedByDisplayName,
+      createdAt: acronymEntries.createdAt,
+    })
+    .from(acronymEntries)
+    .where(
+      and(
+        eq(acronymEntries.status, "published"),
+        eq(acronymEntries.normalizedAcronym, normalizeAcronym(acronym)),
+      ),
+    )
+    .orderBy(asc(acronymEntries.normalizedDefinition));
+}
+
+export async function findExactDuplicate(input: {
+  acronym: string;
+  definition: string;
+}) {
+  const [duplicate] = await db
+    .select({ id: acronymEntries.id })
+    .from(acronymEntries)
+    .where(
+      and(
+        eq(acronymEntries.normalizedAcronym, normalizeAcronym(input.acronym)),
+        eq(
+          acronymEntries.normalizedDefinition,
+          normalizeDefinition(input.definition),
+        ),
+      ),
+    )
+    .limit(1);
+
+  return duplicate ?? null;
+}
+
+export async function createAcronymEntry(
+  input: Parameters<typeof buildNewAcronymEntry>[0],
+) {
+  const [entry] = await db
+    .insert(acronymEntries)
+    .values(buildNewAcronymEntry(input))
+    .returning({
+      id: acronymEntries.id,
+      acronym: acronymEntries.acronym,
+      definition: acronymEntries.definition,
+    });
+
+  return entry;
 }
 
 export function buildNewAcronymEntry(input: {

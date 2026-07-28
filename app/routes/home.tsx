@@ -1,6 +1,7 @@
 import type { Route } from "./+types/home";
 import { Form } from "react-router";
 
+import { getOptionalUser } from "../auth/session.server";
 import { listPublishedAcronyms } from "../db/acronyms.server";
 
 export function meta({}: Route.MetaArgs) {
@@ -13,16 +14,20 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q") ?? "";
-  const entries = await listPublishedAcronyms(query);
+  const [entries, user] = await Promise.all([
+    listPublishedAcronyms(query),
+    getOptionalUser(request),
+  ]);
 
   return {
     entries,
     query,
+    user,
   };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { entries, query } = loaderData;
+  const { entries, query, user } = loaderData;
   const hasEntries = entries.length > 0;
   const isFiltered = query.trim().length > 0;
 
@@ -39,25 +44,64 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
 
-          <Form method="get" className="flex w-full gap-2 md:max-w-xl">
-            <label htmlFor="search" className="sr-only">
-              Search acronyms
-            </label>
-            <input
-              id="search"
-              name="q"
-              type="search"
-              defaultValue={query}
-              placeholder="Search acronym, definition, notes, category, or tag"
-              className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
-            />
-            <button
-              type="submit"
-              className="min-h-11 rounded bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-            >
-              Search
-            </button>
-          </Form>
+          <div className="flex w-full flex-col gap-3 md:max-w-xl">
+            <Form method="get" className="flex w-full gap-2">
+              <label htmlFor="search" className="sr-only">
+                Search acronyms
+              </label>
+              <input
+                id="search"
+                name="q"
+                type="search"
+                defaultValue={query}
+                placeholder="Search acronym, definition, notes, category, or tag"
+                className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
+              />
+              <button
+                type="submit"
+                className="min-h-11 rounded bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+              >
+                Search
+              </button>
+            </Form>
+
+            <div className="flex items-center justify-end gap-3 text-sm">
+              {user ? (
+                <>
+                  <span className="text-slate-600">
+                    {user.displayName ?? user.username}
+                  </span>
+                  <a
+                    href="/submit"
+                    className="font-medium text-slate-800 underline-offset-4 hover:underline"
+                  >
+                    Submit acronym
+                  </a>
+                  <a
+                    href="/auth/logout"
+                    className="font-medium text-slate-600 underline-offset-4 hover:underline"
+                  >
+                    Sign out
+                  </a>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/submit"
+                    className="font-medium text-slate-800 underline-offset-4 hover:underline"
+                  >
+                    Submit acronym
+                  </a>
+                  <a
+                    href="/auth/login"
+                    className="font-medium text-slate-600 underline-offset-4 hover:underline"
+                  >
+                    Sign in
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
         </header>
 
         <section className="flex items-center justify-between gap-3">
