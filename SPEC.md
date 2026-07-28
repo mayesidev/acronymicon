@@ -14,18 +14,21 @@ This project is in requirements definition. Git is initialized and changes shoul
 - Support multiple meanings for the same acronym.
 - Make entries easy to scan and compare.
 - Allow internal users to submit acronym definitions.
+- Associate submissions with an authenticated submitter for traceability and context.
 - Keep the first version small enough to build quickly.
 - Choose a tech stack based on product needs, not before them.
 - Support containerized deployment on a protected network.
+- Persist submitted data across container restarts, backups, and app updates.
 
 ## Non-Goals For MVP
 
-- User accounts.
 - Public internet access.
 - Moderation workflows.
 - Voting, comments, or social features.
 - Complex analytics.
 - Full CMS integration.
+
+Dedicated local user account management is not a goal for MVP. Authentication should preferably integrate with an existing provider.
 
 These may be reconsidered after the MVP if the product direction requires them.
 
@@ -93,7 +96,11 @@ The submission form should collect:
 - Optional tags.
 - Optional source link or source note.
 
+Submissions should be associated with an authenticated submitter for traceability and context.
+
 Open decision: whether MVP submissions are published immediately or stored as pending entries for later review.
+
+In this spec, `pending` means a submitted entry is saved but does not appear in normal search and browse results until someone approves it. A pending workflow is a lightweight moderation queue.
 
 If moderation is deferred, the app should still avoid technical choices that make moderation difficult to add later.
 
@@ -103,8 +110,6 @@ If moderation is deferred, the app should still avoid technical choices that mak
 - CSV import/export.
 - Markdown or rich text notes.
 - Source links or citations.
-- Authentication.
-- Database-backed storage.
 - API endpoints.
 - Editing existing entries.
 - Review or approval workflow.
@@ -123,7 +128,7 @@ type AcronymEntry = {
   aliases?: string[];
   source?: string;
   status?: "pending" | "published" | "rejected";
-  submittedBy?: string;
+  submittedByUserId?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -140,8 +145,28 @@ type AcronymEntry = {
 - `aliases` can support alternate spellings or related short forms.
 - `source` is optional but useful if entries need attribution or verification.
 - `status` allows submissions to become a moderation queue later.
-- `submittedBy` can start as optional free text or be connected to auth later.
+- `submittedByUserId` connects an entry to the authenticated submitter.
 - `createdAt` and `updatedAt` are useful if entries become editable later.
+
+Additional user profile fields may be stored separately if the auth provider exposes useful claims, such as display name, email, organization, or department.
+
+## Authentication
+
+The protected network can provide authentication or SSO. The app should likely integrate with an OIDC-compatible provider so submissions can be tied to a stable user identity.
+
+MVP authentication goals:
+
+- Require authentication before submitting an acronym.
+- Store a stable provider-backed user ID with each submission.
+- Prefer existing SSO/OIDC over local usernames and passwords.
+- Keep authorization simple unless moderation or admin editing ships in the MVP.
+
+Open decisions:
+
+- Which OIDC provider or reverse-proxy auth mechanism will be available?
+- Should browsing require authentication, or only submitting?
+- Which identity claims should be stored locally?
+- Are display name and email acceptable to store for traceability, or should only a stable opaque subject ID be stored?
 
 ## Content Workflow
 
@@ -253,6 +278,14 @@ Cons:
 
 Assessment: likely MVP fit if single-instance deployment is acceptable.
 
+Operational notes:
+
+- Single-container, single-instance deployment is acceptable for MVP.
+- The database should live on a persistent mounted volume.
+- The data is important enough to support backup and app updates, but it is not mission-critical.
+- Backups can be documented as an operational task rather than automated in the first version.
+- Future migration to Postgres should remain possible if availability, scale, or multi-instance deployment requirements increase.
+
 ## Frontend UX Direction
 
 The app should feel like a compact reference tool rather than a marketing site.
@@ -279,6 +312,8 @@ Choose the stack based on these answers:
 - Is SEO important?
 - Is single-instance deployment acceptable?
 - Does the protected network provide shared database infrastructure?
+- What OIDC or SSO integration is available?
+- Should auth protect the entire app or only submission/admin actions?
 
 ## Candidate Stacks
 
@@ -315,26 +350,41 @@ Good fit if:
 
 Assessment: also a good fit. Next.js may be more familiar and widely hosted; Remix-style routing may produce a simpler form-centric implementation.
 
+### Auth-Capable Full-Stack TypeScript App
+
+Any selected framework should support:
+
+- OIDC login.
+- Server-side session handling.
+- Authenticated submission actions.
+- Database access from server-side code.
+- Containerized deployment.
+
+This requirement matters more than the specific React framework choice.
+
 ## Initial Recommendation
 
 Use a full-stack TypeScript app rather than a static frontend because the MVP includes user submissions.
 
-Recommended starting stack:
+Provisional recommended starting stack:
 
 - Next.js + TypeScript for UI and server routes.
 - SQLite for MVP persistence.
 - Prisma or Drizzle for schema and migrations.
+- OIDC-compatible authentication integration.
 - Dockerfile and compose file for repeatable protected-network deployment.
 - Persistent volume for the SQLite database.
 
 This keeps deployment simple while leaving room for future editing, moderation, and migration to Postgres if the app outgrows a single-instance SQLite deployment.
 
+This recommendation should not be considered locked until the auth provider, moderation approach, and deployment constraints are confirmed.
+
 ## Open Questions
 
 1. Should MVP submissions publish immediately, or should they be pending by default?
-2. Should submitters identify themselves, and if so, how?
-3. Does the protected network provide authentication, such as SSO, reverse-proxy auth, or network-only trust?
-4. Is single-container, single-instance deployment acceptable for MVP?
+2. Which OIDC provider or auth mechanism should the app integrate with?
+3. Should browsing require login, or only submitting and future admin actions?
+4. Which submitter identity fields should be stored locally?
 5. Does the target environment provide shared database infrastructure, or should the app own its database?
 6. Roughly how many acronym entries should the first version support?
 7. Does SEO matter inside the protected network?
