@@ -316,6 +316,8 @@ Assessment: a strong candidate if the app is deployed as a single container with
 
 For the expected MVP scale of hundreds of entries, SQLite is sufficient from a data-volume perspective.
 
+MVP decision: use app-owned SQLite storage unless a stronger deployment requirement emerges.
+
 ### Hosted Postgres
 
 Best if the app needs multi-user editing, auth, collaboration, or production-grade persistence.
@@ -333,6 +335,8 @@ Cons:
 - Slower MVP if not needed immediately.
 
 Assessment: a strong candidate if the protected network already has database infrastructure or if multiple app instances are expected.
+
+MVP decision: do not assume Postgres or other shared database infrastructure is available.
 
 ### Containerized App With Embedded SQLite
 
@@ -360,6 +364,7 @@ Operational notes:
 - The data is important enough to support backup and app updates, but it is not mission-critical.
 - Backups can be documented as an operational task rather than automated in the first version.
 - Future migration to Postgres should remain possible if availability, scale, or multi-instance deployment requirements increase.
+- App updates should preserve the mounted database volume.
 
 ## Frontend UX Direction
 
@@ -454,7 +459,7 @@ Provisional recommended starting stack:
 
 This keeps deployment simple while leaving room for future editing, moderation, and migration to Postgres if the app outgrows a single-instance SQLite deployment.
 
-This recommendation should not be considered locked until the OIDC integration approach and persistence layer are confirmed.
+This recommendation should not be considered locked until the OIDC integration approach is confirmed.
 
 ## SEO
 
@@ -466,7 +471,7 @@ SEO is not important for this app because it is intended for protected-network i
 2. Which OIDC claims should map to local user ID, username, display name, and optional email?
 3. Which OIDC groups or claims should map to future admin and moderator roles?
 4. Should submitters be able to edit their own entries in the first post-MVP release?
-5. Does the target environment provide shared database infrastructure, or should the app own its database?
+5. Which local database path and mounted volume convention should the container use?
 6. Should post-MVP note editing be limited to submitters, moderators, admins, or any authenticated user?
 7. Should the JSON import file support only seed data, or should it be treated as the first version of a general bulk import format?
 8. Should importing duplicate records skip, fail the import, or report per-record errors?
