@@ -123,6 +123,7 @@ Approval-required moderation is not part of the MVP and is less likely than post
 - Admin removal or hiding of published entries.
 - Submitter editing of their own entries.
 - Moderator editing of submitted entries.
+- Editing notes on existing definitions.
 - Ranking or upvoting entries when an acronym has multiple meanings.
 - Bulk upload if seed-data import proves reusable.
 
@@ -235,10 +236,11 @@ MVP rules:
 - Block exact duplicate acronym definitions.
 - Show multiple meanings clearly in search and browse results.
 
-Open implementation detail: define exact duplicate matching as normalized acronym plus normalized definition, with notes comparison considered if needed.
+Exact duplicate matching should use normalized acronym plus normalized definition. Notes should not be part of exact duplicate detection.
 
 Post-MVP possibilities:
 
+- Allow users with the right permissions to edit notes on existing definitions.
 - Let users rank, upvote, or mark the most useful definition.
 - Add admin merge tools for near-duplicate entries.
 - Add stronger duplicate detection for minor wording differences.
@@ -465,7 +467,7 @@ SEO is not important for this app because it is intended for protected-network i
 3. Which OIDC groups or claims should map to future admin and moderator roles?
 4. Should submitters be able to edit their own entries in the first post-MVP release?
 5. Does the target environment provide shared database infrastructure, or should the app own its database?
-6. Should exact duplicate detection use acronym plus definition only, or acronym plus definition plus notes?
+6. Should post-MVP note editing be limited to submitters, moderators, admins, or any authenticated user?
 7. Should the JSON import file support only seed data, or should it be treated as the first version of a general bulk import format?
 8. Should importing duplicate records skip, fail the import, or report per-record errors?
 9. Do we need a visible "suggested similar entries" area on the submission form?
