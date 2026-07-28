@@ -417,7 +417,7 @@ Good fit if:
 - Search can run in the browser.
 - No backend is needed for MVP.
 
-Assessment: not enough by itself because MVP submissions need server-side persistence.
+Assessment: not enough by itself because MVP submissions need server-side persistence, OIDC sessions, duplicate enforcement, and import commands. It would require a separate API server, which adds deployment and implementation surface area without enough benefit for MVP.
 
 ### Next.js + TypeScript
 
@@ -428,7 +428,7 @@ Good fit if:
 - Auth or database integration is likely.
 - Server-rendered pages are useful.
 
-Assessment: good fit for a single app that provides both the browser UI and submission APIs.
+Assessment: viable but not selected. Next.js can provide the browser UI and server APIs, but its strongest advantages are less important here because the app is internal, SEO is not important, and we do not need a provider-hosted deployment model.
 
 ### Remix / React Router Framework + TypeScript
 
@@ -438,7 +438,7 @@ Good fit if:
 - Server actions and progressive enhancement are valuable.
 - We want a straightforward full-stack React app.
 
-Assessment: also a good fit. Next.js may be more familiar and widely hosted; Remix-style routing may produce a simpler form-centric implementation.
+Assessment: selected. The app is internal, form-heavy, and self-hosted. React Router framework's loaders/actions model fits browse, search, submit, and future admin workflows without requiring frontend/backend separation.
 
 ### Auth-Capable Full-Stack TypeScript App
 
@@ -454,22 +454,24 @@ Any selected framework should support:
 
 This requirement matters more than the specific React framework choice.
 
-## Initial Recommendation
+## Stack Decision
 
 Use a full-stack TypeScript app rather than a static frontend because the MVP includes user submissions.
 
-Provisional recommended starting stack:
+Selected MVP stack:
 
-- Next.js + TypeScript for UI and server routes.
-- SQLite for MVP persistence.
-- Prisma or Drizzle for schema and migrations.
-- OIDC-compatible authentication integration.
+- React Router framework + TypeScript for UI, routing, loaders, and actions.
+- Drizzle ORM for schema and migrations.
+- SQLite for app-owned MVP persistence.
+- Generic OIDC authentication integration.
+- Keycloak as the local development OIDC provider.
 - Dockerfile and compose file for repeatable protected-network deployment.
-- Persistent volume for the SQLite database.
+- Persistent mounted volume for the SQLite database.
+- JSON import command for seed/demo data and future bulk-import groundwork.
 
 This keeps deployment simple while leaving room for future editing, moderation, and migration to Postgres if the app outgrows a single-instance SQLite deployment.
 
-This recommendation should not be considered locked until the OIDC integration approach is confirmed.
+The auth implementation should remain provider-neutral. Keycloak is only a local development stand-in, and Microsoft Entra ID or another OIDC-compatible provider may be used later.
 
 ## SEO
 
