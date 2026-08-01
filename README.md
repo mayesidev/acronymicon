@@ -136,3 +136,17 @@ admin-user / password
 ```
 
 The app container stores SQLite data in the `acronymicon-data` Docker volume at `/data/acronymicon.sqlite`.
+
+Seed the running container explicitly when needed:
+
+```bash
+docker compose exec app npm run db:seed:container
+```
+
+Import another JSON file into the running container by copying it into the
+container first, then running the container importer:
+
+```bash
+docker cp path/to/acronyms.json $(docker compose ps -q app):/tmp/acronyms.json
+docker compose exec app npm run import:acronyms:container -- /tmp/acronyms.json
+```

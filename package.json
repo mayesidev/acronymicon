@@ -7,8 +7,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/ensure-database-directory.ts && drizzle-kit migrate",
     "db:seed": "tsx scripts/import-acronyms.ts seeds/acronyms.seed.json",
+    "db:seed:container": "node scripts/import-acronyms.mjs seeds/acronyms.seed.json",
     "dev": "react-router dev",
     "import:acronyms": "tsx scripts/import-acronyms.ts",
+    "import:acronyms:container": "node scripts/import-acronyms.mjs",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
   },
