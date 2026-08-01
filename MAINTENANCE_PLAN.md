@@ -2,11 +2,11 @@
 
 ## Status
 
-The actionable maintenance backlog is tracked in Linear under the Acronymicon
-team: [MVP Maintenance](https://github.com/mayesidev/acronymicon/issues).
+The actionable maintenance backlog is tracked in the repository issue tracker.
 
 This repository document defines the release boundary and acceptance contract.
-Linear owns issue status, sequencing, ownership, and implementation details.
+The issue tracker owns status, sequencing, ownership, and implementation
+details.
 
 ## Scope
 

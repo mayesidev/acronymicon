@@ -1,10 +1,7 @@
 # Acronymicon MVP Implementation Record
 
-The MVP implementation is complete. Execution tracking for maintenance and
-future releases lives in Linear under the Acronymicon team.
-
-- [MVP Maintenance](https://github.com/mayesidev/acronymicon/issues)
-- [Version 2 Discovery](https://github.com/mayesidev/acronymicon/issues)
+The MVP implementation is complete. Maintenance and future-release execution
+tracking is maintained in the repository issue tracker.
 
 ## Selected Stack
 

@@ -1,11 +1,17 @@
 # Acronymicon
 
-Acronymicon is an internal acronym dictionary web app.
+Acronymicon is a self-hosted acronym dictionary web app for searching,
+browsing, and submitting acronym definitions. It is designed for deployment
+on a protected network, while the source is available for reuse and forking.
 
 See [SPEC.md](./SPEC.md) for the MVP product contract and
 [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the completed MVP
-implementation record. Maintenance and future-release work is tracked in
-[Linear](https://github.com/mayesidev/acronymicon/issues).
+implementation record. Use the repository's GitHub issues for maintenance and
+future-release work after publication.
+
+The MVP is complete. It supports anonymous browsing, authenticated OIDC
+submissions, duplicate detection, JSON import, and persistent SQLite storage.
+Moderation, editing, roles, voting, and bulk-import UI remain future work.
 
 ## Development
 
@@ -14,6 +20,9 @@ Install dependencies:
 ```bash
 pnpm install
 ```
+
+The supported local toolchain is Node.js 24.x and pnpm 11.x. Docker is also
+required for the Keycloak-backed end-to-end suite.
 
 Run the development server:
 
@@ -95,6 +104,16 @@ with the OIDC provider. Optional claim mapping variables are documented in
 
 ## Verification
 
+Run the automated checks relevant to a change:
+
+```bash
+pnpm run lint
+pnpm run typecheck
+pnpm test
+pnpm run build
+pnpm run security:check
+```
+
 Run typecheck:
 
 ```bash
@@ -139,6 +158,9 @@ Seeded local users:
 user / password
 admin-user / password
 ```
+
+These credentials are local development fixtures only. Do not reuse them or
+the example client/session secrets outside local development.
 
 The app container stores SQLite data in the `acronymicon-data` Docker volume at `/data/acronymicon.sqlite`.
 

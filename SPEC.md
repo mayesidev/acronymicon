@@ -6,10 +6,8 @@ Acronymicon is a simple web app for looking up acronyms, initialisms, and their 
 
 ## Current Status
 
-The MVP implementation is complete and tracked in git. Maintenance work is
-tracked in the [MVP Maintenance project](https://github.com/mayesidev/acronymicon/issues).
-Version 2 requirements discovery is tracked in the [Version 2 Discovery
-project](https://github.com/mayesidev/acronymicon/issues).
+The MVP implementation is complete and tracked in git. Maintenance work and
+Version 2 requirements discovery are tracked in the project issue tracker.
 
 ## Goals
 
@@ -117,7 +115,7 @@ Approval-required moderation is not part of the MVP and is less likely than post
 
 Editing, moderation, role permissions, metadata semantics, duplicate quality,
 and future import/API scope are discovery items rather than committed product
-requirements. They are tracked in the Version 2 Discovery Linear project.
+requirements. They remain future-release discovery items.
 
 ## Data Model Draft
 
@@ -176,8 +174,8 @@ MVP authentication goals:
 - Source future admin and moderator roles from OIDC groups or claims.
 - Keep authorization simple unless admin or moderator capabilities ship in the MVP.
 
-Production provider, claim-storage, and role-mapping decisions are tracked in
-Linear issues `ACR-9` and `ACR-11`.
+Production provider, claim-storage, and role-mapping decisions remain future
+infrastructure work.
 
 Implementation guidance:
 
@@ -235,8 +233,8 @@ MVP rules:
 
 Exact duplicate matching should use normalized acronym plus normalized definition. Notes should not be part of exact duplicate detection.
 
-Post-MVP duplicate quality and ranking decisions are tracked in Linear issue
-`ACR-12` and are not part of this specification yet.
+Post-MVP duplicate quality and ranking decisions are not part of this
+specification yet.
 
 ## Source And Citation Policy
 
@@ -463,6 +461,5 @@ SEO is not important for this app because it is intended for protected-network i
 
 ## Deferred Decisions
 
-Production authentication and infrastructure decisions are tracked in Linear
-issues `ACR-9` and `ACR-11`. Import/API scope is tracked in `ACR-10`, and
-metadata semantics are tracked in `ACR-13`.
+Production authentication, infrastructure, import/API scope, and metadata
+semantics remain deferred future-release decisions.
