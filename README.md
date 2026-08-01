@@ -2,7 +2,10 @@
 
 Acronymicon is an internal acronym dictionary web app.
 
-See [SPEC.md](./SPEC.md) and [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for product requirements and the implementation roadmap.
+See [SPEC.md](./SPEC.md) for the MVP product contract and
+[IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the completed MVP
+implementation record. Maintenance and future-release work is tracked in
+[Linear](https://github.com/mayesidev/acronymicon/issues).
 
 ## Development
 

@@ -6,9 +6,10 @@ Acronymicon is a simple web app for looking up acronyms, initialisms, and their 
 
 ## Current Status
 
-The MVP implementation is complete and tracked in git. It is ready for a
-requirements discussion for the next release. Git changes should continue to
-be committed as meaningful checkpoints.
+The MVP implementation is complete and tracked in git. Maintenance work is
+tracked in the [MVP Maintenance project](https://github.com/mayesidev/acronymicon/issues).
+Version 2 requirements discovery is tracked in the [Version 2 Discovery
+project](https://github.com/mayesidev/acronymicon/issues).
 
 ## Goals
 
@@ -112,22 +113,11 @@ In this spec, `pending` means a submitted entry is saved but does not appear in 
 
 Approval-required moderation is not part of the MVP and is less likely than post-publication moderation. The app should still keep a status field so future admin or moderator workflows can remove, hide, or review entries without a schema redesign.
 
-## Possible Future Features
+## Version 2 Discovery
 
-- Admin interface for adding and editing entries.
-- CSV import/export.
-- Markdown or rich text notes.
-- Source links or citations.
-- API endpoints.
-- Editing existing entries.
-- Review or approval workflow.
-- Role-based admin capabilities.
-- Admin removal or hiding of published entries.
-- Submitter editing of their own entries.
-- Moderator editing of submitted entries.
-- Editing notes on existing definitions.
-- Ranking or upvoting entries when an acronym has multiple meanings.
-- Bulk upload if seed-data import proves reusable.
+Editing, moderation, role permissions, metadata semantics, duplicate quality,
+and future import/API scope are discovery items rather than committed product
+requirements. They are tracked in the Version 2 Discovery Linear project.
 
 ## Data Model Draft
 
@@ -186,12 +176,8 @@ MVP authentication goals:
 - Source future admin and moderator roles from OIDC groups or claims.
 - Keep authorization simple unless admin or moderator capabilities ship in the MVP.
 
-Open decisions:
-
-- Which OIDC provider or reverse-proxy auth mechanism will be available in production?
-- Which exact OIDC claims should be mapped to local username and display name?
-- Should email be stored locally for traceability, or avoided unless needed?
-- Which OIDC groups or claims should map to future admin and moderator roles?
+Production provider, claim-storage, and role-mapping decisions are tracked in
+Linear issues `ACR-9` and `ACR-11`.
 
 Implementation guidance:
 
@@ -249,12 +235,8 @@ MVP rules:
 
 Exact duplicate matching should use normalized acronym plus normalized definition. Notes should not be part of exact duplicate detection.
 
-Post-MVP possibilities:
-
-- Allow users with the right permissions to edit notes on existing definitions.
-- Let users rank, upvote, or mark the most useful definition.
-- Add admin merge tools for near-duplicate entries.
-- Add stronger duplicate detection for minor wording differences.
+Post-MVP duplicate quality and ranking decisions are tracked in Linear issue
+`ACR-12` and are not part of this specification yet.
 
 ## Source And Citation Policy
 
@@ -479,15 +461,8 @@ The auth implementation should remain provider-neutral. Keycloak is only a local
 
 SEO is not important for this app because it is intended for protected-network internal use.
 
-## Open Questions
+## Deferred Decisions
 
-1. Which OIDC provider or auth mechanism should the app integrate with in production?
-2. Which OIDC claims should map to local user ID, username, display name, and optional email?
-3. Which OIDC groups or claims should map to future admin and moderator roles?
-4. Should submitters be able to edit their own entries in the first post-MVP release?
-5. Which local database path and mounted volume convention should the container use?
-6. Should post-MVP note editing be limited to submitters, moderators, admins, or any authenticated user?
-7. Should the JSON import file support only seed data, or should it be treated as the first version of a general bulk import format?
-8. Should importing duplicate records skip, fail the import, or report per-record errors?
-9. Do we need a visible "suggested similar entries" area on the submission form?
-10. Should ranking or upvoting duplicate acronym meanings be part of the first post-MVP release?
+Production authentication and infrastructure decisions are tracked in Linear
+issues `ACR-9` and `ACR-11`. Import/API scope is tracked in `ACR-10`, and
+metadata semantics are tracked in `ACR-13`.

@@ -1,15 +1,10 @@
-# Acronymicon Implementation Plan
+# Acronymicon MVP Implementation Record
 
-## MVP Status
+The MVP implementation is complete. Execution tracking for maintenance and
+future releases lives in Linear under the Acronymicon team.
 
-MVP implementation and verification are complete. The current release supports
-public browsing and search, authenticated OIDC-backed submissions, exact
-duplicate prevention, same-acronym warnings, JSON import, and single-instance
-container deployment with persistent SQLite storage.
-
-The next release should begin with new requirements for editing, moderation,
-roles, and operational workflows. Those capabilities are intentionally not
-part of this MVP checkpoint.
+- [MVP Maintenance](https://github.com/mayesidev/acronymicon/issues)
+- [Version 2 Discovery](https://github.com/mayesidev/acronymicon/issues)
 
 ## Selected Stack
 
@@ -21,129 +16,21 @@ part of this MVP checkpoint.
 - Persistent mounted SQLite volume
 - JSON import command for seed/demo data
 
-## Milestone 1: Project Scaffold [x]
+## Completed MVP Capabilities
 
-Create the React Router framework application and baseline project tooling.
+- React Router application scaffold and app shell.
+- SQLite schema, migrations, normalization, and duplicate enforcement.
+- Reusable JSON import command and demo seed dataset.
+- Anonymous browse and search experience.
+- Generic OIDC login with local Keycloak configuration.
+- Authenticated submission with submitter identity and immediate publication.
+- Existing-acronym warning and exact-duplicate blocking.
+- Containerized app, persistent volume, backup notes, and runtime import command.
+- Typecheck, production build, Docker smoke checks, and MVP runtime verification.
 
-Deliverables:
+## MVP Boundary
 
-- React Router framework app scaffolded with TypeScript.
-- Basic app shell route.
-- Development scripts documented in `package.json`.
-- Formatting and linting available if included by the scaffold.
-- Initial smoke test or typecheck command verified.
-
-## Milestone 2: Database Foundation [x]
-
-Add SQLite persistence through Drizzle.
-
-Deliverables:
-
-- Drizzle configured for SQLite.
-- Database path configurable through environment variables.
-- Initial acronym entry schema.
-- Migration generation and apply commands.
-- Database files excluded from git.
-
-Initial table fields:
-
-- `id`
-- `acronym`
-- `definition`
-- `notes`
-- `category`
-- `tags`
-- `aliases`
-- `source`
-- `status`
-- `submittedByUserId`
-- `submittedByUsername`
-- `submittedByDisplayName`
-- `createdAt`
-- `updatedAt`
-
-## Milestone 3: JSON Import [x]
-
-Build a reusable JSON import command and seed dataset.
-
-Deliverables:
-
-- Importable JSON file format.
-- Seed/demo JSON file.
-- Import script that validates records before inserting.
-- Exact duplicate detection using normalized `acronym + definition`.
-- Clear handling for duplicate records.
-
-Initial recommendation:
-
-- Report per-record import errors.
-- Skip exact duplicates by default.
-- Exit non-zero only for invalid input shape or unexpected import failure.
-
-## Milestone 4: Browse And Search [x]
-
-Build the unauthenticated dictionary experience.
-
-Deliverables:
-
-- Browse published entries without login.
-- Search by acronym, definition, notes, category, and tags.
-- Show duplicate acronym meanings clearly.
-- Empty states for no entries and no search results.
-- Compact reference-tool layout.
-
-## Milestone 5: Authenticated Submission [x]
-
-Add OIDC-backed submission.
-
-Deliverables:
-
-- Generic OIDC configuration.
-- Local Keycloak development configuration.
-- Login flow required for submission.
-- Browsing remains available without login.
-- Submitted entries store stable user ID and username.
-- Submissions publish immediately with `status = "published"`.
-- Existing acronym warning before submission.
-- Exact duplicate submissions blocked.
-
-## Milestone 6: Containerized Deployment [x]
-
-Package the app for local and protected-network deployment.
-
-Deliverables:
-
-- Production Dockerfile.
-- Docker Compose setup for app, SQLite volume, and local Keycloak.
-- Environment variable examples.
-- Persistent database volume convention.
-- Basic backup/update notes.
-
-## Milestone 7: Verification [x]
-
-Validate core behavior end to end.
-
-Deliverables:
-
-- Typecheck/build passes.
-- Import command works against a clean database.
-- Browse/search works with seeded data.
-- Submission requires login.
-- Submitted entry appears immediately.
-- Duplicate exact definition is blocked.
-- Existing acronym warning appears for likely duplicates.
-
-Verification included a clean-database import, idempotent seed import, public
-browse/search requests, unauthenticated submission redirect, local Keycloak
-login, authenticated submission, normalized exact-duplicate rejection, and
-same-acronym warning plus confirmed publication.
-
-## Deferred Features
-
-- Admin removal or hiding of entries.
-- Moderator role workflows.
-- Submitter editing.
-- Note editing on existing definitions.
-- Ranking or upvoting duplicate acronym meanings.
-- Bulk import UI.
-- Postgres migration.
+Admin removal, moderation, editing, role authorization, voting, bulk-import
+UI, and Postgres migration were intentionally deferred. Their requirements
+are not committed here; they are tracked as Version 2 discovery work in
+Linear.
