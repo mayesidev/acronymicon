@@ -1,0 +1,13 @@
+# Build scripts are denied by default; these are the reviewed native/tooling builds.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+blockExoticSubdeps: true
+engineStrict: true
+# Delay newly published packages long enough for registry takeovers to be detected.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+nodeVersion: 24.18.1
+# Keep downgrade detection enabled while tolerating trust metadata gaps on old packages.
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 10080

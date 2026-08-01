@@ -12,13 +12,13 @@ implementation record. Maintenance and future-release work is tracked in
 Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 Run the development server:
 
 ```bash
-npm run dev -- --host 0.0.0.0
+pnpm run dev -- --host 0.0.0.0
 ```
 
 The app runs at:
@@ -46,13 +46,13 @@ DATABASE_PATH=/path/to/acronymicon.sqlite
 Generate migrations after schema changes:
 
 ```bash
-npm run db:generate
+pnpm run db:generate
 ```
 
 Apply migrations:
 
 ```bash
-npm run db:migrate
+pnpm run db:migrate
 ```
 
 Local database files under `data/` are ignored by git.
@@ -62,13 +62,13 @@ Local database files under `data/` are ignored by git.
 Load the demo seed data:
 
 ```bash
-npm run db:seed
+pnpm run db:seed
 ```
 
 Import another JSON file:
 
 ```bash
-npm run import:acronyms -- path/to/acronyms.json
+pnpm run import:acronyms -- path/to/acronyms.json
 ```
 
 The import command accepts either an array of entries or an object with an `entries` array. Exact duplicates are skipped using normalized `acronym + definition`.
@@ -98,13 +98,13 @@ with the OIDC provider. Optional claim mapping variables are documented in
 Run typecheck:
 
 ```bash
-npm run typecheck
+pnpm run typecheck
 ```
 
 Build for production:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ## Docker
@@ -156,7 +156,7 @@ docker compose start app
 Seed the running container explicitly when needed:
 
 ```bash
-docker compose exec app npm run db:seed:container
+docker compose exec app pnpm run db:seed:container
 ```
 
 Import another JSON file into the running container by copying it into the
@@ -164,5 +164,5 @@ container first, then running the container importer:
 
 ```bash
 docker cp path/to/acronyms.json $(docker compose ps -q app):/tmp/acronyms.json
-docker compose exec app npm run import:acronyms:container -- /tmp/acronyms.json
+docker compose exec app pnpm run import:acronyms:container -- /tmp/acronyms.json
 ```
