@@ -2,6 +2,7 @@
 .env*
 !.env.example
 /node_modules/
+/.agents/
 
 # Logs and local tooling state
 *.log
