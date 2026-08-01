@@ -13,3 +13,6 @@
 /.react-router/
 /build/
 /coverage/
+/test-results/
+/playwright-report/
+/blob-report/

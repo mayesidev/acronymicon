@@ -19,14 +19,16 @@
       "serviceAccountsEnabled": false,
       "redirectUris": [
         "http://localhost:3000/auth/callback",
-        "http://localhost:5173/auth/callback"
+        "http://localhost:5173/auth/callback",
+        "http://localhost:3100/auth/callback"
       ],
       "webOrigins": [
         "http://localhost:3000",
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "http://localhost:3100"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:3000/##http://localhost:5173/"
+        "post.logout.redirect.uris": "http://localhost:3000/##http://localhost:5173/##http://localhost:3100/"
       },
       "defaultClientScopes": ["web-origins", "acr", "profile", "email"],
       "optionalClientScopes": ["address", "phone", "offline_access"]
