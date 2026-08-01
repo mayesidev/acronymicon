@@ -1,5 +1,16 @@
 # Acronymicon Implementation Plan
 
+## MVP Status
+
+MVP implementation and verification are complete. The current release supports
+public browsing and search, authenticated OIDC-backed submissions, exact
+duplicate prevention, same-acronym warnings, JSON import, and single-instance
+container deployment with persistent SQLite storage.
+
+The next release should begin with new requirements for editing, moderation,
+roles, and operational workflows. Those capabilities are intentionally not
+part of this MVP checkpoint.
+
 ## Selected Stack
 
 - React Router framework + TypeScript
@@ -10,7 +21,7 @@
 - Persistent mounted SQLite volume
 - JSON import command for seed/demo data
 
-## Milestone 1: Project Scaffold
+## Milestone 1: Project Scaffold [x]
 
 Create the React Router framework application and baseline project tooling.
 
@@ -22,7 +33,7 @@ Deliverables:
 - Formatting and linting available if included by the scaffold.
 - Initial smoke test or typecheck command verified.
 
-## Milestone 2: Database Foundation
+## Milestone 2: Database Foundation [x]
 
 Add SQLite persistence through Drizzle.
 
@@ -51,7 +62,7 @@ Initial table fields:
 - `createdAt`
 - `updatedAt`
 
-## Milestone 3: JSON Import
+## Milestone 3: JSON Import [x]
 
 Build a reusable JSON import command and seed dataset.
 
@@ -69,7 +80,7 @@ Initial recommendation:
 - Skip exact duplicates by default.
 - Exit non-zero only for invalid input shape or unexpected import failure.
 
-## Milestone 4: Browse And Search
+## Milestone 4: Browse And Search [x]
 
 Build the unauthenticated dictionary experience.
 
@@ -81,7 +92,7 @@ Deliverables:
 - Empty states for no entries and no search results.
 - Compact reference-tool layout.
 
-## Milestone 5: Authenticated Submission
+## Milestone 5: Authenticated Submission [x]
 
 Add OIDC-backed submission.
 
@@ -96,7 +107,7 @@ Deliverables:
 - Existing acronym warning before submission.
 - Exact duplicate submissions blocked.
 
-## Milestone 6: Containerized Deployment
+## Milestone 6: Containerized Deployment [x]
 
 Package the app for local and protected-network deployment.
 
@@ -108,7 +119,7 @@ Deliverables:
 - Persistent database volume convention.
 - Basic backup/update notes.
 
-## Milestone 7: Verification
+## Milestone 7: Verification [x]
 
 Validate core behavior end to end.
 
@@ -121,6 +132,11 @@ Deliverables:
 - Submitted entry appears immediately.
 - Duplicate exact definition is blocked.
 - Existing acronym warning appears for likely duplicates.
+
+Verification included a clean-database import, idempotent seed import, public
+browse/search requests, unauthenticated submission redirect, local Keycloak
+login, authenticated submission, normalized exact-duplicate rejection, and
+same-acronym warning plus confirmed publication.
 
 ## Deferred Features
 

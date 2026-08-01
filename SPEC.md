@@ -6,7 +6,9 @@ Acronymicon is a simple web app for looking up acronyms, initialisms, and their 
 
 ## Current Status
 
-This project is in requirements definition. Git is initialized and changes should be committed as meaningful checkpoints while the app is designed and built.
+The MVP implementation is complete and tracked in git. It is ready for a
+requirements discussion for the next release. Git changes should continue to
+be committed as meaningful checkpoints.
 
 ## Goals
 

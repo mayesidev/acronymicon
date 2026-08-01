@@ -137,6 +137,17 @@ admin-user / password
 
 The app container stores SQLite data in the `acronymicon-data` Docker volume at `/data/acronymicon.sqlite`.
 
+Keep this volume when updating the app image. For a simple backup, stop the
+app, copy the database from the stopped service container, and start the app
+again:
+
+```bash
+docker compose stop app
+mkdir -p backups
+docker compose cp app:/data/acronymicon.sqlite ./backups/
+docker compose start app
+```
+
 Seed the running container explicitly when needed:
 
 ```bash
