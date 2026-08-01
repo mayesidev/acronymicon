@@ -4,6 +4,8 @@ allowBuilds:
   esbuild: true
 blockExoticSubdeps: true
 engineStrict: true
+overrides:
+  "@esbuild-kit/core-utils>esbuild": 0.25.12
 # Delay newly published packages long enough for registry takeovers to be detected.
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true

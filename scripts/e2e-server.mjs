@@ -46,13 +46,18 @@ try {
     env: environment,
     stdio: "inherit",
   });
+  execFileSync("pnpm", ["run", "build"], {
+    cwd: process.cwd(),
+    env: environment,
+    stdio: "inherit",
+  });
 
   server = spawn(
     "pnpm",
-    ["exec", "react-router", "dev", "--host", "0.0.0.0", "--port", port],
+    ["run", "start"],
     {
       cwd: process.cwd(),
-      env: environment,
+      env: { ...environment, HOST: "0.0.0.0", PORT: port },
       stdio: "inherit",
     },
   );
