@@ -89,7 +89,9 @@ OIDC_CLIENT_SECRET
 OIDC_REDIRECT_URI
 ```
 
-Optional claim mapping variables are documented in `.env.example`.
+For provider logout, set `OIDC_POST_LOGOUT_REDIRECT_URI` to a URI registered
+with the OIDC provider. Optional claim mapping variables are documented in
+`.env.example`.
 
 ## Verification
 

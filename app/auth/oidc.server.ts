@@ -27,6 +27,13 @@ export function getOidcRedirectUri(request: Request) {
   );
 }
 
+export function getOidcPostLogoutRedirectUri(request: Request) {
+  return (
+    process.env.OIDC_POST_LOGOUT_REDIRECT_URI ||
+    new URL("/", request.url).toString()
+  );
+}
+
 export function getOidcScopes() {
   return process.env.OIDC_SCOPES ?? "openid profile email";
 }
@@ -53,6 +60,23 @@ export async function buildAuthorizationUrl(input: {
     code_challenge_method: "S256",
     state: input.state,
   });
+}
+
+export async function buildOidcLogoutUrl(input: { request: Request }) {
+  try {
+    const config = await getOidcConfig();
+
+    if (!config || !config.serverMetadata().end_session_endpoint) {
+      return null;
+    }
+
+    return oidc.buildEndSessionUrl(config, {
+      post_logout_redirect_uri: getOidcPostLogoutRedirectUri(input.request),
+    });
+  } catch {
+    // Local session destruction remains the fallback when provider logout is unavailable.
+    return null;
+  }
 }
 
 export async function completeAuthorizationCodeGrant(input: {
