@@ -16,6 +16,7 @@ modernize the development toolchain, and add repeatable CI checks.
 - The current runtime dependency audit reports no known vulnerabilities.
 - The full dependency audit reports four moderate development-only findings through the `drizzle-kit` and `esbuild` dependency chain.
 - `package-lock.json` is committed, but dependency installation and lifecycle-script policy are not explicitly documented or enforced.
+- `package-lock.json` is currently listed in `.gitignore`, which should be corrected while npm remains the package manager.
 - The logout link performs a `GET` while the logout route only destroys the local session in its `POST` action.
 
 ## Phase 1: Correctness Fixes
@@ -104,6 +105,20 @@ unrelated packages.
 - Use project-local binaries and avoid network-executed package commands in CI.
 - Do not switch package managers solely on the assumption that npm is insecure; lockfile integrity, script control, auditing, and review provide the meaningful controls.
 
+### Package Manager Decision
+
+Keep npm for this maintenance release. The project already has a working
+`package-lock.json`, Docker uses `npm ci`, and npm provides the required frozen
+install, audit, signature, and lifecycle-script controls. Correct the
+`.gitignore` entry and add an explicit `packageManager` version once the npm
+version for CI is selected.
+
+Evaluate pnpm separately after the maintenance gate, or sooner only if the
+team has a standard pnpm policy or needs its workspace and script controls.
+A pnpm migration would be a deliberate lockfile and Docker change, followed
+by clean-install, native-module, build, and end-to-end comparisons. It should
+not be bundled with the TypeScript or test migration by accident.
+
 ## Phase 4: CI Pipeline
 
 Add a pull-request and main-branch workflow that runs:
@@ -126,6 +141,33 @@ Security controls:
 Initial delivery should be CI only. Publishing or deploying images is a
 separate decision because no upstream repository, registry, or deployment
 environment has been selected yet.
+
+## Execution and Distribution Planning
+
+Use separate systems for separate kinds of information:
+
+- Repository documents hold product requirements, architecture decisions, and release gates.
+- A Linear project or equivalent issue board holds prioritized work, ownership, status, dependencies, and acceptance links.
+- Git holds implementation history.
+- CI holds repeatable verification results.
+- Release notes record what was promoted and how to roll it back.
+
+Create one maintenance project with work grouped under correctness, testing,
+toolchain, supply chain, CI, and release. Do not create Version 2
+implementation issues until the maintenance release is complete; discovery
+questions can remain as a separate backlog.
+
+Before CI can become a shared check, decide:
+
+- Where the private upstream repository will live.
+- Whether cloud CI may access the source and public package registry, or whether a self-hosted runner is required.
+- Where versioned OCI images will be stored.
+- Whether deployment remains manual Compose promotion or becomes an automated protected-environment deployment.
+- How release secrets, image tags, database backups, and rollback approvals will be handled.
+
+The minimum useful first pathway is private source control plus CI that builds
+and tests the application and container. Image publishing and deployment can
+follow once the registry and target environment are chosen.
 
 ## Release Gate
 
@@ -155,6 +197,10 @@ These are Version 2 requirements discussions, not maintenance tasks.
 ## Decisions Needed Before Implementation
 
 - Which CI provider should be the first target if the repository remains without an upstream?
+- Should execution tracking live in Linear, another issue system, or only in the repository until an upstream exists?
+- Which private source host, CI runner model, and OCI registry are acceptable for this internal project?
+- Is cloud CI permitted, or must source and build traffic remain inside the protected network?
+- Should npm remain the package manager for the first maintenance release, with pnpm evaluated afterward?
 - Is adding a browser test dependency such as Playwright acceptable, or is there an existing organizational runner to use?
 - Should development-only moderate audit findings block CI, warn, or be allowed only with an explicit record?
 - Should the first TypeScript target be TypeScript 6, with TypeScript 7 deferred until ecosystem compatibility is confirmed?
