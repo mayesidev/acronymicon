@@ -77,12 +77,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   >
                     Submit acronym
                   </a>
-                  <a
-                    href="/auth/logout"
-                    className="font-medium text-slate-600 underline-offset-4 hover:underline"
-                  >
-                    Sign out
-                  </a>
+                  <Form method="post" action="/auth/logout">
+                    <button
+                      type="submit"
+                      className="font-medium text-slate-600 underline-offset-4 hover:underline"
+                    >
+                      Sign out
+                    </button>
+                  </Form>
                 </>
               ) : (
                 <>
