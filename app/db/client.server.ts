@@ -6,18 +6,42 @@ import { mkdirSync } from "node:fs";
 
 import * as schema from "./schema";
 
-const databasePath = process.env.DATABASE_PATH ?? "./data/acronymicon.sqlite";
+export function createDatabase(options: {
+  databasePath?: string;
+  migrationsFolder?: string;
+  runMigrations?: boolean;
+} = {}) {
+  const databasePath =
+    options.databasePath ?? process.env.DATABASE_PATH ?? "./data/acronymicon.sqlite";
 
-mkdirSync(dirname(databasePath), { recursive: true });
+  mkdirSync(dirname(databasePath), { recursive: true });
 
-const sqlite = new Database(databasePath);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
+  const sqlite = new Database(databasePath);
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("foreign_keys = ON");
 
-export const db = drizzle(sqlite, { schema });
+  const db = drizzle(sqlite, { schema });
 
-if (process.env.RUN_MIGRATIONS_ON_STARTUP !== "false") {
-  migrate(db, {
-    migrationsFolder: process.env.DRIZZLE_MIGRATIONS_PATH ?? "./drizzle",
-  });
+  if (
+    options.runMigrations ??
+    process.env.RUN_MIGRATIONS_ON_STARTUP !== "false"
+  ) {
+    migrate(db, {
+      migrationsFolder:
+        options.migrationsFolder ??
+        process.env.DRIZZLE_MIGRATIONS_PATH ??
+        "./drizzle",
+    });
+  }
+
+  return {
+    db,
+    close: () => sqlite.close(),
+  };
 }
+
+const defaultDatabase = createDatabase();
+
+export type AppDatabase = typeof defaultDatabase.db;
+export const db = defaultDatabase.db;
+export const closeDatabase = defaultDatabase.close;

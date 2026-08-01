@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 
-import { db } from "./client.server";
+import { db, type AppDatabase } from "./client.server";
 import { normalizeAcronym, normalizeDefinition } from "./normalize";
 import { acronymEntries, type AcronymEntry } from "./schema";
 
@@ -19,94 +19,110 @@ export type AcronymSearchResult = Pick<
   | "createdAt"
 >;
 
-export async function listPublishedAcronyms(searchTerm: string) {
-  const entries = await db
-    .select({
-      id: acronymEntries.id,
-      acronym: acronymEntries.acronym,
-      definition: acronymEntries.definition,
-      notes: acronymEntries.notes,
-      category: acronymEntries.category,
-      tags: acronymEntries.tags,
-      aliases: acronymEntries.aliases,
-      source: acronymEntries.source,
-      submittedByUsername: acronymEntries.submittedByUsername,
-      submittedByDisplayName: acronymEntries.submittedByDisplayName,
-      createdAt: acronymEntries.createdAt,
-    })
-    .from(acronymEntries)
-    .where(eq(acronymEntries.status, "published"))
-    .orderBy(asc(acronymEntries.normalizedAcronym));
+export function createAcronymRepository(database: AppDatabase) {
+  async function listPublishedAcronyms(searchTerm: string) {
+    const entries = await database
+      .select({
+        id: acronymEntries.id,
+        acronym: acronymEntries.acronym,
+        definition: acronymEntries.definition,
+        notes: acronymEntries.notes,
+        category: acronymEntries.category,
+        tags: acronymEntries.tags,
+        aliases: acronymEntries.aliases,
+        source: acronymEntries.source,
+        submittedByUsername: acronymEntries.submittedByUsername,
+        submittedByDisplayName: acronymEntries.submittedByDisplayName,
+        createdAt: acronymEntries.createdAt,
+      })
+      .from(acronymEntries)
+      .where(eq(acronymEntries.status, "published"))
+      .orderBy(asc(acronymEntries.normalizedAcronym));
 
-  const normalizedSearch = searchTerm.trim().toLowerCase();
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  if (!normalizedSearch) {
-    return entries;
+    if (!normalizedSearch) {
+      return entries;
+    }
+
+    return entries.filter((entry) => matchesSearch(entry, normalizedSearch));
   }
 
-  return entries.filter((entry) => matchesSearch(entry, normalizedSearch));
-}
-
-export async function findPublishedByAcronym(acronym: string) {
-  return db
-    .select({
-      id: acronymEntries.id,
-      acronym: acronymEntries.acronym,
-      definition: acronymEntries.definition,
-      notes: acronymEntries.notes,
-      category: acronymEntries.category,
-      tags: acronymEntries.tags,
-      aliases: acronymEntries.aliases,
-      source: acronymEntries.source,
-      submittedByUsername: acronymEntries.submittedByUsername,
-      submittedByDisplayName: acronymEntries.submittedByDisplayName,
-      createdAt: acronymEntries.createdAt,
-    })
-    .from(acronymEntries)
-    .where(
-      and(
-        eq(acronymEntries.status, "published"),
-        eq(acronymEntries.normalizedAcronym, normalizeAcronym(acronym)),
-      ),
-    )
-    .orderBy(asc(acronymEntries.normalizedDefinition));
-}
-
-export async function findExactDuplicate(input: {
-  acronym: string;
-  definition: string;
-}) {
-  const [duplicate] = await db
-    .select({ id: acronymEntries.id })
-    .from(acronymEntries)
-    .where(
-      and(
-        eq(acronymEntries.normalizedAcronym, normalizeAcronym(input.acronym)),
-        eq(
-          acronymEntries.normalizedDefinition,
-          normalizeDefinition(input.definition),
+  async function findPublishedByAcronym(acronym: string) {
+    return database
+      .select({
+        id: acronymEntries.id,
+        acronym: acronymEntries.acronym,
+        definition: acronymEntries.definition,
+        notes: acronymEntries.notes,
+        category: acronymEntries.category,
+        tags: acronymEntries.tags,
+        aliases: acronymEntries.aliases,
+        source: acronymEntries.source,
+        submittedByUsername: acronymEntries.submittedByUsername,
+        submittedByDisplayName: acronymEntries.submittedByDisplayName,
+        createdAt: acronymEntries.createdAt,
+      })
+      .from(acronymEntries)
+      .where(
+        and(
+          eq(acronymEntries.status, "published"),
+          eq(acronymEntries.normalizedAcronym, normalizeAcronym(acronym)),
         ),
-      ),
-    )
-    .limit(1);
+      )
+      .orderBy(asc(acronymEntries.normalizedDefinition));
+  }
 
-  return duplicate ?? null;
+  async function findExactDuplicate(input: {
+    acronym: string;
+    definition: string;
+  }) {
+    const [duplicate] = await database
+      .select({ id: acronymEntries.id })
+      .from(acronymEntries)
+      .where(
+        and(
+          eq(acronymEntries.normalizedAcronym, normalizeAcronym(input.acronym)),
+          eq(
+            acronymEntries.normalizedDefinition,
+            normalizeDefinition(input.definition),
+          ),
+        ),
+      )
+      .limit(1);
+
+    return duplicate ?? null;
+  }
+
+  async function createAcronymEntry(
+    input: Parameters<typeof buildNewAcronymEntry>[0],
+  ) {
+    const [entry] = await database
+      .insert(acronymEntries)
+      .values(buildNewAcronymEntry(input))
+      .returning({
+        id: acronymEntries.id,
+        acronym: acronymEntries.acronym,
+        definition: acronymEntries.definition,
+      });
+
+    return entry;
+  }
+
+  return {
+    listPublishedAcronyms,
+    findPublishedByAcronym,
+    findExactDuplicate,
+    createAcronymEntry,
+  };
 }
 
-export async function createAcronymEntry(
-  input: Parameters<typeof buildNewAcronymEntry>[0],
-) {
-  const [entry] = await db
-    .insert(acronymEntries)
-    .values(buildNewAcronymEntry(input))
-    .returning({
-      id: acronymEntries.id,
-      acronym: acronymEntries.acronym,
-      definition: acronymEntries.definition,
-    });
-
-  return entry;
-}
+export const {
+  listPublishedAcronyms,
+  findPublishedByAcronym,
+  findExactDuplicate,
+  createAcronymEntry,
+} = createAcronymRepository(db);
 
 export function buildNewAcronymEntry(input: {
   acronym: string;

@@ -135,7 +135,7 @@ async function discoverOidcConfig() {
   );
 }
 
-function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
+export function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
   const id = getClaimString(claims, process.env.OIDC_CLAIM_USER_ID ?? "sub");
 
   if (!id) {
