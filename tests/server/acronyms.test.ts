@@ -42,12 +42,12 @@ describe("acronym repository", () => {
       definition: "Application Programming Interface",
     });
 
-    await expect(
-      repository.findExactDuplicate({
-        acronym: " api ",
-        definition: "Application   Programming Interface",
-      }),
-    ).resolves.toEqual(expect.objectContaining({ id: expect.any(String) }));
+    const duplicate = await repository.findExactDuplicate({
+      acronym: " api ",
+      definition: "Application   Programming Interface",
+    });
+
+    expect(duplicate?.id).toEqual(expect.any(String));
 
     await expect(
       repository.findExactDuplicate({

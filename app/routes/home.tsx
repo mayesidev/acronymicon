@@ -5,7 +5,7 @@ import { getOptionalUser } from "../auth/session.server";
 import { DictionaryList } from "../components/dictionary-list";
 import { listPublishedAcronyms } from "../db/acronyms.server";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "Acronymicon" },
     { name: "description", content: "Internal acronym dictionary" },

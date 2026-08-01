@@ -9,7 +9,7 @@ import {
 } from "../auth/oidc.server";
 import { commitSession, getSession } from "../auth/session.server";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [{ title: "Sign in | Acronymicon" }];
 }
 

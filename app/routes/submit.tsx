@@ -27,7 +27,7 @@ type SubmissionFieldName =
   | "tags"
   | "source";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
 }
 
