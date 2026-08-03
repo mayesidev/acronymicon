@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { mapClaimsToUser } from "../../app/auth/oidc.server";
+import {
+  addReauthenticationPrompt,
+  mapClaimsToUser,
+} from "../../app/auth/oidc.server";
 
 describe("OIDC claim mapping", () => {
   it("maps configured identity claims and group membership", () => {
@@ -25,5 +28,14 @@ describe("OIDC claim mapping", () => {
     expect(() => mapClaimsToUser({ name: "Missing Subject" })).toThrow(
       "stable user identifier",
     );
+  });
+
+  it("requests provider reauthentication after an explicit logout", () => {
+    const authorizationUrl = addReauthenticationPrompt(
+      new URL("https://issuer.example.test/authorize?client_id=acronymicon"),
+      true,
+    );
+
+    expect(authorizationUrl.searchParams.get("prompt")).toBe("login");
   });
 });

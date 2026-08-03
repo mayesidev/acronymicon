@@ -1,4 +1,4 @@
-import { createCookieSessionStorage } from "react-router";
+import { createCookie, createCookieSessionStorage } from "react-router";
 
 export type AuthUser = {
   id: string;
@@ -33,6 +33,18 @@ const secureCookie =
   process.env.SESSION_COOKIE_SECURE ??
   (process.env.NODE_ENV === "production" ? "true" : "false");
 
+const forceReauthenticationCookie = createCookie(
+  "__acronymicon_force_reauthentication",
+  {
+    httpOnly: true,
+    maxAge: 60 * 5,
+    path: "/",
+    sameSite: "lax",
+    secrets: [sessionSecret],
+    secure: secureCookie !== "false",
+  },
+);
+
 export const { getSession, commitSession, destroySession } =
   createCookieSessionStorage<SessionData, SessionFlashData>({
     cookie: {
@@ -49,4 +61,20 @@ export const { getSession, commitSession, destroySession } =
 export async function getOptionalUser(request: Request) {
   const session = await getSession(request.headers.get("Cookie"));
   return session.get("user") ?? null;
+}
+
+export async function createForceReauthenticationCookie() {
+  return forceReauthenticationCookie.serialize(true);
+}
+
+export async function hasForceReauthentication(request: Request) {
+  return (
+    (await forceReauthenticationCookie.parse(
+      request.headers.get("Cookie"),
+    )) === true
+  );
+}
+
+export async function clearForceReauthenticationCookie() {
+  return forceReauthenticationCookie.serialize("", { maxAge: 0 });
 }

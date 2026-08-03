@@ -7,7 +7,11 @@ import {
   randomOidcCodeVerifier,
   randomOidcState,
 } from "../auth/oidc.server";
-import { commitSession, getSession } from "../auth/session.server";
+import {
+  commitSession,
+  getSession,
+  hasForceReauthentication,
+} from "../auth/session.server";
 
 export function meta() {
   return [{ title: "Sign in | Acronymicon" }];
@@ -28,10 +32,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
   const state = randomOidcState();
   const codeVerifier = randomOidcCodeVerifier();
+  const forceReauthentication = await hasForceReauthentication(request);
   const redirectTo = await buildAuthorizationUrl({
     request,
     state,
     codeVerifier,
+    forceReauthentication,
   });
 
   session.set("oidcState", state);

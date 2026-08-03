@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  clearForceReauthenticationCookie,
   commitSession,
+  createForceReauthenticationCookie,
   destroySession,
   getSession,
+  hasForceReauthentication,
 } from "../../app/auth/session.server";
 
 describe("session lifecycle", () => {
@@ -23,5 +26,17 @@ describe("session lifecycle", () => {
       username: "local-user",
     });
     expect(await destroySession(restored)).toContain("Expires=Thu, 01 Jan 1970");
+  });
+
+  it("round-trips the short-lived reauthentication marker", async () => {
+    const marker = await createForceReauthenticationCookie();
+    const request = new Request("http://localhost:5173/auth/login", {
+      headers: { Cookie: marker },
+    });
+
+    expect(await hasForceReauthentication(request)).toBe(true);
+    expect(await clearForceReauthenticationCookie()).toContain(
+      "Max-Age=0",
+    );
   });
 });

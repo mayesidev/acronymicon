@@ -2,7 +2,11 @@ import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/auth.logout";
 import { buildOidcLogoutUrl } from "../auth/oidc.server";
-import { destroySession, getSession } from "../auth/session.server";
+import {
+  createForceReauthenticationCookie,
+  destroySession,
+  getSession,
+} from "../auth/session.server";
 
 export function meta() {
   return [{ title: "Sign out | Acronymicon" }];
@@ -11,11 +15,15 @@ export function meta() {
 export async function action({ request }: Route.ActionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   const providerLogoutUrl = await buildOidcLogoutUrl({ request });
+  const headers = new Headers();
+  headers.append("Set-Cookie", await destroySession(session));
+  headers.append(
+    "Set-Cookie",
+    await createForceReauthenticationCookie(),
+  );
 
   return redirect(providerLogoutUrl?.toString() ?? "/", {
-    headers: {
-      "Set-Cookie": await destroySession(session),
-    },
+    headers,
   });
 }
 

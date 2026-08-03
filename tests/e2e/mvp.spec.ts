@@ -47,14 +47,18 @@ test("users can submit, review duplicates, sign out, and switch accounts", async
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
 
   await page.goto("/auth/login?returnTo=/submit");
-  await signIn(page, "admin-user");
+  await signIn(page, "admin-user", { expectReauthentication: true });
   await expect(page.getByText("Signed in as Local Admin")).toBeVisible();
 });
 
 async function signIn(
   page: Page,
   username: string,
+  options: { expectReauthentication?: boolean } = {},
 ) {
+  if (options.expectReauthentication) {
+    expect(new URL(page.url()).searchParams.get("prompt")).toBe("login");
+  }
   await page.locator("#username").fill(username);
   await page.locator("#password").fill("password");
   await page.getByRole("button", { name: "Sign In" }).click();

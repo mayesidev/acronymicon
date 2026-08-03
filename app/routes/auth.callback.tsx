@@ -2,7 +2,11 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/auth.callback";
 import { completeAuthorizationCodeGrant } from "../auth/oidc.server";
-import { commitSession, getSession } from "../auth/session.server";
+import {
+  clearForceReauthenticationCookie,
+  commitSession,
+  getSession,
+} from "../auth/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
@@ -30,9 +34,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   session.unset("oidcCodeVerifier");
   session.unset("returnTo");
 
-  return redirect(returnTo, {
-    headers: {
-      "Set-Cookie": await commitSession(session),
-    },
-  });
+  const headers = new Headers();
+  headers.append("Set-Cookie", await commitSession(session));
+  headers.append("Set-Cookie", await clearForceReauthenticationCookie());
+
+  return redirect(returnTo, { headers });
 }

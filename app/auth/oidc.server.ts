@@ -42,6 +42,7 @@ export async function buildAuthorizationUrl(input: {
   request: Request;
   state: string;
   codeVerifier: string;
+  forceReauthentication?: boolean;
 }) {
   const config = await getOidcConfig();
 
@@ -53,13 +54,29 @@ export async function buildAuthorizationUrl(input: {
     input.codeVerifier,
   );
 
-  return oidc.buildAuthorizationUrl(config, {
+  const authorizationUrl = oidc.buildAuthorizationUrl(config, {
     redirect_uri: getOidcRedirectUri(input.request),
     scope: getOidcScopes(),
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
     state: input.state,
   });
+
+  return addReauthenticationPrompt(
+    authorizationUrl,
+    input.forceReauthentication,
+  );
+}
+
+export function addReauthenticationPrompt(
+  authorizationUrl: URL,
+  forceReauthentication = false,
+) {
+  if (forceReauthentication) {
+    authorizationUrl.searchParams.set("prompt", "login");
+  }
+
+  return authorizationUrl;
 }
 
 export async function buildOidcLogoutUrl(input: { request: Request }) {
