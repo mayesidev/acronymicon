@@ -6,14 +6,15 @@ import { join } from "node:path";
 const port = "3100";
 const directory = mkdtempSync(join(tmpdir(), "acronymicon-e2e-"));
 const databasePath = join(directory, "acronymicon.sqlite");
+const oidcIssuerUrl =
+  "http://keycloak.localtest.me:8080/realms/acronymicon";
 const environment = {
   ...process.env,
   DATABASE_PATH: databasePath,
   DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
   SESSION_SECRET: "e2e-session-secret",
   SESSION_COOKIE_SECURE: "false",
-  OIDC_ISSUER_URL:
-    "http://keycloak.localtest.me:8080/realms/acronymicon",
+  OIDC_ISSUER_URL: oidcIssuerUrl,
   OIDC_CLIENT_ID: "acronymicon",
   OIDC_CLIENT_SECRET: "local-development-client-secret",
   OIDC_REDIRECT_URI: `http://localhost:${port}/auth/callback`,
@@ -36,6 +37,10 @@ try {
     env: environment,
     stdio: "inherit",
   });
+  await waitForHttp(
+    `${oidcIssuerUrl}/.well-known/openid-configuration`,
+    "Keycloak OIDC discovery",
+  );
   execFileSync("pnpm", ["run", "db:migrate"], {
     cwd: process.cwd(),
     env: environment,
@@ -76,11 +81,15 @@ try {
 }
 
 async function waitForServer() {
+  await waitForHttp(`http://localhost:${port}/`, "E2E server");
+}
+
+async function waitForHttp(url, name) {
   const deadline = Date.now() + 120_000;
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`http://localhost:${port}/`);
+      const response = await fetch(url);
 
       if (response.ok) {
         return;
@@ -92,7 +101,7 @@ async function waitForServer() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  throw new Error(`E2E server did not start on port ${port}.`);
+  throw new Error(`${name} did not become ready: ${url}`);
 }
 
 process.on("SIGINT", () => shutdown(0));
