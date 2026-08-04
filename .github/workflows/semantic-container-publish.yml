@@ -1,0 +1,56 @@
+name: Publish semantic release container
+
+on:
+  workflow_run:
+    workflows:
+      - Semantic release
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-tag:
+    name: Resolve published release tag
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
+
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
+        env:
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          git fetch --force --tags origin
+          RELEASE_TAG="$(git tag --points-at "$RELEASE_SHA" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$RELEASE_TAG" ]]; then
+            echo "Publishing container for $RELEASE_TAG."
+          else
+            echo "No release was created for this commit."
+          fi
+
+  publish:
+    name: Publish container image
+    needs: resolve-tag
+    if: needs.resolve-tag.outputs.release_tag != ''
+    uses: ./.github/workflows/publish-container.yml
+    with:
+      release_tag: ${{ needs.resolve-tag.outputs.release_tag }}
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
