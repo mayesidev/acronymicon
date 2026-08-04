@@ -2,18 +2,44 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 
-test("anonymous users can browse and search seeded entries", async ({ page }) => {
+test("anonymous users can browse and search seeded entries", async ({
+  page,
+}) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Acronymicon" })).toBeVisible();
-  await expect(page.getByText("Application Programming Interface")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Acronymicon" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Application Programming Interface"),
+  ).toBeVisible();
 
   await page.locator('input[name="q"]').fill("performance");
   await page.getByRole("button", { name: "Search" }).click();
 
   await expect(page).toHaveURL(/q=performance/);
   await expect(page.getByText("Annual Performance Index")).toBeVisible();
-  await expect(page.getByText("Application Programming Interface")).toBeHidden();
+  await expect(
+    page.getByText("Application Programming Interface"),
+  ).toBeHidden();
+});
+
+test("users can open a specific definition variant and see marked ranges", async ({
+  page,
+}) => {
+  await page.goto("/define?acr=radar&var=1");
+
+  await expect(page.getByRole("heading", { name: "RADAR" })).toBeVisible();
+  await expect(page.getByText("Radio Detection And Ranging")).toBeVisible();
+  await expect(page.locator("strong")).toHaveCount(4);
+
+  await page.goto("/define?acr=radar&var=2");
+  await expect(
+    page.getByRole("heading", { name: "Definition not found" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "View all definitions for radar" }),
+  ).toHaveAttribute("href", "/define?acr=radar");
 });
 
 test("users can submit, review duplicates, sign out, and switch accounts", async ({
@@ -33,7 +59,9 @@ test("users can submit, review duplicates, sign out, and switch accounts", async
   await expect(page.getByText("End To End Verification")).toBeVisible();
   await page.getByRole("button", { name: "Submit Anyway" }).click();
   await expect(page).toHaveURL(/q=E2E/);
-  await expect(page.getByText("Browser Integration Verification")).toBeVisible();
+  await expect(
+    page.getByText("Browser Integration Verification"),
+  ).toBeVisible();
 
   await page.goto("/submit");
   await submit(page, "E2E", "End To End Verification");
@@ -65,11 +93,7 @@ async function signIn(
   await expect(page).toHaveURL(/localhost:3100/);
 }
 
-async function submit(
-  page: Page,
-  acronym: string,
-  definition: string,
-) {
+async function submit(page: Page, acronym: string, definition: string) {
   await page.getByLabel("Acronym").fill(acronym);
   await page.getByLabel("Definition").fill(definition);
   await page.getByRole("button", { name: "Submit" }).click();

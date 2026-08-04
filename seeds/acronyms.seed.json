@@ -39,6 +39,11 @@
       "acronym": "SLA",
       "definition": "Service Level Agreement",
       "notes": "An agreement that defines expected service commitments."
+    },
+    {
+      "acronym": "RADAR",
+      "definition": "[Ra]dio [D]etection [A]nd [R]anging",
+      "notes": "A system for detecting and locating objects with radio waves."
     }
   ]
 }
