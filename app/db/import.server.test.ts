@@ -55,4 +55,22 @@ describe("acronym import", () => {
 
     expect(result.status).toBe("invalid");
   });
+
+  it("isolates malformed definition markup to the failing entry", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+
+    await expect(
+      importAcronymEntries(database.db, [
+        { acronym: "RADAR", definition: "[Ra]dio [D]etection [" },
+        { acronym: "API", definition: "Application Programming Interface" },
+      ]),
+    ).resolves.toMatchObject({
+      status: "complete",
+      inserted: 1,
+      skippedDuplicates: 0,
+      failed: 1,
+      errors: [{ index: 0 }],
+    });
+  });
 });

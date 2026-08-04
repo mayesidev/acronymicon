@@ -81,6 +81,26 @@ describe("acronym repository", () => {
     ).resolves.toHaveLength(0);
   });
 
+  it("lists published entries alphabetically by default", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const repository = createAcronymRepository(database.db);
+
+    await repository.createAcronymEntry({
+      acronym: "ZULU",
+      definition: "Zulu Definition",
+    });
+    await repository.createAcronymEntry({
+      acronym: "ALPHA",
+      definition: "Alpha Definition",
+    });
+
+    await expect(repository.listPublishedAcronyms("")).resolves.toMatchObject([
+      { acronym: "ALPHA", variant: 1 },
+      { acronym: "ZULU", variant: 1 },
+    ]);
+  });
+
   it("ranks exact matches before substring and minor typo matches", async () => {
     const database = createTestDatabase();
     databases.push(database);
