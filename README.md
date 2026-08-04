@@ -4,14 +4,14 @@ Acronymicon is a self-hosted acronym dictionary web app for searching,
 browsing, and submitting acronym definitions. It is designed for deployment
 on a protected network, while the source is available for reuse and forking.
 
-See [SPEC.md](./SPEC.md) for the MVP product contract and
-[IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the completed MVP
-implementation record. Use GitHub Issues for public bug reports and feature
-requests; internal planning and prioritization are maintained separately.
+Use GitHub Issues for public bug reports and feature requests. Internal
+planning and prioritization are maintained in Linear; implementation history
+is preserved in git and published releases.
 
-The MVP is complete. It supports anonymous browsing, authenticated OIDC
+The app supports anonymous browsing, live search across acronyms and
+definitions, fuzzy matches for minor typos, readable definition links,
+optional definition range marking, light and dark themes, authenticated OIDC
 submissions, duplicate detection, JSON import, and persistent SQLite storage.
-Moderation, editing, roles, voting, and bulk-import UI remain future work.
 
 ## Development
 
