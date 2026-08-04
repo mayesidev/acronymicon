@@ -46,7 +46,8 @@ pnpm test:e2e
 
 The end-to-end suite requires Docker and a local Keycloak container. GitHub
 Actions runs the complete quality, browser, security, build, and container
-checks for every pull request.
+checks for application changes. Documentation-only pull requests still run
+commit metadata validation, but skip application quality and browser checks.
 
 Changes to authentication, persistence, imports, or user-facing workflows
 should include focused tests. Changes to the browser workflow should include
