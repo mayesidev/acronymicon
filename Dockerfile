@@ -14,6 +14,7 @@ RUN pnpm run build \
   && rm -r node_modules/better-sqlite3/prebuilds \
   && pnpm --dir node_modules/better-sqlite3 run build-release
 
+# Keep build tools and development dependencies out of the runtime image.
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production
 ENV PORT=3000
