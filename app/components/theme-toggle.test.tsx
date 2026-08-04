@@ -3,7 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { ThemeToggle } from "../../app/components/theme-toggle";
+import { ThemeToggle } from "./theme-toggle";
 
 describe("theme toggle", () => {
   afterEach(() => {

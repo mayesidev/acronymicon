@@ -7,7 +7,7 @@ import {
   destroySession,
   getSession,
   hasForceReauthentication,
-} from "../../app/auth/session.server";
+} from "./session.server";
 
 describe("session lifecycle", () => {
   it("round-trips a user and expires the cookie on destruction", async () => {

@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createAcronymRepository } from "../../app/db/acronyms.server";
-import { buildNewAcronymEntry } from "../../app/db/acronyms.server";
-import { createTestDatabase } from "../helpers/database";
+import {
+  buildNewAcronymEntry,
+  createAcronymRepository,
+} from "./acronyms.server";
+import { createTestDatabase } from "../../test/helpers/database";
 
 describe("acronym repository", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];
@@ -77,6 +79,26 @@ describe("acronym repository", () => {
     await expect(
       repository.listPublishedAcronyms("missing"),
     ).resolves.toHaveLength(0);
+  });
+
+  it("lists published entries alphabetically by default", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const repository = createAcronymRepository(database.db);
+
+    await repository.createAcronymEntry({
+      acronym: "ZULU",
+      definition: "Zulu Definition",
+    });
+    await repository.createAcronymEntry({
+      acronym: "ALPHA",
+      definition: "Alpha Definition",
+    });
+
+    await expect(repository.listPublishedAcronyms("")).resolves.toMatchObject([
+      { acronym: "ALPHA", variant: 1 },
+      { acronym: "ZULU", variant: 1 },
+    ]);
   });
 
   it("ranks exact matches before substring and minor typo matches", async () => {
