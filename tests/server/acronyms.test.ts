@@ -79,6 +79,36 @@ describe("acronym repository", () => {
     ).resolves.toHaveLength(0);
   });
 
+  it("ranks exact matches before substring and minor typo matches", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const repository = createAcronymRepository(database.db);
+
+    await repository.createAcronymEntry({
+      acronym: "APP",
+      definition: "Application Profile",
+    });
+    await repository.createAcronymEntry({
+      acronym: "API",
+      definition: "Application Programming Interface",
+    });
+    await repository.createAcronymEntry({
+      acronym: "APR",
+      definition: "Annual Performance Review",
+    });
+
+    await expect(
+      repository.listPublishedAcronyms("api"),
+    ).resolves.toMatchObject([
+      { acronym: "API" },
+      { acronym: "APP" },
+      { acronym: "APR" },
+    ]);
+    await expect(
+      repository.listPublishedAcronyms("applcation"),
+    ).resolves.toMatchObject([{ acronym: "API" }, { acronym: "APP" }]);
+  });
+
   it("assigns stable variants per acronym for shareable links", async () => {
     const database = createTestDatabase();
     databases.push(database);

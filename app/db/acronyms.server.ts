@@ -1,4 +1,4 @@
-import { and, asc, eq, max } from "drizzle-orm";
+import { and, asc, desc, eq, max } from "drizzle-orm";
 
 import { db, type AppDatabase } from "./client.server";
 import {
@@ -22,8 +22,13 @@ export type AcronymSearchResult = Pick<
   | "createdAt"
 >;
 
+export type AcronymSort = "alphabetical" | "recent";
+
 export function createAcronymRepository(database: AppDatabase) {
-  async function listPublishedAcronyms(searchTerm: string) {
+  async function listPublishedAcronyms(
+    searchTerm: string,
+    sort: AcronymSort = "alphabetical",
+  ) {
     const entries = await database
       .select({
         id: acronymEntries.id,
@@ -39,7 +44,17 @@ export function createAcronymRepository(database: AppDatabase) {
       })
       .from(acronymEntries)
       .where(eq(acronymEntries.status, "published"))
-      .orderBy(asc(acronymEntries.normalizedAcronym));
+      .orderBy(
+        ...(sort === "recent"
+          ? [
+              desc(acronymEntries.createdAt),
+              asc(acronymEntries.normalizedAcronym),
+            ]
+          : [
+              asc(acronymEntries.normalizedAcronym),
+              asc(acronymEntries.variant),
+            ]),
+      );
 
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -47,7 +62,20 @@ export function createAcronymRepository(database: AppDatabase) {
       return entries;
     }
 
-    return entries.filter((entry) => matchesSearch(entry, normalizedSearch));
+    return entries
+      .map((entry) => ({
+        entry,
+        score: getSearchScore(entry, normalizedSearch),
+      }))
+      .filter((result) => result.score !== null)
+      .sort((left, right) => {
+        if (left.score !== right.score) {
+          return left.score! - right.score!;
+        }
+
+        return compareEntries(left.entry, right.entry, sort);
+      })
+      .map((result) => result.entry);
   }
 
   async function findPublishedByAcronym(acronym: string) {
@@ -191,13 +219,76 @@ export function buildNewAcronymEntry(input: {
   };
 }
 
-function matchesSearch(entry: AcronymSearchResult, normalizedSearch: string) {
-  const searchableText = [entry.acronym, entry.definition]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+function getSearchScore(
+  entry: AcronymSearchResult,
+  normalizedSearch: string,
+): number | null {
+  const fields = [entry.acronym, entry.definition].map((field) =>
+    field.toLowerCase(),
+  );
 
-  return searchableText.includes(normalizedSearch);
+  if (fields.some((field) => field === normalizedSearch)) {
+    return 0;
+  }
+
+  if (fields.some((field) => field.startsWith(normalizedSearch))) {
+    return 1;
+  }
+
+  if (fields.some((field) => field.includes(normalizedSearch))) {
+    return 2;
+  }
+
+  const fuzzyThreshold = normalizedSearch.length <= 5 ? 1 : 2;
+  const words = fields.flatMap((field) => field.split(/[^a-z0-9]+/));
+
+  return words.some(
+    (word) =>
+      word.length > 0 &&
+      Math.abs(word.length - normalizedSearch.length) <= fuzzyThreshold &&
+      levenshteinDistance(word, normalizedSearch) <= fuzzyThreshold,
+  )
+    ? 3
+    : null;
+}
+
+function compareEntries(
+  left: AcronymSearchResult,
+  right: AcronymSearchResult,
+  sort: AcronymSort,
+) {
+  if (sort === "recent" && left.createdAt !== right.createdAt) {
+    return right.createdAt.localeCompare(left.createdAt);
+  }
+
+  return (
+    left.acronym.localeCompare(right.acronym) || left.variant - right.variant
+  );
+}
+
+function levenshteinDistance(left: string, right: string) {
+  const distances = Array.from(
+    { length: right.length + 1 },
+    (_, index) => index,
+  );
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    let previousDiagonal = distances[0];
+    distances[0] = leftIndex;
+
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const previous = distances[rightIndex];
+      distances[rightIndex] = Math.min(
+        distances[rightIndex] + 1,
+        distances[rightIndex - 1] + 1,
+        previousDiagonal +
+          (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
+      );
+      previousDiagonal = previous;
+    }
+  }
+
+  return distances[right.length];
 }
 
 function normalizeOptional(value: string | undefined) {
