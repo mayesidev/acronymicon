@@ -44,7 +44,7 @@ describe("acronym repository", () => {
 
     const duplicate = await repository.findExactDuplicate({
       acronym: " api ",
-      definition: "Application   Programming Interface",
+      definition: "[A]pplication   [P]rogramming [I]nterface",
     });
 
     expect(duplicate?.id).toEqual(expect.any(String));
@@ -66,10 +66,77 @@ describe("acronym repository", () => {
       acronym: "API",
       definition: "Application Programming Interface",
       notes: "Systems integration",
-      tags: ["software"],
     });
 
-    await expect(repository.listPublishedAcronyms("integration")).resolves.toHaveLength(1);
-    await expect(repository.listPublishedAcronyms("missing")).resolves.toHaveLength(0);
+    await expect(
+      repository.listPublishedAcronyms("interface"),
+    ).resolves.toHaveLength(1);
+    await expect(
+      repository.listPublishedAcronyms("integration"),
+    ).resolves.toHaveLength(0);
+    await expect(
+      repository.listPublishedAcronyms("missing"),
+    ).resolves.toHaveLength(0);
+  });
+
+  it("ranks exact matches before substring and minor typo matches", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const repository = createAcronymRepository(database.db);
+
+    await repository.createAcronymEntry({
+      acronym: "APP",
+      definition: "Application Profile",
+    });
+    await repository.createAcronymEntry({
+      acronym: "API",
+      definition: "Application Programming Interface",
+    });
+    await repository.createAcronymEntry({
+      acronym: "APR",
+      definition: "Annual Performance Review",
+    });
+
+    await expect(
+      repository.listPublishedAcronyms("api"),
+    ).resolves.toMatchObject([
+      { acronym: "API" },
+      { acronym: "APP" },
+      { acronym: "APR" },
+    ]);
+    await expect(
+      repository.listPublishedAcronyms("applcation"),
+    ).resolves.toMatchObject([{ acronym: "API" }, { acronym: "APP" }]);
+  });
+
+  it("assigns stable variants per acronym for shareable links", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const repository = createAcronymRepository(database.db);
+
+    await expect(
+      repository.createAcronymEntry({
+        acronym: "API",
+        definition: "Application Programming Interface",
+      }),
+    ).resolves.toMatchObject({ variant: 1 });
+
+    await expect(
+      repository.createAcronymEntry({
+        acronym: "API",
+        definition: "Annual Performance Index",
+      }),
+    ).resolves.toMatchObject({ variant: 2 });
+
+    await expect(
+      repository.findPublishedByVariant("api", 2),
+    ).resolves.toMatchObject({
+      acronym: "API",
+      definition: "Annual Performance Index",
+      variant: 2,
+    });
+    await expect(
+      repository.findPublishedByVariant("api", 3),
+    ).resolves.toBeNull();
   });
 });

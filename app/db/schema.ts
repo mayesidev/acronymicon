@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+
+import type { DefinitionRange } from "./normalize";
 
 export const acronymEntries = sqliteTable(
   "acronym_entries",
@@ -7,16 +15,18 @@ export const acronymEntries = sqliteTable(
     id: text("id").primaryKey(),
     acronym: text("acronym").notNull(),
     normalizedAcronym: text("normalized_acronym").notNull(),
+    variant: integer("variant").notNull().default(1),
     definition: text("definition").notNull(),
+    definitionRanges: text("definition_ranges", { mode: "json" })
+      .$type<DefinitionRange[]>()
+      .notNull()
+      .default([]),
     normalizedDefinition: text("normalized_definition").notNull(),
     notes: text("notes"),
-    category: text("category"),
-    tags: text("tags", { mode: "json" }).$type<string[]>().notNull().default([]),
     aliases: text("aliases", { mode: "json" })
       .$type<string[]>()
       .notNull()
       .default([]),
-    source: text("source"),
     status: text("status", {
       enum: ["pending", "published", "removed"],
     })
@@ -37,9 +47,12 @@ export const acronymEntries = sqliteTable(
       table.normalizedAcronym,
       table.normalizedDefinition,
     ),
+    uniqueIndex("acronym_entries_unique_variant").on(
+      table.normalizedAcronym,
+      table.variant,
+    ),
     index("acronym_entries_acronym_idx").on(table.normalizedAcronym),
     index("acronym_entries_status_idx").on(table.status),
-    index("acronym_entries_category_idx").on(table.category),
   ],
 );
 

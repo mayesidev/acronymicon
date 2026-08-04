@@ -8,6 +8,27 @@
       "when": 1785211349127,
       "tag": "0000_foamy_blue_shield",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1785880843789,
+      "tag": "0001_modern_falcon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785881004770,
+      "tag": "0002_brainy_the_spike",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1785881112399,
+      "tag": "0003_equal_songbird",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
-import { Form } from "react-router";
+import { Form, useSubmit } from "react-router";
 
 import { getOptionalUser } from "../auth/session.server";
 import { DictionaryList } from "../components/dictionary-list";
-import { listPublishedAcronyms } from "../db/acronyms.server";
+import { listPublishedAcronyms, type AcronymSort } from "../db/acronyms.server";
 
 export function meta() {
   return [
@@ -15,22 +16,43 @@ export function meta() {
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q") ?? "";
+  const sort: AcronymSort =
+    url.searchParams.get("sort") === "recent" ? "recent" : "alphabetical";
   const [entries, user] = await Promise.all([
-    listPublishedAcronyms(query),
+    listPublishedAcronyms(query, sort),
     getOptionalUser(request),
   ]);
 
   return {
     entries,
     query,
+    sort,
     user,
   };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { entries, query, user } = loaderData;
+  const submit = useSubmit();
+  const [searchValue, setSearchValue] = useState(query);
+  const [sortValue, setSortValue] = useState(loaderData.sort);
   const hasEntries = entries.length > 0;
   const isFiltered = query.trim().length > 0;
+
+  useEffect(() => {
+    if (searchValue === query && sortValue === loaderData.sort) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void submit(
+        { q: searchValue, sort: sortValue },
+        { method: "get", replace: true },
+      );
+    }, 150);
+
+    return () => window.clearTimeout(timeout);
+  }, [loaderData.sort, query, searchValue, sortValue, submit]);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -54,8 +76,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 id="search"
                 name="q"
                 type="search"
-                defaultValue={query}
-                placeholder="Search acronym, definition, notes, category, or tag"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder="Search acronym or definition"
                 className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
               />
               <button
@@ -65,6 +88,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 Search
               </button>
             </Form>
+
+            <label className="flex items-center justify-end gap-2 text-sm text-slate-600">
+              <span>Sort</span>
+              <select
+                value={sortValue}
+                onChange={(event) =>
+                  setSortValue(event.target.value as AcronymSort)
+                }
+                className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-950"
+              >
+                <option value="alphabetical">Alphabetical</option>
+                <option value="recent">Most recent</option>
+              </select>
+            </label>
 
             <div className="flex items-center justify-end gap-3 text-sm">
               {user ? (
@@ -116,6 +153,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           {isFiltered ? (
             <a
               href="/"
+              onClick={() => setSearchValue("")}
               className="text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
             >
               Clear search
@@ -141,7 +179,7 @@ function EmptyState({ isFiltered }: { isFiltered: boolean }) {
       </h2>
       <p className="mt-2 text-sm text-slate-600">
         {isFiltered
-          ? "Try a different acronym, definition, note, category, or tag."
+          ? "Try a different acronym or definition."
           : "Run the seed import or submit the first acronym once submissions are available."}
       </p>
     </section>

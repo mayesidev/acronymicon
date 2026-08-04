@@ -19,7 +19,6 @@ describe("acronym import", () => {
       {
         acronym: "API",
         definition: "Application Programming Interface",
-        tags: ["software"],
       },
       {
         acronym: "API",
@@ -27,14 +26,18 @@ describe("acronym import", () => {
       },
     ];
 
-    await expect(importAcronymEntries(database.db, entries)).resolves.toMatchObject({
+    await expect(
+      importAcronymEntries(database.db, entries),
+    ).resolves.toMatchObject({
       status: "complete",
       inserted: 2,
       skippedDuplicates: 0,
       failed: 0,
     });
 
-    await expect(importAcronymEntries(database.db, entries)).resolves.toMatchObject({
+    await expect(
+      importAcronymEntries(database.db, entries),
+    ).resolves.toMatchObject({
       status: "complete",
       inserted: 0,
       skippedDuplicates: 2,

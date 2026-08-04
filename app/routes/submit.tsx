@@ -1,4 +1,5 @@
-import { data, Form, redirect } from "react-router";
+import { useEffect, useState } from "react";
+import { data, Form, redirect, useFetcher } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/submit";
@@ -8,24 +9,20 @@ import {
   findPublishedByAcronym,
 } from "../db/acronyms.server";
 import { getOptionalUser } from "../auth/session.server";
+import {
+  DefinitionMarkupError,
+  parseDefinitionMarkup,
+  validateDefinitionRanges,
+} from "../db/normalize";
 
 const submissionSchema = z.object({
   acronym: z.string().trim().min(1, "Acronym is required."),
   definition: z.string().trim().min(1, "Definition is required."),
   notes: z.string().trim().optional(),
-  category: z.string().trim().optional(),
-  tags: z.string().trim().optional(),
-  source: z.string().trim().optional(),
   confirmDuplicate: z.literal("true").optional(),
 });
 
-type SubmissionFieldName =
-  | "acronym"
-  | "definition"
-  | "notes"
-  | "category"
-  | "tags"
-  | "source";
+type SubmissionFieldName = "acronym" | "definition" | "notes";
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -39,7 +36,48 @@ export async function loader({ request }: Route.LoaderArgs) {
     return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
 
-  return { user };
+  const url = new URL(request.url);
+  const acronym = url.searchParams.get("acronym")?.trim() ?? "";
+  const definition = url.searchParams.get("definition") ?? "";
+
+  if (!acronym) {
+    return {
+      user,
+      checkedAcronym: "",
+      checkedDefinition: "",
+      existingEntries: [],
+      exactDuplicate: false,
+      definitionError: null,
+    };
+  }
+
+  const definitionError = getDefinitionError(acronym, definition);
+  if (definitionError) {
+    return {
+      user,
+      checkedAcronym: acronym,
+      checkedDefinition: definition,
+      existingEntries: await findPublishedByAcronym(acronym),
+      exactDuplicate: false,
+      definitionError,
+    };
+  }
+
+  const [existingEntries, exactDuplicate] = await Promise.all([
+    findPublishedByAcronym(acronym),
+    definition
+      ? findExactDuplicate({ acronym, definition }).then(Boolean)
+      : Promise.resolve(false),
+  ]);
+
+  return {
+    user,
+    checkedAcronym: acronym,
+    checkedDefinition: definition,
+    existingEntries,
+    exactDuplicate,
+    definitionError: null,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -64,6 +102,19 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const values = parsed.data;
+  const definitionError = getDefinitionError(values.acronym, values.definition);
+
+  if (definitionError) {
+    return data(
+      {
+        status: "error" as const,
+        errors: { definition: [definitionError] },
+        values,
+      },
+      { status: 400 },
+    );
+  }
+
   const exactDuplicate = await findExactDuplicate(values);
 
   if (exactDuplicate) {
@@ -96,9 +147,6 @@ export async function action({ request }: Route.ActionArgs) {
     acronym: values.acronym,
     definition: values.definition,
     notes: values.notes,
-    category: values.category,
-    tags: parseDelimitedList(values.tags),
-    source: values.source,
     submittedByUserId: user.id,
     submittedByUsername: user.username,
     submittedByDisplayName: user.displayName,
@@ -112,6 +160,47 @@ export default function SubmitAcronym({
   loaderData,
 }: Route.ComponentProps) {
   const values = actionData?.values;
+  const fetcher = useFetcher<typeof loader>();
+  const [acronym, setAcronym] = useState(values?.acronym ?? "");
+  const [definition, setDefinition] = useState(values?.definition ?? "");
+
+  useEffect(() => {
+    const normalizedAcronym = acronym.trim();
+    if (!normalizedAcronym) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const params = new URLSearchParams({
+        acronym: normalizedAcronym,
+        definition,
+      });
+      void fetcher.load(`/submit?${params.toString()}`);
+    }, 200);
+
+    return () => window.clearTimeout(timeout);
+  }, [acronym, definition, fetcher]);
+
+  const localDefinitionError = getDefinitionError(acronym, definition);
+  const currentCheck =
+    fetcher.data &&
+    fetcher.data.checkedAcronym === acronym.trim() &&
+    fetcher.data.checkedDefinition === definition
+      ? fetcher.data
+      : null;
+  const actionWarningMatchesCurrentInput =
+    actionData?.status === "duplicate-warning" &&
+    actionData.values.acronym === acronym &&
+    actionData.values.definition === definition;
+  const existingEntries = actionWarningMatchesCurrentInput
+    ? actionData.existingEntries
+    : currentCheck
+      ? currentCheck.existingEntries
+      : [];
+  const exactDuplicate = currentCheck?.exactDuplicate ?? false;
+  const definitionError =
+    localDefinitionError ?? currentCheck?.definitionError ?? null;
+  const showDuplicateWarning = !exactDuplicate && existingEntries.length > 0;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -127,19 +216,23 @@ export default function SubmitAcronym({
             Submit acronym
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Signed in as {loaderData.user.displayName ?? loaderData.user.username}
+            Signed in as{" "}
+            {loaderData.user.displayName ?? loaderData.user.username}
           </p>
         </header>
 
-        {actionData?.status === "duplicate-warning" ? (
+        {showDuplicateWarning ? (
           <DuplicateWarning
-            acronym={actionData.values.acronym}
-            existingEntries={actionData.existingEntries}
+            acronym={acronym}
+            existingEntries={existingEntries}
           />
         ) : null}
 
-        <Form method="post" className="rounded border border-slate-200 bg-white p-5">
-          {actionData?.status === "duplicate-warning" ? (
+        <Form
+          method="post"
+          className="rounded border border-slate-200 bg-white p-5"
+        >
+          {showDuplicateWarning ? (
             <input type="hidden" name="confirmDuplicate" value="true" />
           ) : null}
 
@@ -147,7 +240,8 @@ export default function SubmitAcronym({
             <Field label="Acronym" error={getFieldError(actionData, "acronym")}>
               <input
                 name="acronym"
-                defaultValue={values?.acronym}
+                value={acronym}
+                onChange={(event) => setAcronym(event.target.value)}
                 className="form-input"
                 autoComplete="off"
               />
@@ -155,11 +249,16 @@ export default function SubmitAcronym({
 
             <Field
               label="Definition"
-              error={getFieldError(actionData, "definition")}
+              error={
+                getFieldError(actionData, "definition") ??
+                definitionError ??
+                undefined
+              }
             >
               <input
                 name="definition"
-                defaultValue={values?.definition}
+                value={definition}
+                onChange={(event) => setDefinition(event.target.value)}
                 className="form-input"
                 autoComplete="off"
               />
@@ -174,41 +273,18 @@ export default function SubmitAcronym({
             />
           </Field>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Category" error={getFieldError(actionData, "category")}>
-              <input
-                name="category"
-                defaultValue={values?.category}
-                className="form-input"
-              />
-            </Field>
-
-            <Field label="Tags" error={getFieldError(actionData, "tags")}>
-              <input
-                name="tags"
-                defaultValue={values?.tags}
-                className="form-input"
-                placeholder="comma-separated"
-              />
-            </Field>
-
-            <Field label="Source" error={getFieldError(actionData, "source")}>
-              <input
-                name="source"
-                defaultValue={values?.source}
-                className="form-input"
-              />
-            </Field>
-          </div>
-
           <div className="mt-5 flex items-center gap-3">
             <button
               type="submit"
-              className="rounded bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              disabled={Boolean(
+                exactDuplicate ||
+                definitionError ||
+                !acronym.trim() ||
+                !definition.trim(),
+              )}
+              className="rounded bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {actionData?.status === "duplicate-warning"
-                ? "Submit Anyway"
-                : "Submit"}
+              {showDuplicateWarning ? "Submit Anyway" : "Submit"}
             </button>
             <a
               href="/"
@@ -285,9 +361,6 @@ function getSubmissionValues(formData: FormData) {
     acronym: getFormString(formData, "acronym"),
     definition: getFormString(formData, "definition"),
     notes: getFormString(formData, "notes"),
-    category: getFormString(formData, "category"),
-    tags: getFormString(formData, "tags"),
-    source: getFormString(formData, "source"),
   };
 }
 
@@ -296,13 +369,16 @@ function getFormString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function parseDelimitedList(value: string | undefined) {
-  if (!value) {
-    return [];
+function getDefinitionError(acronym: string, definition: string) {
+  if (!definition.trim()) {
+    return null;
   }
 
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  try {
+    return validateDefinitionRanges(acronym, parseDefinitionMarkup(definition));
+  } catch (error) {
+    return error instanceof DefinitionMarkupError
+      ? error.message
+      : "Definition formatting is invalid.";
+  }
 }
