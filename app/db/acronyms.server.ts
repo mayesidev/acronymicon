@@ -15,10 +15,7 @@ export type AcronymSearchResult = Pick<
   | "definition"
   | "definitionRanges"
   | "notes"
-  | "category"
-  | "tags"
   | "aliases"
-  | "source"
   | "submittedByUsername"
   | "submittedByDisplayName"
   | "createdAt"
@@ -33,10 +30,7 @@ export function createAcronymRepository(database: AppDatabase) {
         definition: acronymEntries.definition,
         definitionRanges: acronymEntries.definitionRanges,
         notes: acronymEntries.notes,
-        category: acronymEntries.category,
-        tags: acronymEntries.tags,
         aliases: acronymEntries.aliases,
-        source: acronymEntries.source,
         submittedByUsername: acronymEntries.submittedByUsername,
         submittedByDisplayName: acronymEntries.submittedByDisplayName,
         createdAt: acronymEntries.createdAt,
@@ -62,10 +56,7 @@ export function createAcronymRepository(database: AppDatabase) {
         definition: acronymEntries.definition,
         definitionRanges: acronymEntries.definitionRanges,
         notes: acronymEntries.notes,
-        category: acronymEntries.category,
-        tags: acronymEntries.tags,
         aliases: acronymEntries.aliases,
-        source: acronymEntries.source,
         submittedByUsername: acronymEntries.submittedByUsername,
         submittedByDisplayName: acronymEntries.submittedByDisplayName,
         createdAt: acronymEntries.createdAt,
@@ -135,10 +126,7 @@ export function buildNewAcronymEntry(input: {
   acronym: string;
   definition: string;
   notes?: string;
-  category?: string;
-  tags?: string[];
   aliases?: string[];
-  source?: string;
   submittedByUserId?: string;
   submittedByUsername?: string;
   submittedByDisplayName?: string;
@@ -153,10 +141,7 @@ export function buildNewAcronymEntry(input: {
     definitionRanges: parsedDefinition.ranges,
     normalizedDefinition: normalizeDefinition(parsedDefinition.text),
     notes: normalizeOptional(input.notes),
-    category: normalizeOptional(input.category),
-    tags: input.tags ?? [],
     aliases: input.aliases ?? [],
-    source: normalizeOptional(input.source),
     status: "published" as const,
     submittedByUserId: normalizeOptional(input.submittedByUserId),
     submittedByUsername: normalizeOptional(input.submittedByUsername),
@@ -165,17 +150,7 @@ export function buildNewAcronymEntry(input: {
 }
 
 function matchesSearch(entry: AcronymSearchResult, normalizedSearch: string) {
-  const searchableText = [
-    entry.acronym,
-    entry.definition,
-    entry.notes,
-    entry.category,
-    entry.source,
-    entry.submittedByUsername,
-    entry.submittedByDisplayName,
-    ...entry.tags,
-    ...entry.aliases,
-  ]
+  const searchableText = [entry.acronym, entry.definition]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

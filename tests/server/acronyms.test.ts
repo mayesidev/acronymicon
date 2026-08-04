@@ -66,10 +66,16 @@ describe("acronym repository", () => {
       acronym: "API",
       definition: "Application Programming Interface",
       notes: "Systems integration",
-      tags: ["software"],
     });
 
-    await expect(repository.listPublishedAcronyms("integration")).resolves.toHaveLength(1);
-    await expect(repository.listPublishedAcronyms("missing")).resolves.toHaveLength(0);
+    await expect(
+      repository.listPublishedAcronyms("interface"),
+    ).resolves.toHaveLength(1);
+    await expect(
+      repository.listPublishedAcronyms("integration"),
+    ).resolves.toHaveLength(0);
+    await expect(
+      repository.listPublishedAcronyms("missing"),
+    ).resolves.toHaveLength(0);
   });
 });

@@ -13,19 +13,10 @@ const submissionSchema = z.object({
   acronym: z.string().trim().min(1, "Acronym is required."),
   definition: z.string().trim().min(1, "Definition is required."),
   notes: z.string().trim().optional(),
-  category: z.string().trim().optional(),
-  tags: z.string().trim().optional(),
-  source: z.string().trim().optional(),
   confirmDuplicate: z.literal("true").optional(),
 });
 
-type SubmissionFieldName =
-  | "acronym"
-  | "definition"
-  | "notes"
-  | "category"
-  | "tags"
-  | "source";
+type SubmissionFieldName = "acronym" | "definition" | "notes";
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -96,9 +87,6 @@ export async function action({ request }: Route.ActionArgs) {
     acronym: values.acronym,
     definition: values.definition,
     notes: values.notes,
-    category: values.category,
-    tags: parseDelimitedList(values.tags),
-    source: values.source,
     submittedByUserId: user.id,
     submittedByUsername: user.username,
     submittedByDisplayName: user.displayName,
@@ -127,7 +115,8 @@ export default function SubmitAcronym({
             Submit acronym
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Signed in as {loaderData.user.displayName ?? loaderData.user.username}
+            Signed in as{" "}
+            {loaderData.user.displayName ?? loaderData.user.username}
           </p>
         </header>
 
@@ -138,7 +127,10 @@ export default function SubmitAcronym({
           />
         ) : null}
 
-        <Form method="post" className="rounded border border-slate-200 bg-white p-5">
+        <Form
+          method="post"
+          className="rounded border border-slate-200 bg-white p-5"
+        >
           {actionData?.status === "duplicate-warning" ? (
             <input type="hidden" name="confirmDuplicate" value="true" />
           ) : null}
@@ -173,33 +165,6 @@ export default function SubmitAcronym({
               className="form-input min-h-28 resize-y"
             />
           </Field>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Category" error={getFieldError(actionData, "category")}>
-              <input
-                name="category"
-                defaultValue={values?.category}
-                className="form-input"
-              />
-            </Field>
-
-            <Field label="Tags" error={getFieldError(actionData, "tags")}>
-              <input
-                name="tags"
-                defaultValue={values?.tags}
-                className="form-input"
-                placeholder="comma-separated"
-              />
-            </Field>
-
-            <Field label="Source" error={getFieldError(actionData, "source")}>
-              <input
-                name="source"
-                defaultValue={values?.source}
-                className="form-input"
-              />
-            </Field>
-          </div>
 
           <div className="mt-5 flex items-center gap-3">
             <button
@@ -285,24 +250,10 @@ function getSubmissionValues(formData: FormData) {
     acronym: getFormString(formData, "acronym"),
     definition: getFormString(formData, "definition"),
     notes: getFormString(formData, "notes"),
-    category: getFormString(formData, "category"),
-    tags: getFormString(formData, "tags"),
-    source: getFormString(formData, "source"),
   };
 }
 
 function getFormString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
-}
-
-function parseDelimitedList(value: string | undefined) {
-  if (!value) {
-    return [];
-  }
-
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
 }

@@ -2,17 +2,18 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import type { AppDatabase } from "./client.server";
-import { normalizeAcronym, normalizeDefinition } from "./normalize";
+import {
+  normalizeAcronym,
+  normalizeDefinition,
+  parseDefinitionMarkup,
+} from "./normalize";
 import { acronymEntries } from "./schema";
 
 export const importEntrySchema = z.object({
   acronym: z.string().trim().min(1),
   definition: z.string().trim().min(1),
   notes: z.string().trim().optional(),
-  category: z.string().trim().optional(),
-  tags: z.array(z.string().trim().min(1)).default([]),
   aliases: z.array(z.string().trim().min(1)).default([]),
-  source: z.string().trim().optional(),
   status: z.enum(["pending", "published", "removed"]).default("published"),
   submittedByUserId: z.string().trim().optional(),
   submittedByUsername: z.string().trim().optional(),
@@ -69,16 +70,12 @@ export async function importAcronymEntries(
       }
 
       await database.insert(acronymEntries).values({
+        ...parseImportedDefinition(entry.definition),
         id: crypto.randomUUID(),
         acronym: entry.acronym.trim(),
         normalizedAcronym: normalizeAcronym(entry.acronym),
-        definition: entry.definition.trim(),
-        normalizedDefinition: normalizeDefinition(entry.definition),
         notes: normalizeOptional(entry.notes),
-        category: normalizeOptional(entry.category),
-        tags: entry.tags,
         aliases: entry.aliases,
-        source: normalizeOptional(entry.source),
         status: entry.status,
         submittedByUserId: normalizeOptional(entry.submittedByUserId) ?? "seed",
         submittedByUsername:
@@ -123,4 +120,14 @@ async function findDuplicate(database: AppDatabase, entry: ImportEntry) {
 function normalizeOptional(value: string | undefined) {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
+}
+
+function parseImportedDefinition(value: string) {
+  const parsed = parseDefinitionMarkup(value);
+
+  return {
+    definition: parsed.text,
+    definitionRanges: parsed.ranges,
+    normalizedDefinition: normalizeDefinition(parsed.text),
+  };
 }

@@ -16,16 +16,10 @@ export const acronymEntries = sqliteTable(
       .default([]),
     normalizedDefinition: text("normalized_definition").notNull(),
     notes: text("notes"),
-    category: text("category"),
-    tags: text("tags", { mode: "json" })
-      .$type<string[]>()
-      .notNull()
-      .default([]),
     aliases: text("aliases", { mode: "json" })
       .$type<string[]>()
       .notNull()
       .default([]),
-    source: text("source"),
     status: text("status", {
       enum: ["pending", "published", "removed"],
     })
@@ -48,7 +42,6 @@ export const acronymEntries = sqliteTable(
     ),
     index("acronym_entries_acronym_idx").on(table.normalizedAcronym),
     index("acronym_entries_status_idx").on(table.status),
-    index("acronym_entries_category_idx").on(table.category),
   ],
 );
 

@@ -3,58 +3,42 @@
     {
       "acronym": "API",
       "definition": "Application Programming Interface",
-      "notes": "A contract that lets software systems communicate with each other.",
-      "category": "Technology",
-      "tags": ["software", "integration"]
+      "notes": "A contract that lets software systems communicate with each other."
     },
     {
       "acronym": "API",
       "definition": "Annual Performance Index",
-      "notes": "A metric name used in some business and reporting contexts.",
-      "category": "Business",
-      "tags": ["reporting", "metrics"]
+      "notes": "A metric name used in some business and reporting contexts."
     },
     {
       "acronym": "ATO",
       "definition": "Authority to Operate",
-      "notes": "A formal authorization for an information system to operate.",
-      "category": "Government",
-      "tags": ["security", "compliance"]
+      "notes": "A formal authorization for an information system to operate."
     },
     {
       "acronym": "COOP",
       "definition": "Continuity of Operations",
-      "notes": "Planning for continued essential functions during disruption.",
-      "category": "Government",
-      "tags": ["planning", "resilience"]
+      "notes": "Planning for continued essential functions during disruption."
     },
     {
       "acronym": "KPI",
       "definition": "Key Performance Indicator",
-      "notes": "A measurable value used to track progress toward an objective.",
-      "category": "Business",
-      "tags": ["metrics", "reporting"]
+      "notes": "A measurable value used to track progress toward an objective."
     },
     {
       "acronym": "MOU",
       "definition": "Memorandum of Understanding",
-      "notes": "A document describing an agreement or shared understanding between parties.",
-      "category": "Business",
-      "tags": ["agreement", "governance"]
+      "notes": "A document describing an agreement or shared understanding between parties."
     },
     {
       "acronym": "PII",
       "definition": "Personally Identifiable Information",
-      "notes": "Information that can identify a specific person.",
-      "category": "Compliance",
-      "tags": ["privacy", "security"]
+      "notes": "Information that can identify a specific person."
     },
     {
       "acronym": "SLA",
       "definition": "Service Level Agreement",
-      "notes": "An agreement that defines expected service commitments.",
-      "category": "Business",
-      "tags": ["operations", "agreement"]
+      "notes": "An agreement that defines expected service commitments."
     }
   ]
 }

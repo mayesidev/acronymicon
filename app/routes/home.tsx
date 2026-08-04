@@ -55,7 +55,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 name="q"
                 type="search"
                 defaultValue={query}
-                placeholder="Search acronym, definition, notes, category, or tag"
+                placeholder="Search acronym or definition"
                 className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
               />
               <button
@@ -141,7 +141,7 @@ function EmptyState({ isFiltered }: { isFiltered: boolean }) {
       </h2>
       <p className="mt-2 text-sm text-slate-600">
         {isFiltered
-          ? "Try a different acronym, definition, note, category, or tag."
+          ? "Try a different acronym or definition."
           : "Run the seed import or submit the first acronym once submissions are available."}
       </p>
     </section>

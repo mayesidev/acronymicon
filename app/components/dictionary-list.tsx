@@ -13,11 +13,6 @@ export function DictionaryList({
             <p className="text-2xl font-semibold tracking-normal text-slate-950">
               {entry.acronym}
             </p>
-            {entry.category ? (
-              <p className="mt-1 text-xs font-medium uppercase tracking-normal text-slate-500">
-                {entry.category}
-              </p>
-            ) : null}
           </div>
 
           <div className="min-w-0">
@@ -30,19 +25,11 @@ export function DictionaryList({
               </p>
             ) : null}
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {entry.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
             <p className="mt-3 text-xs text-slate-500">
-              Submitted by {entry.submittedByDisplayName ?? entry.submittedByUsername ?? "unknown"}
+              Submitted by{" "}
+              {entry.submittedByDisplayName ??
+                entry.submittedByUsername ??
+                "unknown"}
             </p>
           </div>
         </li>
