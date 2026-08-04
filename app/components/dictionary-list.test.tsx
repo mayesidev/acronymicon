@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   DefinitionText,
   DictionaryList,
-} from "../../app/components/dictionary-list";
+} from "./dictionary-list";
 
 const loaderData = {
   entries: [

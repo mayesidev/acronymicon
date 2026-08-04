@@ -7,7 +7,7 @@ import {
   normalizeDefinition,
   parseDefinitionMarkup,
   validateDefinitionRanges,
-} from "../../app/db/normalize";
+} from "./normalize";
 
 describe("acronym normalization", () => {
   it("trims and uppercases acronyms", () => {

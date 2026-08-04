@@ -64,11 +64,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ["tests/ui/**/*.{ts,tsx}"],
+    files: ["app/components/**/*.test.{ts,tsx}"],
     ...testingLibrary.configs["flat/react"],
   },
   {
-    files: ["tests/ui/**/*.{ts,tsx}"],
+    files: ["app/components/**/*.test.{ts,tsx}"],
     ...jestDom.configs["flat/recommended"],
   },
   {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { importAcronymEntries } from "../../app/db/import.server";
-import { createTestDatabase } from "../helpers/database";
+import { createTestDatabase } from "../../test/helpers/database";
+import { importAcronymEntries } from "./import.server";
 
 describe("acronym import", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];
