@@ -1,0 +1,1 @@
+ALTER TABLE `acronym_entries` ADD `definition_ranges` text DEFAULT '[]' NOT NULL;

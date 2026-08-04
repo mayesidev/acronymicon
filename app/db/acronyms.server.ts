@@ -1,7 +1,11 @@
 import { and, asc, eq } from "drizzle-orm";
 
 import { db, type AppDatabase } from "./client.server";
-import { normalizeAcronym, normalizeDefinition } from "./normalize";
+import {
+  normalizeAcronym,
+  normalizeDefinition,
+  parseDefinitionMarkup,
+} from "./normalize";
 import { acronymEntries, type AcronymEntry } from "./schema";
 
 export type AcronymSearchResult = Pick<
@@ -9,6 +13,7 @@ export type AcronymSearchResult = Pick<
   | "id"
   | "acronym"
   | "definition"
+  | "definitionRanges"
   | "notes"
   | "category"
   | "tags"
@@ -26,6 +31,7 @@ export function createAcronymRepository(database: AppDatabase) {
         id: acronymEntries.id,
         acronym: acronymEntries.acronym,
         definition: acronymEntries.definition,
+        definitionRanges: acronymEntries.definitionRanges,
         notes: acronymEntries.notes,
         category: acronymEntries.category,
         tags: acronymEntries.tags,
@@ -54,6 +60,7 @@ export function createAcronymRepository(database: AppDatabase) {
         id: acronymEntries.id,
         acronym: acronymEntries.acronym,
         definition: acronymEntries.definition,
+        definitionRanges: acronymEntries.definitionRanges,
         notes: acronymEntries.notes,
         category: acronymEntries.category,
         tags: acronymEntries.tags,
@@ -136,12 +143,15 @@ export function buildNewAcronymEntry(input: {
   submittedByUsername?: string;
   submittedByDisplayName?: string;
 }) {
+  const parsedDefinition = parseDefinitionMarkup(input.definition);
+
   return {
     id: crypto.randomUUID(),
     acronym: input.acronym.trim(),
     normalizedAcronym: normalizeAcronym(input.acronym),
-    definition: input.definition.trim(),
-    normalizedDefinition: normalizeDefinition(input.definition),
+    definition: parsedDefinition.text,
+    definitionRanges: parsedDefinition.ranges,
+    normalizedDefinition: normalizeDefinition(parsedDefinition.text),
     notes: normalizeOptional(input.notes),
     category: normalizeOptional(input.category),
     tags: input.tags ?? [],

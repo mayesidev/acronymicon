@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
+import type { DefinitionRange } from "./normalize";
+
 export const acronymEntries = sqliteTable(
   "acronym_entries",
   {
@@ -8,10 +10,17 @@ export const acronymEntries = sqliteTable(
     acronym: text("acronym").notNull(),
     normalizedAcronym: text("normalized_acronym").notNull(),
     definition: text("definition").notNull(),
+    definitionRanges: text("definition_ranges", { mode: "json" })
+      .$type<DefinitionRange[]>()
+      .notNull()
+      .default([]),
     normalizedDefinition: text("normalized_definition").notNull(),
     notes: text("notes"),
     category: text("category"),
-    tags: text("tags", { mode: "json" }).$type<string[]>().notNull().default([]),
+    tags: text("tags", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     aliases: text("aliases", { mode: "json" })
       .$type<string[]>()
       .notNull()
