@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, max } from "drizzle-orm";
 
 import { db, type AppDatabase } from "./client.server";
 import {
@@ -12,6 +12,7 @@ export type AcronymSearchResult = Pick<
   AcronymEntry,
   | "id"
   | "acronym"
+  | "variant"
   | "definition"
   | "definitionRanges"
   | "notes"
@@ -27,6 +28,7 @@ export function createAcronymRepository(database: AppDatabase) {
       .select({
         id: acronymEntries.id,
         acronym: acronymEntries.acronym,
+        variant: acronymEntries.variant,
         definition: acronymEntries.definition,
         definitionRanges: acronymEntries.definitionRanges,
         notes: acronymEntries.notes,
@@ -53,6 +55,7 @@ export function createAcronymRepository(database: AppDatabase) {
       .select({
         id: acronymEntries.id,
         acronym: acronymEntries.acronym,
+        variant: acronymEntries.variant,
         definition: acronymEntries.definition,
         definitionRanges: acronymEntries.definitionRanges,
         notes: acronymEntries.notes,
@@ -68,7 +71,34 @@ export function createAcronymRepository(database: AppDatabase) {
           eq(acronymEntries.normalizedAcronym, normalizeAcronym(acronym)),
         ),
       )
-      .orderBy(asc(acronymEntries.normalizedDefinition));
+      .orderBy(asc(acronymEntries.variant));
+  }
+
+  async function findPublishedByVariant(acronym: string, variant: number) {
+    const [entry] = await database
+      .select({
+        id: acronymEntries.id,
+        acronym: acronymEntries.acronym,
+        variant: acronymEntries.variant,
+        definition: acronymEntries.definition,
+        definitionRanges: acronymEntries.definitionRanges,
+        notes: acronymEntries.notes,
+        aliases: acronymEntries.aliases,
+        submittedByUsername: acronymEntries.submittedByUsername,
+        submittedByDisplayName: acronymEntries.submittedByDisplayName,
+        createdAt: acronymEntries.createdAt,
+      })
+      .from(acronymEntries)
+      .where(
+        and(
+          eq(acronymEntries.status, "published"),
+          eq(acronymEntries.normalizedAcronym, normalizeAcronym(acronym)),
+          eq(acronymEntries.variant, variant),
+        ),
+      )
+      .limit(1);
+
+    return entry ?? null;
   }
 
   async function findExactDuplicate(input: {
@@ -95,12 +125,22 @@ export function createAcronymRepository(database: AppDatabase) {
   async function createAcronymEntry(
     input: Parameters<typeof buildNewAcronymEntry>[0],
   ) {
+    const normalizedAcronym = normalizeAcronym(input.acronym);
+    const [latest] = await database
+      .select({ variant: max(acronymEntries.variant) })
+      .from(acronymEntries)
+      .where(eq(acronymEntries.normalizedAcronym, normalizedAcronym));
+
     const [entry] = await database
       .insert(acronymEntries)
-      .values(buildNewAcronymEntry(input))
+      .values({
+        ...buildNewAcronymEntry(input),
+        variant: (latest?.variant ?? 0) + 1,
+      })
       .returning({
         id: acronymEntries.id,
         acronym: acronymEntries.acronym,
+        variant: acronymEntries.variant,
         definition: acronymEntries.definition,
       });
 
@@ -110,6 +150,7 @@ export function createAcronymRepository(database: AppDatabase) {
   return {
     listPublishedAcronyms,
     findPublishedByAcronym,
+    findPublishedByVariant,
     findExactDuplicate,
     createAcronymEntry,
   };
@@ -118,6 +159,7 @@ export function createAcronymRepository(database: AppDatabase) {
 export const {
   listPublishedAcronyms,
   findPublishedByAcronym,
+  findPublishedByVariant,
   findExactDuplicate,
   createAcronymEntry,
 } = createAcronymRepository(db);

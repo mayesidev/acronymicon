@@ -55,6 +55,11 @@ const findDuplicate = database.prepare(`
   WHERE normalized_acronym = ? AND normalized_definition = ?
   LIMIT 1
 `);
+const findNextVariant = database.prepare(`
+  SELECT COALESCE(MAX(variant), 0) + 1 AS variant
+  FROM acronym_entries
+  WHERE normalized_acronym = ?
+`);
 const insertEntry = database.prepare(`
   INSERT INTO acronym_entries (
     id,
@@ -62,6 +67,7 @@ const insertEntry = database.prepare(`
     normalized_acronym,
     definition,
     definition_ranges,
+    variant,
     normalized_definition,
     notes,
     aliases,
@@ -69,7 +75,7 @@ const insertEntry = database.prepare(`
     submitted_by_user_id,
     submitted_by_username,
     submitted_by_display_name
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 let inserted = 0;
@@ -92,12 +98,14 @@ for (const [index, entry] of entries.entries()) {
   }
 
   try {
+    const variant = findNextVariant.get(normalizedAcronym).variant;
     insertEntry.run(
       randomUUID(),
       acronym,
       normalizedAcronym,
       definition,
       JSON.stringify(parsedDefinition.ranges),
+      variant,
       normalizedDefinition,
       normalizeOptional(entry.notes),
       JSON.stringify(entry.aliases),

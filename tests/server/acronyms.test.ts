@@ -78,4 +78,35 @@ describe("acronym repository", () => {
       repository.listPublishedAcronyms("missing"),
     ).resolves.toHaveLength(0);
   });
+
+  it("assigns stable variants per acronym for shareable links", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const repository = createAcronymRepository(database.db);
+
+    await expect(
+      repository.createAcronymEntry({
+        acronym: "API",
+        definition: "Application Programming Interface",
+      }),
+    ).resolves.toMatchObject({ variant: 1 });
+
+    await expect(
+      repository.createAcronymEntry({
+        acronym: "API",
+        definition: "Annual Performance Index",
+      }),
+    ).resolves.toMatchObject({ variant: 2 });
+
+    await expect(
+      repository.findPublishedByVariant("api", 2),
+    ).resolves.toMatchObject({
+      acronym: "API",
+      definition: "Annual Performance Index",
+      variant: 2,
+    });
+    await expect(
+      repository.findPublishedByVariant("api", 3),
+    ).resolves.toBeNull();
+  });
 });

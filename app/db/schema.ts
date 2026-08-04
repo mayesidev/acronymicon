@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 import type { DefinitionRange } from "./normalize";
 
@@ -9,6 +15,7 @@ export const acronymEntries = sqliteTable(
     id: text("id").primaryKey(),
     acronym: text("acronym").notNull(),
     normalizedAcronym: text("normalized_acronym").notNull(),
+    variant: integer("variant").notNull().default(1),
     definition: text("definition").notNull(),
     definitionRanges: text("definition_ranges", { mode: "json" })
       .$type<DefinitionRange[]>()
@@ -39,6 +46,10 @@ export const acronymEntries = sqliteTable(
     uniqueIndex("acronym_entries_unique_definition").on(
       table.normalizedAcronym,
       table.normalizedDefinition,
+    ),
+    uniqueIndex("acronym_entries_unique_variant").on(
+      table.normalizedAcronym,
+      table.variant,
     ),
     index("acronym_entries_acronym_idx").on(table.normalizedAcronym),
     index("acronym_entries_status_idx").on(table.status),

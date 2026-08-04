@@ -10,6 +10,7 @@ const loaderData = {
     {
       id: "entry-1",
       acronym: "API",
+      variant: 1,
       definition: "Application Programming Interface",
       definitionRanges: [],
       notes: "A contract between systems.",

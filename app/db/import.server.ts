@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 
 import type { AppDatabase } from "./client.server";
@@ -69,11 +69,18 @@ export async function importAcronymEntries(
         continue;
       }
 
+      const normalizedAcronym = normalizeAcronym(entry.acronym);
+      const [latest] = await database
+        .select({ variant: max(acronymEntries.variant) })
+        .from(acronymEntries)
+        .where(eq(acronymEntries.normalizedAcronym, normalizedAcronym));
+
       await database.insert(acronymEntries).values({
         ...parseImportedDefinition(entry.definition),
         id: crypto.randomUUID(),
         acronym: entry.acronym.trim(),
-        normalizedAcronym: normalizeAcronym(entry.acronym),
+        normalizedAcronym,
+        variant: (latest?.variant ?? 0) + 1,
         notes: normalizeOptional(entry.notes),
         aliases: entry.aliases,
         status: entry.status,
