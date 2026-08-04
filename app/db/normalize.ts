@@ -72,3 +72,25 @@ export function parseDefinitionMarkup(value: string): ParsedDefinition {
 export function normalizeDefinition(value: string) {
   return parseDefinitionMarkup(value).text.replace(/\s+/g, " ").toLowerCase();
 }
+
+export function getMarkedDefinitionText(definition: ParsedDefinition): string {
+  return definition.ranges
+    .map((range) => definition.text.slice(range.start, range.end))
+    .join("");
+}
+
+export function validateDefinitionRanges(
+  acronym: string,
+  definition: ParsedDefinition,
+) {
+  if (definition.ranges.length === 0) {
+    return null;
+  }
+
+  const expected = normalizeAcronym(acronym).replace(/\s+/g, "");
+  const marked = getMarkedDefinitionText(definition).toUpperCase();
+
+  return marked === expected
+    ? null
+    : "Marked definition ranges must spell the acronym, or remove the brackets to submit without range details.";
+}

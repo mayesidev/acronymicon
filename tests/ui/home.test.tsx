@@ -3,7 +3,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { DictionaryList } from "../../app/components/dictionary-list";
+import {
+  DefinitionText,
+  DictionaryList,
+} from "../../app/components/dictionary-list";
 
 const loaderData = {
   entries: [
@@ -33,5 +36,23 @@ describe("home dictionary view", () => {
       screen.getByText("Application Programming Interface"),
     ).toBeInTheDocument();
     expect(screen.getByText("Submitted by Local User")).toBeInTheDocument();
+  });
+
+  it("emphasizes marked definition ranges", () => {
+    render(
+      <DefinitionText
+        definition="Radio Detection And Ranging"
+        ranges={[
+          { start: 0, end: 2 },
+          { start: 6, end: 7 },
+          { start: 16, end: 17 },
+          { start: 20, end: 21 },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getAllByText(/^(Ra|D|A|R)$/, { selector: "strong" }),
+    ).toHaveLength(4);
   });
 });

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   DefinitionMarkupError,
+  getMarkedDefinitionText,
   normalizeAcronym,
   normalizeDefinition,
   parseDefinitionMarkup,
+  validateDefinitionRanges,
 } from "../../app/db/normalize";
 
 describe("acronym normalization", () => {
@@ -36,6 +38,22 @@ describe("acronym normalization", () => {
     expect(normalizeDefinition("[A]pplication [P]rogramming [I]nterface")).toBe(
       normalizeDefinition("Application Programming Interface"),
     );
+  });
+
+  it("validates that marked ranges spell the acronym", () => {
+    const parsed = parseDefinitionMarkup("[Ra]dio [D]etection [A]nd [R]anging");
+
+    expect(getMarkedDefinitionText(parsed)).toBe("RaDAR");
+    expect(validateDefinitionRanges("RADAR", parsed)).toBeNull();
+    expect(validateDefinitionRanges("RDR", parsed)).toContain(
+      "must spell the acronym",
+    );
+    expect(
+      validateDefinitionRanges(
+        "RADAR",
+        parseDefinitionMarkup("Radio Detection And Ranging"),
+      ),
+    ).toBeNull();
   });
 
   it.each([
