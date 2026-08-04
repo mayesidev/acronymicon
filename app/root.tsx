@@ -8,9 +8,19 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { ThemeToggle } from "./components/theme-toggle";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [];
+
+const themeInitializer = `(() => {
+  try {
+    const stored = window.localStorage.getItem("acronymicon-theme");
+    const dark = stored === "dark" ||
+      (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", dark);
+  } catch {}
+})()`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,11 +28,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: themeInitializer }} />
         <Meta />
         <Links />
       </head>
       <body>
         {children}
+        <ThemeToggle />
         <ScrollRestoration />
         <Scripts />
       </body>

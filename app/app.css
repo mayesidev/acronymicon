@@ -1,19 +1,94 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  @apply bg-white text-slate-950;
+}
 
-  @media (prefers-color-scheme: dark) {
+html {
+  color-scheme: light;
+
+  &.dark {
     color-scheme: dark;
   }
 }
 
+html.dark body,
+html.dark .bg-slate-50 {
+  background-color: #0f172a;
+}
+
+html.dark .bg-white {
+  background-color: #1e293b;
+}
+
+html.dark .bg-slate-950 {
+  background-color: #e2e8f0;
+}
+
+html.dark .text-white {
+  color: #0f172a;
+}
+
+html.dark .text-slate-950 {
+  color: #f8fafc;
+}
+
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: #cbd5e1;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+html.dark .border-slate-200,
+html.dark .divide-slate-200 {
+  border-color: #334155;
+}
+
+html.dark .border-slate-300 {
+  border-color: #475569;
+}
+
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #334155;
+}
+
+html.dark .hover\:bg-slate-800:hover {
+  background-color: #cbd5e1;
+}
+
+html.dark .bg-amber-50 {
+  background-color: #422006;
+}
+
+html.dark .text-amber-950 {
+  color: #fef3c7;
+}
+
+html.dark .border-amber-300 {
+  border-color: #b45309;
+}
+
+html.dark .text-red-700 {
+  color: #fca5a5;
+}
+
 .form-input {
   @apply w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200;
+}
+
+html.dark .form-input,
+html.dark select {
+  color: #f8fafc;
+  background-color: #1e293b;
 }
