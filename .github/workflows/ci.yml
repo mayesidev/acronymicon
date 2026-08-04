@@ -19,7 +19,9 @@ jobs:
     name: Determine check scope
     runs-on: ubuntu-latest
     outputs:
+      browser: ${{ steps.scope.outputs.browser }}
       application: ${{ steps.scope.outputs.application }}
+      container: ${{ steps.scope.outputs.container }}
 
     steps:
       - name: Check out source history
@@ -37,7 +39,9 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
         run: |
           if [[ "$EVENT_NAME" == "workflow_call" ]]; then
+            echo "browser=true" >> "$GITHUB_OUTPUT"
             echo "application=true" >> "$GITHUB_OUTPUT"
+            echo "container=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -48,24 +52,38 @@ jobs:
           fi
 
           application=false
+          browser=false
+          container=false
           while IFS= read -r file; do
             [[ -z "$file" ]] && continue
             case "$file" in
               README.md|CONTRIBUTING.md|SECURITY.md|.agents/*|.github/ISSUE_TEMPLATE/*.md|.github/pull_request_template.md)
                 ;;
+              Dockerfile|.dockerignore)
+                container=true
+                ;;
               *)
                 application=true
+                browser=true
+                container=true
                 break
                 ;;
             esac
           done <<< "$changed_files"
 
+          if [[ "$application" == "true" ]]; then
+            browser=true
+            container=true
+          fi
+
+          echo "browser=$browser" >> "$GITHUB_OUTPUT"
           echo "application=$application" >> "$GITHUB_OUTPUT"
+          echo "container=$container" >> "$GITHUB_OUTPUT"
 
   quality:
     name: Quality and build
     needs: scope
-    if: needs.scope.outputs.application == 'true'
+    if: needs.scope.outputs.application == 'true' || needs.scope.outputs.container == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -73,38 +91,48 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up pnpm
+        if: needs.scope.outputs.application == 'true'
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         with:
           version: 11.18.0
 
       - name: Set up Node.js
+        if: needs.scope.outputs.application == 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.x
           cache: pnpm
 
       - name: Install dependencies
+        if: needs.scope.outputs.application == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
+        if: needs.scope.outputs.application == 'true'
         run: pnpm run typecheck
 
       - name: Lint
+        if: needs.scope.outputs.application == 'true'
         run: pnpm run lint
 
       - name: Unit and server tests
+        if: needs.scope.outputs.application == 'true'
         run: pnpm test
 
       - name: Security checks
+        if: needs.scope.outputs.application == 'true'
         run: pnpm run security:check
 
       - name: Production build
+        if: needs.scope.outputs.application == 'true'
         run: pnpm run build
 
       - name: Set up Docker Buildx
+        if: needs.scope.outputs.container == 'true'
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Build container
+        if: needs.scope.outputs.container == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
@@ -115,7 +143,7 @@ jobs:
   browser:
     name: Browser integration tests
     needs: scope
-    if: needs.scope.outputs.application == 'true'
+    if: needs.scope.outputs.browser == 'true'
     runs-on: ubuntu-latest
 
     steps:
