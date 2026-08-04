@@ -6,8 +6,8 @@ on a protected network, while the source is available for reuse and forking.
 
 See [SPEC.md](./SPEC.md) for the MVP product contract and
 [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the completed MVP
-implementation record. Use the repository's GitHub issues for maintenance and
-future-release work after publication.
+implementation record. Use GitHub Issues for public bug reports and feature
+requests; internal planning and prioritization are maintained separately.
 
 The MVP is complete. It supports anonymous browsing, authenticated OIDC
 submissions, duplicate detection, JSON import, and persistent SQLite storage.
@@ -112,7 +112,14 @@ pnpm run typecheck
 pnpm test
 pnpm run build
 pnpm run security:check
+pnpm test:e2e
 ```
+
+Pull requests use Conventional Commit titles, such as `fix: correct logout
+redirect` or `feat: allow editing definitions`. CI validates the title, and
+semantic-release creates releases automatically after successful builds on
+`main`. Use squash merging so the validated pull request title is retained
+for release analysis.
 
 Run typecheck:
 
