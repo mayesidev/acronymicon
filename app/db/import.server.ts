@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import type { AppDatabase } from "./client.server";
 import {
   normalizeAcronym,
   normalizeDefinition,
   parseDefinitionMarkup,
-} from "./normalize";
+} from "../domain/acronym";
+import type { AppDatabase } from "./client.server";
 import { insertAcronymEntryAtomic } from "./write.server";
 
 export const importEntrySchema = z.object({
