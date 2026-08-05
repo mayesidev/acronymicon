@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { SubmissionActionData } from "../model";
 import { exactDuplicateMessage } from "../policy";
@@ -13,11 +13,9 @@ const existingEntry = {
   definition: "Application Programming Interface",
 };
 
-afterEach(cleanup);
-
 describe("submission form", () => {
   it("recovers submitted values and field errors", () => {
-    const { container } = renderForm({
+    renderForm({
       status: "error",
       errors: { acronym: ["Acronym is required."] },
       exactDuplicate: null,
@@ -28,11 +26,11 @@ describe("submission form", () => {
       },
     });
 
-    expect(container.querySelector('input[name="acronym"]')).toHaveValue("");
-    expect(container.querySelector('input[name="definition"]')).toHaveValue(
+    expect(screen.getByRole("textbox", { name: /^Acronym/ })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Definition" })).toHaveValue(
       "Application Programming Interface",
     );
-    expect(container.querySelector('textarea[name="notes"]')).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Notes" })).toHaveValue(
       "Recovered notes",
     );
     expect(screen.getByText("Acronym is required.")).toBeVisible();
@@ -40,7 +38,7 @@ describe("submission form", () => {
   });
 
   it("shows exact feedback without repeating the duplicate field error", () => {
-    const { container } = renderForm({
+    renderForm({
       status: "error",
       errors: { definition: [exactDuplicateMessage] },
       exactDuplicate: existingEntry,
@@ -56,7 +54,7 @@ describe("submission form", () => {
     expect(screen.queryByText(exactDuplicateMessage)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
 
-    fireEvent.change(container.querySelector('input[name="definition"]')!, {
+    fireEvent.change(screen.getByRole("textbox", { name: "Definition" }), {
       target: { value: "Annual Performance Index" },
     });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -64,7 +62,7 @@ describe("submission form", () => {
   });
 
   it("preserves confirmation state for a similar-definition warning", () => {
-    const { container } = renderForm({
+    renderForm({
       status: "duplicate-warning",
       existingEntries: [existingEntry],
       values: {
@@ -76,14 +74,15 @@ describe("submission form", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       existingEntry.definition,
     );
-    expect(
-      container.querySelector('input[name="confirmDuplicate"]'),
-    ).toHaveValue("true");
+    expect(screen.getByDisplayValue("true")).toHaveAttribute(
+      "name",
+      "confirmDuplicate",
+    );
     expect(screen.getByRole("button", { name: "Submit Anyway" })).toBeEnabled();
   });
 
   it("renders the unchanged empty form without duplicate feedback", () => {
-    const { container } = renderForm();
+    renderForm();
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -93,10 +92,10 @@ describe("submission form", () => {
     );
     expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
 
-    fireEvent.change(container.querySelector('input[name="acronym"]')!, {
+    fireEvent.change(screen.getByRole("textbox", { name: "Acronym" }), {
       target: { value: "API" },
     });
-    fireEvent.change(container.querySelector('input[name="definition"]')!, {
+    fireEvent.change(screen.getByRole("textbox", { name: "Definition" }), {
       target: { value: "Application Programming Interface" },
     });
     expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();

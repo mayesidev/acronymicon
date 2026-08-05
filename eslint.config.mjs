@@ -8,6 +8,13 @@ import reactHooks from "eslint-plugin-react-hooks";
 import testingLibrary from "eslint-plugin-testing-library";
 import tseslint from "typescript-eslint";
 
+const uiTestFiles = [
+  "app/components/**/*.test.{ts,tsx}",
+  "app/features/**/components/**/*.test.{ts,tsx}",
+  "app/features/**/hooks/**/*.test.{ts,tsx}",
+  "app/features/**/use-*.test.{ts,tsx}",
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -158,11 +165,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ["app/components/**/*.test.{ts,tsx}"],
+    files: uiTestFiles,
     ...testingLibrary.configs["flat/react"],
   },
   {
-    files: ["app/components/**/*.test.{ts,tsx}"],
+    files: uiTestFiles,
     ...jestDom.configs["flat/recommended"],
   },
   {
