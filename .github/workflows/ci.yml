@@ -206,8 +206,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           tags: acronymicon:multi-arch-ci
-          cache-from: type=gha,scope=multi-arch-ci
-          cache-to: type=gha,mode=min,scope=multi-arch-ci
 
   commit:
     name: Commit metadata
