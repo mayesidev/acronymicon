@@ -24,6 +24,7 @@ try {
   );
 
   await waitForApplication();
+  verifyRuntimeToolingRemoved();
   verifyContainerImporter();
   console.log(`Container smoke test passed for ${image}.`);
 } catch (error) {
@@ -40,6 +41,31 @@ try {
   } catch {
     // The container may have failed before Docker created it.
   }
+}
+
+function verifyRuntimeToolingRemoved() {
+  const script = `
+    for command in npm npx corepack yarn yarnpkg; do
+      if command -v "$command" >/dev/null 2>&1; then
+        echo "Unexpected runtime command: $command" >&2
+        exit 1
+      fi
+    done
+
+    for path in \
+      /opt/yarn-v1.22.22 \
+      /usr/local/lib/node_modules/corepack \
+      /usr/local/lib/node_modules/npm; do
+      if test -e "$path" || test -L "$path"; then
+        echo "Unexpected runtime package tree: $path" >&2
+        exit 1
+      fi
+    done
+  `;
+
+  execFileSync("docker", ["exec", containerName, "sh", "-c", script], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 }
 
 function verifyContainerImporter() {

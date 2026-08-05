@@ -2,62 +2,6 @@
   "version": 1,
   "exceptions": [
     {
-      "vulnerability": "GHSA-3jxr-9vmj-r5cp",
-      "package": "brace-expansion",
-      "version": "5.0.6",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
-      "vulnerability": "GHSA-mh99-v99m-4gvg",
-      "package": "brace-expansion",
-      "version": "5.0.6",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
-      "vulnerability": "GHSA-rgw5-rvv9-x895",
-      "package": "brace-expansion",
-      "version": "5.0.6",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
-      "vulnerability": "GHSA-mwp4-54f8-5fhr",
-      "package": "ip-address",
-      "version": "10.2.0",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
-      "vulnerability": "GHSA-23hp-3jrh-7fpw",
-      "package": "tar",
-      "version": "7.5.16",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
-      "vulnerability": "GHSA-8x88-c5mf-7j5w",
-      "package": "tar",
-      "version": "7.5.16",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
-      "vulnerability": "GHSA-vxpw-j846-p89q",
-      "package": "undici",
-      "version": "6.26.0",
-      "expiresOn": "2026-08-12",
-      "reason": "Unused npm-bundled dependency in the official Node runtime image.",
-      "trackingIssue": "ACR-61"
-    },
-    {
       "vulnerability": "CVE-2026-41992",
       "package": "gzip",
       "version": "1.12-1",
