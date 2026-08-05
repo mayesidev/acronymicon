@@ -51,9 +51,23 @@ test("users can open a specific definition variant and see marked ranges", async
   ).toHaveAttribute("href", "/define?acr=radar");
 });
 
-test("users can submit and review duplicate definitions", async ({
-  page,
-}) => {
+test("users can submit and review duplicate definitions", async ({ page }) => {
+  const anonymousResponse = await page.request.get("/submit", {
+    maxRedirects: 0,
+  });
+  expect(anonymousResponse.status()).toBe(302);
+  expect(anonymousResponse.headers().location).toBe(
+    "/auth/login?returnTo=%2Fsubmit",
+  );
+  const anonymousActionResponse = await page.request.post("/submit", {
+    form: { acronym: "API", definition: "Application Programming Interface" },
+    maxRedirects: 0,
+  });
+  expect(anonymousActionResponse.status()).toBe(302);
+  expect(anonymousActionResponse.headers().location).toBe(
+    "/auth/login?returnTo=/submit",
+  );
+
   await page.goto("/submit");
   await signIn(page, "user");
 
@@ -63,19 +77,25 @@ test("users can submit and review duplicate definitions", async ({
   await expect(page.getByText("End To End Verification")).toBeVisible();
 
   await page.goto("/submit");
-  await submit(page, "E2E", "Browser Integration Verification");
+  expect(
+    (await submit(page, "E2E", "Browser Integration Verification")).status(),
+  ).toBe(409);
   await expect(
     page.getByRole("heading", { name: "E2E already exists" }),
   ).toBeVisible();
   await expect(page.getByText("End To End Verification")).toBeVisible();
+  const confirmedResponse = waitForSubmitResponse(page);
   await page.getByRole("button", { name: "Submit Anyway" }).click();
+  await confirmedResponse;
   await expect(page).toHaveURL(/q=E2E/);
   await expect(
     page.getByText("Browser Integration Verification"),
   ).toBeVisible();
 
   await page.goto("/submit");
-  await submit(page, "E2E", "End To End Verification");
+  expect((await submit(page, "E2E", "End To End Verification")).status()).toBe(
+    400,
+  );
   const exactDuplicateWarning = page.getByRole("alert");
   await expect(exactDuplicateWarning).toContainText(
     "This definition already exists",
@@ -121,5 +141,15 @@ async function signIn(
 async function submit(page: Page, acronym: string, definition: string) {
   await page.getByLabel("Acronym").fill(acronym);
   await page.getByLabel("Definition").fill(definition);
+  const response = waitForSubmitResponse(page);
   await page.getByRole("button", { name: "Submit" }).click();
+  return response;
+}
+
+function waitForSubmitResponse(page: Page) {
+  return page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/submit.data",
+  );
 }
