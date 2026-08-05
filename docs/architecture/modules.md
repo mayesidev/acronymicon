@@ -64,13 +64,13 @@ server-to-client leaks cannot be introduced during the migration.
 The repository will reach the target layout in focused changes rather than one
 large rename. These are the only planned structural gaps:
 
-| Current gap                                                                                               | Resolution                                                      |
-| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Authentication logic and auth-aware header presentation remain under `app/auth` and `app/components`      | ACR-63 moves the authentication boundary                        |
-| Home and definition routes import the legacy acronym repository                                           | ACR-42 introduces dictionary feature services and route states  |
-| The submit route combines transport, policy, client state, and persistence                                | ACR-43 extracts the submission feature                          |
-| Configuration, bootstrap, schema, repositories, and SQLite ownership remain in top-level/`app/db` modules | ACR-65 moves platform modules after feature contracts exist     |
-| Reusable UI remains under `app/components` while its foundation is evaluated                              | The separate UI-foundation decision and migration own this move |
+| Current gap                                                                                               | Planned resolution                                                                                         |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Authentication logic and auth-aware header presentation remain under `app/auth` and `app/components`      | Move session/OIDC behavior and auth-aware presentation behind an authentication feature boundary          |
+| Home and definition routes import the legacy acronym repository                                           | Introduce dictionary read/search services and route-facing result contracts                               |
+| The submit route combines transport, policy, client state, and persistence                                | Extract pure policy first, followed by server orchestration and client presentation                        |
+| Configuration, bootstrap, schema, repositories, and SQLite ownership remain in top-level/`app/db` modules | Move configuration and SQLite ownership after feature-facing persistence contracts have been established  |
+| Reusable UI remains under `app/components` while its foundation is evaluated                              | Keep the UI-foundation decision and any resulting component migration as a separate architectural change  |
 
 Each structural pull request moves one boundary, colocates its tests, tightens
 the corresponding lint rule, and preserves user-visible behavior. Router, UI
