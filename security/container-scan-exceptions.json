@@ -2,195 +2,27 @@
   "version": 1,
   "exceptions": [
     {
-      "vulnerability": "CVE-2026-41992",
-      "package": "gzip",
-      "version": "1.12-1",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-54369",
-      "package": "libacl1",
-      "version": "2.3.1-3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-54370",
-      "package": "libacl1",
-      "version": "2.3.1-3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-5435",
-      "package": "libc-bin",
-      "version": "2.36-9+deb12u14",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
       "vulnerability": "CVE-2026-5450",
-      "package": "libc-bin",
-      "version": "2.36-9+deb12u14",
+      "package": "libc6",
+      "version": "2.41-12+deb13u3",
       "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-5928",
-      "package": "libc-bin",
-      "version": "2.36-9+deb12u14",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
+      "reason": "Debian rates this scanf %mc explicit-width overflow as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05.",
       "trackingIssue": "ACR-60"
     },
     {
       "vulnerability": "CVE-2026-5435",
       "package": "libc6",
-      "version": "2.36-9+deb12u14",
+      "version": "2.41-12+deb13u3",
       "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-5450",
-      "package": "libc6",
-      "version": "2.36-9+deb12u14",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
+      "reason": "Debian rates this deprecated resolver-debug buffer issue as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05.",
       "trackingIssue": "ACR-60"
     },
     {
       "vulnerability": "CVE-2026-5928",
       "package": "libc6",
-      "version": "2.36-9+deb12u14",
+      "version": "2.41-12+deb13u3",
       "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2025-13151",
-      "package": "libtasn1-6",
-      "version": "4.19.0-2+deb12u1",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2025-69720",
-      "package": "libtinfo6",
-      "version": "6.4-4",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2025-69720",
-      "package": "ncurses-base",
-      "version": "6.4-4",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2025-69720",
-      "package": "ncurses-bin",
-      "version": "6.4-4",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-12087",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-13221",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-42496",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-42497",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-48959",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-48962",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-57432",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-57433",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-7017",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-8376",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
-      "trackingIssue": "ACR-60"
-    },
-    {
-      "vulnerability": "CVE-2026-9538",
-      "package": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "expiresOn": "2026-09-04",
-      "reason": "No Debian fix reported by Grype on 2026-08-05.",
+      "reason": "Debian rates this ungetwc overlapping non-Unicode conversion issue as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05.",
       "trackingIssue": "ACR-60"
     }
   ]

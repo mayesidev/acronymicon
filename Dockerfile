@@ -1,4 +1,4 @@
-FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS development-dependencies-env
+FROM node:24.19.0-trixie-slim@sha256:0711b541c1c33a8a530ac4f0d391baa9a15b3d804695b1b24a47daa5fb60e74d AS development-dependencies-env
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
@@ -12,26 +12,20 @@ COPY . /app/
 RUN pnpm run build \
   && pnpm prune --prod \
   && rm -r node_modules/better-sqlite3/prebuilds \
-  && pnpm --dir node_modules/better-sqlite3 run build-release
+  && pnpm --dir node_modules/better-sqlite3 run build-release \
+  && mkdir -p /app/runtime-data
 
-# Keep build tools and development dependencies out of the runtime image.
-FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
-RUN rm -rf \
-  /opt/yarn-v1.22.22 \
-  /usr/local/lib/node_modules/corepack \
-  /usr/local/lib/node_modules/npm \
-  /usr/local/bin/corepack \
-  /usr/local/bin/npm \
-  /usr/local/bin/npx \
-  /usr/local/bin/yarn \
-  /usr/local/bin/yarnpkg
+# Keep the shell, package managers, build tools, and development dependencies
+# out of the non-root runtime image.
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:fbbdda866ea71aef98c4abece17e3d61fbf820cc2ef3961522caa2478716171a
 ENV NODE_ENV=production
 ENV PORT=3000
-COPY --from=build-env /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/
-COPY --from=build-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
-COPY --from=build-env /app/drizzle /app/drizzle
-COPY ./seeds /app/seeds
+COPY --from=build-env --chown=65532:65532 /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/
+COPY --from=build-env --chown=65532:65532 /app/node_modules /app/node_modules
+COPY --from=build-env --chown=65532:65532 /app/build /app/build
+COPY --from=build-env --chown=65532:65532 /app/drizzle /app/drizzle
+COPY --from=build-env --chown=65532:65532 /app/runtime-data /data
+COPY --chown=65532:65532 ./seeds /app/seeds
 WORKDIR /app
 EXPOSE 3000
-CMD ["node", "node_modules/@react-router/serve/bin.cjs", "./build/server/index.js"]
+CMD ["node_modules/@react-router/serve/bin.cjs", "./build/server/index.js"]

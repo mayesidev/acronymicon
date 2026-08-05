@@ -3,6 +3,7 @@ import { setTimeout } from "node:timers/promises";
 
 const image = process.env.CONTAINER_IMAGE ?? "acronymicon:ci";
 const containerName = `acronymicon-smoke-${process.pid}`;
+const runtimeNode = "/nodejs/bin/node";
 
 try {
   execFileSync(
@@ -13,8 +14,6 @@ try {
       "--name",
       containerName,
       "--env",
-      "COREPACK_ENABLE_NETWORK=0",
-      "--env",
       "DATABASE_PATH=/tmp/acronymicon.sqlite",
       "--env",
       "SESSION_SECRET=container-smoke-session-secret",
@@ -24,7 +23,7 @@ try {
   );
 
   await waitForApplication();
-  verifyRuntimeToolingRemoved();
+  verifyRuntimeHardening();
   verifyContainerImporter();
   console.log(`Container smoke test passed for ${image}.`);
 } catch (error) {
@@ -43,36 +42,60 @@ try {
   }
 }
 
-function verifyRuntimeToolingRemoved() {
+function verifyRuntimeHardening() {
   const script = `
-    for command in npm npx corepack yarn yarnpkg; do
-      if command -v "$command" >/dev/null 2>&1; then
-        echo "Unexpected runtime command: $command" >&2
-        exit 1
-      fi
-    done
+    import { lstatSync } from "node:fs";
 
-    for path in \
-      /opt/yarn-v1.22.22 \
-      /usr/local/lib/node_modules/corepack \
-      /usr/local/lib/node_modules/npm; do
-      if test -e "$path" || test -L "$path"; then
-        echo "Unexpected runtime package tree: $path" >&2
-        exit 1
-      fi
-    done
+    const forbiddenPaths = [
+      "/bin/sh",
+      "/bin/bash",
+      "/opt/yarn-v1.22.22",
+      "/usr/local/bin/corepack",
+      "/usr/local/bin/npm",
+      "/usr/local/bin/npx",
+      "/usr/local/bin/yarn",
+      "/usr/local/bin/yarnpkg",
+      "/usr/local/lib/node_modules/corepack",
+      "/usr/local/lib/node_modules/npm",
+    ];
+
+    for (const path of forbiddenPaths) {
+      try {
+        lstatSync(path);
+        console.error(\`Unexpected runtime path: \${path}\`);
+        process.exit(1);
+      } catch (error) {
+        if (error.code !== "ENOENT") {
+          throw error;
+        }
+      }
+    }
+
+    if (process.getuid?.() !== 65532 || process.getgid?.() !== 65532) {
+      console.error(\`Unexpected runtime identity: \${process.getuid?.()}:\${process.getgid?.()}\`);
+      process.exit(1);
+    }
   `;
 
-  execFileSync("docker", ["exec", containerName, "sh", "-c", script], {
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  execFileSync(
+    "docker",
+    [
+      "exec",
+      containerName,
+      runtimeNode,
+      "--input-type=module",
+      "--eval",
+      script,
+    ],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
 }
 
 function verifyContainerImporter() {
   const importerArguments = [
     "exec",
     containerName,
-    "node",
+    runtimeNode,
     "build/scripts/import-acronyms.mjs",
     "seeds/acronyms.seed.json",
   ];
@@ -86,7 +109,9 @@ function verifyContainerImporter() {
   });
 
   if (!firstImport.includes("9 inserted, 0 duplicates skipped, 0 failed")) {
-    throw new Error(`Container importer did not insert the seed data: ${firstImport}`);
+    throw new Error(
+      `Container importer did not insert the seed data: ${firstImport}`,
+    );
   }
 
   if (!secondImport.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
@@ -110,7 +135,7 @@ async function waitForApplication() {
         [
           "exec",
           containerName,
-          "node",
+          runtimeNode,
           "--input-type=module",
           "--eval",
           requestScript,
