@@ -1,0 +1,24 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2099-0001",
+        "severity": "High"
+      },
+      "artifact": {
+        "name": "example-package",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2099-0002",
+        "severity": "Medium"
+      },
+      "artifact": {
+        "name": "informational-package",
+        "version": "2.0.0"
+      }
+    }
+  ]
+}
