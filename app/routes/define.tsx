@@ -1,6 +1,9 @@
 import type { Route } from "./+types/define";
 
-import { DefinitionText } from "../components/dictionary-list";
+import {
+  DefinitionText,
+  formatSubmittedDate,
+} from "../components/dictionary-list";
 import {
   findPublishedByAcronym,
   findPublishedByVariant,
@@ -80,7 +83,7 @@ export default function Define({ loaderData }: Route.ComponentProps) {
       </h1>
       <p className="mt-2 text-sm text-slate-600">
         {loaderData.status === "entry"
-          ? `Definition variant ${loaderData.entry.variant}`
+          ? "Definition"
           : `${entries.length} definition${entries.length === 1 ? "" : "s"}`}
       </p>
 
@@ -103,6 +106,8 @@ export default function Define({ loaderData }: Route.ComponentProps) {
               {entry.submittedByDisplayName ??
                 entry.submittedByUsername ??
                 "unknown"}
+              <span aria-hidden="true"> | </span>
+              <span>Submitted {formatSubmittedDate(entry.createdAt)}</span>
             </p>
           </li>
         ))}

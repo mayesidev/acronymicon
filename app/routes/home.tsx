@@ -9,7 +9,7 @@ import { listPublishedAcronyms, type AcronymSort } from "../db/acronyms.server";
 export function meta() {
   return [
     { title: "Acronymicon" },
-    { name: "description", content: "Internal acronym dictionary" },
+    { name: "description", content: "A quick reference for acronyms and definitions" },
   ];
 }
 
@@ -39,6 +39,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const hasEntries = entries.length > 0;
   const isFiltered = query.trim().length > 0;
 
+  function clearSearch() {
+    setSearchValue("");
+  }
+
   useEffect(() => {
     if (searchValue === query && sortValue === loaderData.sort) {
       return;
@@ -57,58 +61,26 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-end md:justify-between">
+        <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-normal text-slate-950">
               Acronymicon
             </h1>
             <p className="mt-1 text-sm text-slate-600">
-              Internal acronym dictionary
+              A book of knowledge for acronyms
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-3 md:max-w-xl">
-            <Form method="get" className="flex w-full gap-2">
-              <label htmlFor="search" className="sr-only">
-                Search acronyms
-              </label>
-              <input
-                id="search"
-                name="q"
-                type="search"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search acronym or definition"
-                className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
-              />
-              <button
-                type="submit"
-                className="min-h-11 rounded bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-              >
-                Search
-              </button>
-            </Form>
-
-            <label className="flex items-center justify-end gap-2 text-sm text-slate-600">
-              <span>Sort</span>
-              <select
-                value={sortValue}
-                onChange={(event) =>
-                  setSortValue(event.target.value as AcronymSort)
-                }
-                className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-950"
-              >
-                <option value="alphabetical">Alphabetical</option>
-                <option value="recent">Most recent</option>
-              </select>
-            </label>
-
-            <div className="flex items-center justify-end gap-3 text-sm">
-              {user ? (
-                <>
-                  <span className="text-slate-600">
+          <div className="flex flex-col gap-3 text-sm md:items-end">
+            {user ? (
+              <>
+                <p className="text-slate-500">
+                  Signed in as{" "}
+                  <span className="font-medium text-slate-700">
                     {user.displayName ?? user.username}
                   </span>
+                </p>
+                <div className="flex items-center gap-4">
                   <a
                     href="/submit"
                     className="font-medium text-slate-800 underline-offset-4 hover:underline"
@@ -123,46 +95,86 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       Sign out
                     </button>
                   </Form>
-                </>
-              ) : (
-                <>
-                  <a
-                    href="/submit"
-                    className="font-medium text-slate-800 underline-offset-4 hover:underline"
-                  >
-                    Submit acronym
-                  </a>
-                  <a
-                    href="/auth/login"
-                    className="font-medium text-slate-600 underline-offset-4 hover:underline"
-                  >
-                    Sign in
-                  </a>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-4">
+                <a
+                  href="/submit"
+                  className="font-medium text-slate-800 underline-offset-4 hover:underline"
+                >
+                  Submit acronym
+                </a>
+                <a
+                  href="/auth/login"
+                  className="font-medium text-slate-600 underline-offset-4 hover:underline"
+                >
+                  Sign in
+                </a>
+              </div>
+            )}
           </div>
         </header>
 
-        <section className="flex items-center justify-between gap-3">
+        <section aria-label="Search dictionary">
+          <Form method="get" className="flex w-full gap-2">
+            <label htmlFor="search" className="sr-only">
+              Search acronyms
+            </label>
+            <input
+              id="search"
+              name="q"
+              type="search"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="Search acronym or definition"
+              className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
+            />
+            <input type="hidden" name="sort" value={sortValue} />
+            {isFiltered ? (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="min-h-11 rounded border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+              >
+                Clear
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              className="min-h-11 rounded bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+            >
+              Search
+            </button>
+          </Form>
+        </section>
+
+        <section className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">
             {isFiltered
               ? `${entries.length} result${entries.length === 1 ? "" : "s"} for "${query}"`
               : `${entries.length} published entr${entries.length === 1 ? "y" : "ies"}`}
           </p>
-          {isFiltered ? (
-            <a
-              href="/"
-              onClick={() => setSearchValue("")}
-              className="text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <span>Sort results</span>
+            <select
+              value={sortValue}
+              onChange={(event) =>
+                setSortValue(event.target.value as AcronymSort)
+              }
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-950"
             >
-              Clear search
-            </a>
-          ) : null}
+              <option value="alphabetical">Alphabetical</option>
+              <option value="recent">Most recent</option>
+            </select>
+          </label>
         </section>
 
         {hasEntries ? (
-          <DictionaryList entries={entries} />
+          <DictionaryList
+            entries={entries}
+            groupByLetter={!isFiltered && loaderData.sort === "alphabetical"}
+          />
         ) : (
           <EmptyState isFiltered={isFiltered} />
         )}
