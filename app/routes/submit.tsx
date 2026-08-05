@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { data, Form, redirect, useFetcher } from "react-router";
-import { z } from "zod";
 
 import type { Route } from "./+types/submit";
 import {
@@ -11,21 +10,15 @@ import {
 import { getOptionalUser } from "../auth/session.server";
 import { DuplicateFeedback } from "../components/duplicate-feedback";
 import {
-  DefinitionMarkupError,
-  parseDefinitionMarkup,
-  validateDefinitionRanges,
-} from "../domain/acronym";
-
-const submissionSchema = z.object({
-  acronym: z.string().trim().min(1, "Acronym is required."),
-  definition: z.string().trim().min(1, "Definition is required."),
-  notes: z.string().trim().optional(),
-  confirmDuplicate: z.literal("true").optional(),
-});
-
-const exactDuplicateMessage = "This acronym and definition already exist.";
-
-type SubmissionFieldName = "acronym" | "definition" | "notes";
+  evaluateDuplicatePolicy,
+  exactDuplicateMessage,
+  getDefinitionError,
+} from "../features/submission/policy";
+import type {
+  SubmissionFieldErrors,
+  SubmissionFieldName,
+} from "../features/submission/model";
+import { validateSubmissionInput } from "../features/submission/server/input";
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -91,45 +84,33 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const parsed = submissionSchema.safeParse(Object.fromEntries(formData));
+  const validation = validateSubmissionInput(Object.fromEntries(formData));
 
-  if (!parsed.success) {
+  if (validation.status === "invalid") {
     return data(
       {
         status: "error" as const,
-        errors: parsed.error.flatten().fieldErrors,
+        errors: validation.errors,
         exactDuplicate: null,
-        values: getSubmissionValues(formData),
+        values: validation.values,
       },
       { status: 400 },
     );
   }
 
-  const values = parsed.data;
-  const definitionError = getDefinitionError(values.acronym, values.definition);
-
-  if (definitionError) {
-    return data(
-      {
-        status: "error" as const,
-        errors: { definition: [definitionError] },
-        exactDuplicate: null,
-        values,
-      },
-      { status: 400 },
-    );
-  }
-
+  const values = validation.values;
   const exactDuplicate = await findExactDuplicate(values);
+  const exactDuplicateOutcome = evaluateDuplicatePolicy(values, {
+    exactDuplicate,
+    existingEntries: [],
+  });
 
-  if (exactDuplicate) {
+  if (exactDuplicateOutcome.status === "exact-duplicate") {
     return data(
       {
         status: "error" as const,
-        errors: {
-          definition: [exactDuplicateMessage],
-        },
-        exactDuplicate,
+        errors: exactDuplicateOutcome.errors,
+        exactDuplicate: exactDuplicateOutcome.duplicate,
         values,
       },
       { status: 400 },
@@ -137,12 +118,16 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const existingEntries = await findPublishedByAcronym(values.acronym);
+  const duplicateOutcome = evaluateDuplicatePolicy(values, {
+    exactDuplicate: null,
+    existingEntries,
+  });
 
-  if (existingEntries.length > 0 && values.confirmDuplicate !== "true") {
+  if (duplicateOutcome.status === "duplicate-warning") {
     return data(
       {
         status: "duplicate-warning" as const,
-        existingEntries,
+        existingEntries: duplicateOutcome.existingEntries,
         values,
       },
       { status: 409 },
@@ -159,13 +144,16 @@ export async function action({ request }: Route.ActionArgs) {
   });
 
   if (result.status === "duplicate") {
+    const concurrentDuplicateOutcome = evaluateDuplicatePolicy(values, {
+      exactDuplicate: result.duplicate,
+      existingEntries: [],
+    });
+
     return data(
       {
         status: "error" as const,
-        errors: {
-          definition: [exactDuplicateMessage],
-        },
-        exactDuplicate: result.duplicate,
+        errors: concurrentDuplicateOutcome.errors,
+        exactDuplicate: concurrentDuplicateOutcome.duplicate,
         values,
       },
       { status: 400 },
@@ -359,36 +347,7 @@ function getFieldError(
     return undefined;
   }
 
-  const errors = actionData.errors as Partial<
-    Record<SubmissionFieldName, string[]>
-  >;
+  const errors = actionData.errors as SubmissionFieldErrors;
 
   return errors[field]?.[0];
-}
-
-function getSubmissionValues(formData: FormData) {
-  return {
-    acronym: getFormString(formData, "acronym"),
-    definition: getFormString(formData, "definition"),
-    notes: getFormString(formData, "notes"),
-  };
-}
-
-function getFormString(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : "";
-}
-
-function getDefinitionError(acronym: string, definition: string) {
-  if (!definition.trim()) {
-    return null;
-  }
-
-  try {
-    return validateDefinitionRanges(acronym, parseDefinitionMarkup(definition));
-  } catch (error) {
-    return error instanceof DefinitionMarkupError
-      ? error.message
-      : "Definition formatting is invalid.";
-  }
 }
