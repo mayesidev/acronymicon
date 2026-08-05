@@ -55,7 +55,7 @@ test("users can submit, review duplicates, sign out, and switch accounts", async
 
   await page.goto("/submit");
   await submit(page, "E2E", "Browser Integration Verification");
-  await expect(page.getByText("E2E already exists")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("E2E already exists");
   await expect(page.getByText("End To End Verification")).toBeVisible();
   await page.getByRole("button", { name: "Submit Anyway" }).click();
   await expect(page).toHaveURL(/q=E2E/);
@@ -65,9 +65,10 @@ test("users can submit, review duplicates, sign out, and switch accounts", async
 
   await page.goto("/submit");
   await submit(page, "E2E", "End To End Verification");
-  await expect(
-    page.getByText("This acronym and definition already exist."),
-  ).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "This definition already exists",
+  );
+  await expect(page.getByRole("button", { name: "Submit" })).toBeDisabled();
 
   await page.goto("/");
   await page.getByRole("button", { name: "Sign out" }).click();
