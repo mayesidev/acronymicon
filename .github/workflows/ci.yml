@@ -69,7 +69,6 @@ jobs:
                 application=true
                 browser=true
                 container=true
-                break
                 ;;
             esac
           done <<< "$changed_files"
