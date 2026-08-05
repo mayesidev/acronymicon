@@ -140,7 +140,9 @@ docker compose pull app
 docker compose up -d
 ```
 
-The published image is available for both `linux/amd64` and `linux/arm64`.
+The published image is available for both `linux/amd64` and `linux/arm64`. Its
+runtime is a minimal distroless image that runs as non-root UID/GID `65532` and
+does not include a shell or package manager.
 
 The published image applies bundled database migrations on startup. Open the
 app at `http://localhost:3000`. Remove the `ACRONYMICON_IMAGE` variable and
@@ -190,7 +192,7 @@ docker compose start app
 Seed the running container explicitly when needed:
 
 ```bash
-docker compose exec app node build/scripts/import-acronyms.mjs seeds/acronyms.seed.json
+docker compose exec app /nodejs/bin/node build/scripts/import-acronyms.mjs seeds/acronyms.seed.json
 ```
 
 Import another JSON file into the running container by copying it into the
@@ -198,5 +200,5 @@ container first, then running the container importer:
 
 ```bash
 docker cp path/to/acronyms.json $(docker compose ps -q app):/tmp/acronyms.json
-docker compose exec app node build/scripts/import-acronyms.mjs /tmp/acronyms.json
+docker compose exec app /nodejs/bin/node build/scripts/import-acronyms.mjs /tmp/acronyms.json
 ```
