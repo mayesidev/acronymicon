@@ -190,7 +190,7 @@ docker compose start app
 Seed the running container explicitly when needed:
 
 ```bash
-docker compose exec app node scripts/import-acronyms.mjs seeds/acronyms.seed.json
+docker compose exec app node build/scripts/import-acronyms.mjs seeds/acronyms.seed.json
 ```
 
 Import another JSON file into the running container by copying it into the
@@ -198,5 +198,5 @@ container first, then running the container importer:
 
 ```bash
 docker cp path/to/acronyms.json $(docker compose ps -q app):/tmp/acronyms.json
-docker compose exec app node scripts/import-acronyms.mjs /tmp/acronyms.json
+docker compose exec app node build/scripts/import-acronyms.mjs /tmp/acronyms.json
 ```

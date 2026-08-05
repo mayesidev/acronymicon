@@ -24,6 +24,7 @@ try {
   );
 
   await waitForApplication();
+  verifyContainerImporter();
   console.log(`Container smoke test passed for ${image}.`);
 } catch (error) {
   const logs = getContainerLogs();
@@ -38,6 +39,32 @@ try {
     });
   } catch {
     // The container may have failed before Docker created it.
+  }
+}
+
+function verifyContainerImporter() {
+  const importerArguments = [
+    "exec",
+    containerName,
+    "node",
+    "build/scripts/import-acronyms.mjs",
+    "seeds/acronyms.seed.json",
+  ];
+  const firstImport = execFileSync("docker", importerArguments, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const secondImport = execFileSync("docker", importerArguments, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  if (!firstImport.includes("9 inserted, 0 duplicates skipped, 0 failed")) {
+    throw new Error(`Container importer did not insert the seed data: ${firstImport}`);
+  }
+
+  if (!secondImport.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
+    throw new Error(`Container importer is not idempotent: ${secondImport}`);
   }
 }
 
