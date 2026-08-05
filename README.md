@@ -141,6 +141,18 @@ Build and run the app with local Keycloak:
 docker compose up --build
 ```
 
+Run a published container release with local Keycloak:
+
+```bash
+export ACRONYMICON_IMAGE=ghcr.io/mayesidev/acronymicon:0.2.0
+docker compose pull app
+docker compose up -d
+```
+
+The published image applies bundled database migrations on startup. Open the
+app at `http://localhost:3000`. Remove the `ACRONYMICON_IMAGE` variable and
+run `docker compose up --build` to return to the local source build.
+
 App:
 
 ```txt

@@ -1,5 +1,6 @@
 services:
   app:
+    image: ${ACRONYMICON_IMAGE:-ghcr.io/mayesidev/acronymicon:latest}
     build: .
     depends_on:
       - keycloak
