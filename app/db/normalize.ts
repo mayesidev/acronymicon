@@ -1,7 +1,4 @@
-export type DefinitionRange = {
-  start: number;
-  end: number;
-};
+import type { DefinitionRange } from "../domain/acronym";
 
 export type ParsedDefinition = {
   text: string;

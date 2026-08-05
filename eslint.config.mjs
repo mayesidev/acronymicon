@@ -64,6 +64,100 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      "app/components/**/*.{ts,tsx}",
+      "app/domain/**/*.{ts,tsx}",
+      "app/features/**/*.{ts,tsx}",
+      "app/ui/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      "app/features/**/*.server.{ts,tsx}",
+      "app/features/**/server/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "**/*.server",
+                "**/*.server.*",
+                "~/platform/**",
+                "../platform/**",
+                "../../platform/**",
+                "../../../platform/**",
+                "~/routes/**",
+                "../routes/**",
+                "../../routes/**",
+                "../../../routes/**",
+                "~/db/**",
+                "../db/**",
+                "../../db/**",
+                "../../../db/**",
+                "~/auth/**",
+                "../auth/**",
+                "../../auth/**",
+                "../../../auth/**",
+                "~/config.server",
+                "../config.server",
+                "../../config.server",
+                "~/bootstrap.server",
+                "../bootstrap.server",
+                "../../bootstrap.server",
+              ],
+              message:
+                "Client-capable UI and contracts must not depend on server or platform implementations.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["app/platform/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "~/routes/**",
+                "../../routes/**",
+                "~/ui/**",
+                "../../ui/**",
+                "~/components/**",
+                "../../components/**",
+              ],
+              message:
+                "Platform implementations cannot depend on route or presentation modules.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // ACR-42, ACR-43, and ACR-63 remove the remaining legacy route imports.
+    // New target-platform imports are prohibited now so the gap cannot grow.
+    files: ["app/routes/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/platform/**", "../platform/**"],
+              message:
+                "Route adapters compose feature APIs instead of importing platform implementations.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["app/components/**/*.test.{ts,tsx}"],
     ...testingLibrary.configs["flat/react"],
   },

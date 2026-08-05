@@ -1,7 +1,7 @@
 import * as oidc from "openid-client";
 
 import { getAppConfig } from "../config.server";
-import type { AuthUser } from "./session.server";
+import type { AuthUser } from "../features/authentication/model";
 
 let cachedConfig: Promise<oidc.Configuration | null> | null = null;
 
@@ -176,10 +176,7 @@ export function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
         "name",
         "sub",
       ]) ?? id,
-    displayName: getFirstClaimString(claims, [
-      claimConfig.displayName,
-      "name",
-    ]),
+    displayName: getFirstClaimString(claims, [claimConfig.displayName, "name"]),
     email: getClaimString(claims, claimConfig.email),
     groups: getClaimStringArray(claims, claimConfig.groups),
   };

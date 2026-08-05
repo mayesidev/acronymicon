@@ -1,10 +1,10 @@
-import type { AcronymSearchResult } from "../db/acronyms.server";
+import type { DictionaryEntry } from "../features/dictionary/model";
 
 export function DictionaryList({
   entries,
   groupByLetter = false,
 }: {
-  entries: AcronymSearchResult[];
+  entries: DictionaryEntry[];
   groupByLetter?: boolean;
 }) {
   if (groupByLetter) {
@@ -19,7 +19,7 @@ export function DictionaryList({
             </h2>
             <ol className="divide-y divide-slate-200 overflow-hidden rounded border border-slate-200 bg-white">
               {group.entries.map((entry) => (
-                <DictionaryEntry key={entry.id} entry={entry} />
+                <DictionaryEntryItem key={entry.id} entry={entry} />
               ))}
             </ol>
           </li>
@@ -31,13 +31,13 @@ export function DictionaryList({
   return (
     <ol className="divide-y divide-slate-200 overflow-hidden rounded border border-slate-200 bg-white">
       {entries.map((entry) => (
-        <DictionaryEntry key={entry.id} entry={entry} />
+        <DictionaryEntryItem key={entry.id} entry={entry} />
       ))}
     </ol>
   );
 }
 
-function DictionaryEntry({ entry }: { entry: AcronymSearchResult }) {
+function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
   return (
     <li className="grid gap-4 p-4 md:grid-cols-[8rem_1fr]">
       <div>
@@ -67,7 +67,9 @@ function DictionaryEntry({ entry }: { entry: AcronymSearchResult }) {
 
         <p className="mt-3 text-xs text-slate-500">
           Submitted by{" "}
-          {entry.submittedByDisplayName ?? entry.submittedByUsername ?? "unknown"}
+          {entry.submittedByDisplayName ??
+            entry.submittedByUsername ??
+            "unknown"}
           <span aria-hidden="true"> | </span>
           <span>Submitted {formatSubmittedDate(entry.createdAt)}</span>
         </p>
@@ -131,8 +133,8 @@ export function formatSubmittedDate(createdAt: string) {
   }).format(date);
 }
 
-function groupEntriesByLetter(entries: AcronymSearchResult[]) {
-  const groups = new Map<string, AcronymSearchResult[]>();
+function groupEntriesByLetter(entries: DictionaryEntry[]) {
+  const groups = new Map<string, DictionaryEntry[]>();
 
   for (const entry of entries) {
     const firstCharacter = entry.acronym.charAt(0).toUpperCase();
