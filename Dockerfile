@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim AS development-dependencies-env
+FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS development-dependencies-env
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
@@ -15,7 +15,7 @@ RUN pnpm run build \
   && pnpm --dir node_modules/better-sqlite3 run build-release
 
 # Keep build tools and development dependencies out of the runtime image.
-FROM node:24-bookworm-slim
+FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
 ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=build-env /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/

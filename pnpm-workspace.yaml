@@ -9,7 +9,7 @@ overrides:
 # Delay newly published packages long enough for registry takeovers to be detected.
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
-nodeVersion: 24.18.1
+nodeVersion: 24.19.0
 # Keep downgrade detection enabled while tolerating trust metadata gaps on old packages.
 trustPolicy: no-downgrade
 trustPolicyIgnoreAfter: 10080
