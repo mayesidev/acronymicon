@@ -31,7 +31,7 @@ test("users can open a specific definition variant and see marked ranges", async
 
   await expect(page.getByRole("heading", { name: "RADAR" })).toBeVisible();
   await expect(page.getByText("Radio Detection And Ranging")).toBeVisible();
-  await expect(page.locator("strong")).toHaveCount(4);
+  await expect(page.locator("u")).toHaveCount(4);
 
   await page.goto("/define?acr=radar&var=2");
   await expect(
