@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, max } from "drizzle-orm";
 
-import { db, type AppDatabase } from "./client.server";
+import { getAppDatabase } from "../bootstrap.server";
+import type { AppDatabase } from "./client.server";
 import {
   normalizeAcronym,
   normalizeDefinition,
@@ -187,13 +188,41 @@ export function createAcronymRepository(database: AppDatabase) {
   };
 }
 
-export const {
-  listPublishedAcronyms,
-  findPublishedByAcronym,
-  findPublishedByVariant,
-  findExactDuplicate,
-  createAcronymEntry,
-} = createAcronymRepository(db);
+type AcronymRepository = ReturnType<typeof createAcronymRepository>;
+
+function getAcronymRepository() {
+  return createAcronymRepository(getAppDatabase());
+}
+
+export function listPublishedAcronyms(
+  ...arguments_: Parameters<AcronymRepository["listPublishedAcronyms"]>
+) {
+  return getAcronymRepository().listPublishedAcronyms(...arguments_);
+}
+
+export function findPublishedByAcronym(
+  ...arguments_: Parameters<AcronymRepository["findPublishedByAcronym"]>
+) {
+  return getAcronymRepository().findPublishedByAcronym(...arguments_);
+}
+
+export function findPublishedByVariant(
+  ...arguments_: Parameters<AcronymRepository["findPublishedByVariant"]>
+) {
+  return getAcronymRepository().findPublishedByVariant(...arguments_);
+}
+
+export function findExactDuplicate(
+  ...arguments_: Parameters<AcronymRepository["findExactDuplicate"]>
+) {
+  return getAcronymRepository().findExactDuplicate(...arguments_);
+}
+
+export function createAcronymEntry(
+  ...arguments_: Parameters<AcronymRepository["createAcronymEntry"]>
+) {
+  return getAcronymRepository().createAcronymEntry(...arguments_);
+}
 
 export function buildNewAcronymEntry(input: {
   acronym: string;

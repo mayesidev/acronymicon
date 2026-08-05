@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 
+import { getAppConfig } from "../app/config.server";
+import { createDatabase } from "../app/db/client.server";
 import { importAcronymEntries } from "../app/db/import.server";
-import { db } from "../app/db/client.server";
 
 const inputPath = process.argv[2];
 
@@ -10,23 +11,40 @@ if (!inputPath) {
   process.exit(1);
 }
 
-const rawInput = await readFile(inputPath, "utf8");
-const result = await importAcronymEntries(db, JSON.parse(rawInput));
+const config = getAppConfig();
+const database = createDatabase({
+  databasePath: config.database.path,
+  migrationsFolder: config.database.migrationsFolder,
+  runMigrations: config.database.runMigrations,
+});
+let exitCode = 0;
 
-if (result.status === "invalid") {
-  console.error("Import file is invalid:");
-  console.error(result.error);
-  process.exit(1);
+try {
+  const rawInput = await readFile(inputPath, "utf8");
+  const result = await importAcronymEntries(database.db, JSON.parse(rawInput));
+
+  if (result.status === "invalid") {
+    console.error("Import file is invalid:");
+    console.error(result.error);
+    exitCode = 1;
+  } else {
+    for (const index of result.errors) {
+      console.error(
+        `Failed to import entry at index ${index.index}:`,
+        index.error,
+      );
+    }
+
+    console.log(
+      `Import complete: ${result.inserted} inserted, ${result.skippedDuplicates} duplicates skipped, ${result.failed} failed.`,
+    );
+
+    if (result.failed > 0) {
+      exitCode = 1;
+    }
+  }
+} finally {
+  database.close();
 }
 
-for (const index of result.errors) {
-  console.error(`Failed to import entry at index ${index.index}:`, index.error);
-}
-
-console.log(
-  `Import complete: ${result.inserted} inserted, ${result.skippedDuplicates} duplicates skipped, ${result.failed} failed.`,
-);
-
-if (result.failed > 0) {
-  process.exit(1);
-}
+process.exitCode = exitCode;

@@ -1,17 +1,35 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { afterEach, describe, expect, it } from "vitest";
 
+import { closeApplication, initializeApplication } from "../bootstrap.server";
+import { parseAppConfig } from "../config.server";
 import {
   buildNewAcronymEntry,
+  createAcronymEntry,
   createAcronymRepository,
+  findExactDuplicate,
+  findPublishedByAcronym,
+  findPublishedByVariant,
+  listPublishedAcronyms,
 } from "./acronyms.server";
 import { createTestDatabase } from "../../test/helpers/database";
 
 describe("acronym repository", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];
+  const applicationDirectories: string[] = [];
 
   afterEach(() => {
+    closeApplication();
+
     for (const database of databases.splice(0)) {
       database.remove();
+    }
+
+    for (const directory of applicationDirectories.splice(0)) {
+      rmSync(directory, { recursive: true, force: true });
     }
   });
 
@@ -161,5 +179,34 @@ describe("acronym repository", () => {
     await expect(
       repository.findPublishedByVariant("api", 3),
     ).resolves.toBeNull();
+  });
+
+  it("serves route-facing operations through the initialized application", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "acronymicon-app-db-test-"));
+    applicationDirectories.push(directory);
+    const config = parseAppConfig({
+      NODE_ENV: "test",
+      DATABASE_PATH: join(directory, "acronymicon.sqlite"),
+      DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
+    });
+    initializeApplication(config, { registerShutdownHandlers: false });
+
+    await expect(
+      createAcronymEntry({
+        acronym: "API",
+        definition: "Application Programming Interface",
+      }),
+    ).resolves.toMatchObject({ variant: 1 });
+    await expect(
+      findExactDuplicate({
+        acronym: "api",
+        definition: "Application Programming Interface",
+      }),
+    ).resolves.toMatchObject({ definition: "Application Programming Interface" });
+    await expect(findPublishedByAcronym("API")).resolves.toHaveLength(1);
+    await expect(findPublishedByVariant("API", 1)).resolves.toMatchObject({
+      acronym: "API",
+    });
+    await expect(listPublishedAcronyms("API")).resolves.toHaveLength(1);
   });
 });

@@ -9,6 +9,7 @@ export function createTestDatabase() {
   const database = createDatabase({
     databasePath: join(directory, "acronymicon.sqlite"),
     migrationsFolder: join(process.cwd(), "drizzle"),
+    runMigrations: true,
   });
 
   return {
