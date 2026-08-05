@@ -4,6 +4,7 @@ import { Form, useSubmit } from "react-router";
 
 import { getOptionalUser } from "../auth/session.server";
 import { DictionaryList } from "../components/dictionary-list";
+import { HeaderActions } from "../components/header-actions";
 import { listPublishedAcronyms, type AcronymSort } from "../db/acronyms.server";
 
 export function meta() {
@@ -71,49 +72,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 text-sm md:items-end">
-            {user ? (
-              <>
-                <p className="text-slate-500">
-                  Signed in as{" "}
-                  <span className="font-medium text-slate-700">
-                    {user.displayName ?? user.username}
-                  </span>
-                </p>
-                <div className="flex items-center gap-4">
-                  <a
-                    href="/submit"
-                    className="font-medium text-slate-800 underline-offset-4 hover:underline"
-                  >
-                    Submit acronym
-                  </a>
-                  <Form method="post" action="/auth/logout">
-                    <button
-                      type="submit"
-                      className="font-medium text-slate-600 underline-offset-4 hover:underline"
-                    >
-                      Sign out
-                    </button>
-                  </Form>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center gap-4">
-                <a
-                  href="/submit"
-                  className="font-medium text-slate-800 underline-offset-4 hover:underline"
-                >
-                  Submit acronym
-                </a>
-                <a
-                  href="/auth/login"
-                  className="font-medium text-slate-600 underline-offset-4 hover:underline"
-                >
-                  Sign in
-                </a>
-              </div>
-            )}
-          </div>
+          <HeaderActions user={user} />
         </header>
 
         <section aria-label="Search dictionary">

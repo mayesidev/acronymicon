@@ -1,10 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
 
-test.describe.configure({ mode: "serial" });
-
 test("anonymous users can browse and search seeded entries", async ({
   page,
 }) => {
+  const hydrationErrors: string[] = [];
+  page.on("console", (message) => {
+    if (
+      message.type() === "error" &&
+      message.text().includes("hydrated but some attributes")
+    ) {
+      hydrationErrors.push(message.text());
+    }
+  });
+
   await page.goto("/");
 
   await expect(
@@ -22,6 +30,7 @@ test("anonymous users can browse and search seeded entries", async ({
   await expect(
     page.getByText("Application Programming Interface"),
   ).toBeHidden();
+  expect(hydrationErrors).toEqual([]);
 });
 
 test("users can open a specific definition variant and see marked ranges", async ({
@@ -42,7 +51,7 @@ test("users can open a specific definition variant and see marked ranges", async
   ).toHaveAttribute("href", "/define?acr=radar");
 });
 
-test("users can submit, review duplicates, sign out, and switch accounts", async ({
+test("users can submit and review duplicate definitions", async ({
   page,
 }) => {
   await page.goto("/submit");
@@ -67,13 +76,26 @@ test("users can submit, review duplicates, sign out, and switch accounts", async
 
   await page.goto("/submit");
   await submit(page, "E2E", "End To End Verification");
-  await expect(page.getByRole("alert")).toContainText(
+  const exactDuplicateWarning = page.getByRole("alert");
+  await expect(exactDuplicateWarning).toContainText(
     "This definition already exists",
   );
+  await expect(exactDuplicateWarning).toContainText("End To End Verification");
+  await expect(exactDuplicateWarning).not.toContainText(
+    "Browser Integration Verification",
+  );
   await expect(page.getByRole("button", { name: "Submit" })).toBeDisabled();
+});
+
+test("users can sign out and switch accounts", async ({ page }) => {
+  await page.goto("/submit");
+  await signIn(page, "user");
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Sign out" }).click();
+  const account = page.getByRole("group", { name: "Account" });
+  await expect(account).toContainText("Signed in as");
+  await expect(account).toContainText("Local User");
+  await account.getByRole("button", { name: "Sign out" }).click();
   await page.getByRole("button", { name: "Logout" }).click();
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
 

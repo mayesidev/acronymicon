@@ -69,7 +69,7 @@ export default function Login({ loaderData }: Route.ComponentProps) {
         </p>
         <a
           href="/"
-          className="mt-5 inline-block text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+          className="text-link mt-5 inline-block text-sm"
         >
           Return to dictionary
         </a>

@@ -134,7 +134,10 @@ export function createAcronymRepository(database: AppDatabase) {
     definition: string;
   }) {
     const [duplicate] = await database
-      .select({ id: acronymEntries.id })
+      .select({
+        id: acronymEntries.id,
+        definition: acronymEntries.definition,
+      })
       .from(acronymEntries)
       .where(
         and(

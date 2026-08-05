@@ -9,6 +9,7 @@ import {
   findPublishedByAcronym,
 } from "../db/acronyms.server";
 import { getOptionalUser } from "../auth/session.server";
+import { DuplicateFeedback } from "../components/duplicate-feedback";
 import {
   DefinitionMarkupError,
   parseDefinitionMarkup,
@@ -21,6 +22,8 @@ const submissionSchema = z.object({
   notes: z.string().trim().optional(),
   confirmDuplicate: z.literal("true").optional(),
 });
+
+const exactDuplicateMessage = "This acronym and definition already exist.";
 
 type SubmissionFieldName = "acronym" | "definition" | "notes";
 
@@ -46,7 +49,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       checkedAcronym: "",
       checkedDefinition: "",
       existingEntries: [],
-      exactDuplicate: false,
+      exactDuplicate: null,
       definitionError: null,
     };
   }
@@ -58,7 +61,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       checkedAcronym: acronym,
       checkedDefinition: definition,
       existingEntries: await findPublishedByAcronym(acronym),
-      exactDuplicate: false,
+      exactDuplicate: null,
       definitionError,
     };
   }
@@ -66,8 +69,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   const [existingEntries, exactDuplicate] = await Promise.all([
     findPublishedByAcronym(acronym),
     definition
-      ? findExactDuplicate({ acronym, definition }).then(Boolean)
-      : Promise.resolve(false),
+      ? findExactDuplicate({ acronym, definition })
+      : Promise.resolve(null),
   ]);
 
   return {
@@ -95,6 +98,7 @@ export async function action({ request }: Route.ActionArgs) {
       {
         status: "error" as const,
         errors: parsed.error.flatten().fieldErrors,
+        exactDuplicate: null,
         values: getSubmissionValues(formData),
       },
       { status: 400 },
@@ -109,6 +113,7 @@ export async function action({ request }: Route.ActionArgs) {
       {
         status: "error" as const,
         errors: { definition: [definitionError] },
+        exactDuplicate: null,
         values,
       },
       { status: 400 },
@@ -122,8 +127,9 @@ export async function action({ request }: Route.ActionArgs) {
       {
         status: "error" as const,
         errors: {
-          definition: ["This acronym and definition already exist."],
+          definition: [exactDuplicateMessage],
         },
+        exactDuplicate,
         values,
       },
       { status: 400 },
@@ -192,24 +198,24 @@ export default function SubmitAcronym({
     actionData?.status === "duplicate-warning" &&
     actionData.values.acronym === acronym &&
     actionData.values.definition === definition;
-  const actionExactDuplicateMatchesCurrentInput =
+  const actionExactDuplicate =
     actionData?.status === "error" &&
     actionData.values.acronym === acronym &&
     actionData.values.definition === definition &&
-    getFieldError(actionData, "definition") ===
-      "This acronym and definition already exist.";
+    getFieldError(actionData, "definition") === exactDuplicateMessage
+      ? actionData.exactDuplicate
+      : null;
+  const exactDuplicate =
+    actionExactDuplicate ?? currentCheck?.exactDuplicate ?? null;
   const existingEntries = actionWarningMatchesCurrentInput
     ? actionData.existingEntries
     : currentCheck
       ? currentCheck.existingEntries
       : [];
-  const exactDuplicate =
-    actionExactDuplicateMatchesCurrentInput ||
-    (currentCheck?.exactDuplicate ?? false);
   const definitionError =
     localDefinitionError ?? currentCheck?.definitionError ?? null;
   const showDuplicateWarning = !exactDuplicate && existingEntries.length > 0;
-  const showDuplicateFeedback = exactDuplicate || showDuplicateWarning;
+  const showDuplicateFeedback = Boolean(exactDuplicate) || showDuplicateWarning;
   const definitionFieldError = getFieldError(actionData, "definition");
 
   return (
@@ -218,7 +224,7 @@ export default function SubmitAcronym({
         <header className="border-b border-slate-200 pb-5">
           <a
             href="/"
-            className="text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+            className="text-link text-sm"
           >
             Back to dictionary
           </a>
@@ -231,15 +237,13 @@ export default function SubmitAcronym({
           </p>
         </header>
 
-        <div className="h-40 overflow-y-auto" aria-live="polite">
-          {showDuplicateFeedback ? (
-            <DuplicateWarning
-              acronym={acronym}
-              exactDuplicate={exactDuplicate}
-              existingEntries={existingEntries}
-            />
-          ) : null}
-        </div>
+        {showDuplicateFeedback ? (
+          <DuplicateFeedback
+            acronym={acronym}
+            exactDuplicate={exactDuplicate}
+            existingEntries={existingEntries}
+          />
+        ) : null}
 
         <Form
           method="post"
@@ -264,7 +268,7 @@ export default function SubmitAcronym({
               label="Definition"
               error={
                 (definitionFieldError ===
-                "This acronym and definition already exist."
+                exactDuplicateMessage
                   ? undefined
                   : definitionFieldError) ??
                 definitionError ??
@@ -312,45 +316,6 @@ export default function SubmitAcronym({
         </Form>
       </div>
     </main>
-  );
-}
-
-function DuplicateWarning({
-  acronym,
-  exactDuplicate,
-  existingEntries,
-}: {
-  acronym: string;
-  exactDuplicate: boolean;
-  existingEntries: Awaited<ReturnType<typeof findPublishedByAcronym>>;
-}) {
-  return (
-    <section
-      className={
-        exactDuplicate
-          ? "rounded border border-red-300 bg-red-50 p-4 text-red-950"
-          : "rounded border border-amber-300 bg-amber-50 p-4 text-amber-950"
-      }
-      role={exactDuplicate ? "alert" : undefined}
-    >
-      <h2 className="font-semibold tracking-normal">
-        {exactDuplicate
-          ? "This definition already exists"
-          : `${acronym.toUpperCase()} already exists`}
-      </h2>
-      <p className="mt-1 text-sm">
-        {exactDuplicate
-          ? "An identical acronym and definition is already in the dictionary."
-          : "Review the existing definitions before submitting another meaning."}
-      </p>
-      {existingEntries.length > 0 ? (
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
-          {existingEntries.map((entry) => (
-            <li key={entry.id}>{entry.definition}</li>
-          ))}
-        </ul>
-      ) : null}
-    </section>
   );
 }
 

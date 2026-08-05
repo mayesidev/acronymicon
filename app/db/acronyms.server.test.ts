@@ -50,6 +50,7 @@ describe("acronym repository", () => {
     });
 
     expect(duplicate?.id).toEqual(expect.any(String));
+    expect(duplicate?.definition).toBe("Application Programming Interface");
 
     await expect(
       repository.findExactDuplicate({
