@@ -1,5 +1,12 @@
 import { defineConfig } from "vitest/config";
 
+const presentationCoverageThresholds = {
+  statements: 80,
+  branches: 55,
+  functions: 75,
+  lines: 80,
+};
+
 export default defineConfig({
   test: {
     include: ["app/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
@@ -24,12 +31,11 @@ export default defineConfig({
           functions: 30,
           lines: 30,
         },
-        "app/components/**": {
-          statements: 80,
-          branches: 55,
-          functions: 75,
-          lines: 80,
-        },
+        // Presentation keeps the same policy whether it is shared or feature-owned.
+        "app/components/**": presentationCoverageThresholds,
+        "app/features/**/components/**": presentationCoverageThresholds,
+        "app/features/**/{hooks/**,use-*.{ts,tsx}}":
+          presentationCoverageThresholds,
         "app/db/**": {
           statements: 90,
           branches: 80,
