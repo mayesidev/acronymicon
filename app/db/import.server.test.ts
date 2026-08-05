@@ -30,9 +30,9 @@ describe("acronym import", () => {
       },
     ];
 
-    await expect(
+    expect(
       importAcronymEntries(database.db, entries),
-    ).resolves.toMatchObject({
+    ).toMatchObject({
       status: "complete",
       inserted: 2,
       skippedDuplicates: 0,
@@ -64,9 +64,9 @@ describe("acronym import", () => {
       },
     ]);
 
-    await expect(
+    expect(
       importAcronymEntries(database.db, entries),
-    ).resolves.toMatchObject({
+    ).toMatchObject({
       status: "complete",
       inserted: 0,
       skippedDuplicates: 2,
@@ -74,27 +74,27 @@ describe("acronym import", () => {
     });
   });
 
-  it("reports invalid input without writing to the database", async () => {
+  it("reports invalid input without writing to the database", () => {
     const database = createTestDatabase();
     databases.push(database);
 
-    const result = await importAcronymEntries(database.db, [
+    const result = importAcronymEntries(database.db, [
       { acronym: "", definition: "Missing acronym" },
     ]);
 
     expect(result.status).toBe("invalid");
   });
 
-  it("isolates malformed definition markup to the failing entry", async () => {
+  it("isolates malformed definition markup to the failing entry", () => {
     const database = createTestDatabase();
     databases.push(database);
 
-    await expect(
+    expect(
       importAcronymEntries(database.db, [
         { acronym: "RADAR", definition: "[Ra]dio [D]etection [" },
         { acronym: "API", definition: "Application Programming Interface" },
       ]),
-    ).resolves.toMatchObject({
+    ).toMatchObject({
       status: "complete",
       inserted: 1,
       skippedDuplicates: 0,

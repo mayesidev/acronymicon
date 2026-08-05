@@ -57,7 +57,7 @@ describe("acronym repository", () => {
     databases.push(database);
     const repository = createAcronymRepository(database.db);
 
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "API",
       definition: "Application Programming Interface",
     });
@@ -83,7 +83,7 @@ describe("acronym repository", () => {
     databases.push(database);
     const repository = createAcronymRepository(database.db);
 
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "API",
       definition: "Application Programming Interface",
       notes: "Systems integration",
@@ -105,11 +105,11 @@ describe("acronym repository", () => {
     databases.push(database);
     const repository = createAcronymRepository(database.db);
 
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "ZULU",
       definition: "Zulu Definition",
     });
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "ALPHA",
       definition: "Alpha Definition",
     });
@@ -125,15 +125,15 @@ describe("acronym repository", () => {
     databases.push(database);
     const repository = createAcronymRepository(database.db);
 
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "APP",
       definition: "Application Profile",
     });
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "API",
       definition: "Application Programming Interface",
     });
-    await repository.createAcronymEntry({
+    repository.createAcronymEntry({
       acronym: "APR",
       definition: "Annual Performance Review",
     });
@@ -155,19 +155,35 @@ describe("acronym repository", () => {
     databases.push(database);
     const repository = createAcronymRepository(database.db);
 
-    await expect(
+    expect(
       repository.createAcronymEntry({
         acronym: "API",
         definition: "Application Programming Interface",
       }),
-    ).resolves.toMatchObject({ variant: 1 });
+    ).toMatchObject({
+      status: "created",
+      entry: { variant: 1 },
+    });
 
-    await expect(
+    expect(
       repository.createAcronymEntry({
         acronym: "API",
         definition: "Annual Performance Index",
       }),
-    ).resolves.toMatchObject({ variant: 2 });
+    ).toMatchObject({
+      status: "created",
+      entry: { variant: 2 },
+    });
+
+    expect(
+      repository.createAcronymEntry({
+        acronym: " api ",
+        definition: "[A]pplication [P]rogramming [I]nterface",
+      }),
+    ).toMatchObject({
+      status: "duplicate",
+      duplicate: { definition: "Application Programming Interface" },
+    });
 
     await expect(
       repository.findPublishedByVariant("api", 2),
@@ -191,12 +207,15 @@ describe("acronym repository", () => {
     });
     initializeApplication(config, { registerShutdownHandlers: false });
 
-    await expect(
+    expect(
       createAcronymEntry({
         acronym: "API",
         definition: "Application Programming Interface",
       }),
-    ).resolves.toMatchObject({ variant: 1 });
+    ).toMatchObject({
+      status: "created",
+      entry: { variant: 1 },
+    });
     await expect(
       findExactDuplicate({
         acronym: "api",

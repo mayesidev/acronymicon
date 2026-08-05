@@ -22,7 +22,7 @@ let exitCode = 0;
 
 try {
   const rawInput = await readFile(inputPath, "utf8");
-  const result = await importAcronymEntries(database.db, JSON.parse(rawInput));
+  const result = importAcronymEntries(database.db, JSON.parse(rawInput));
 
   if (result.status === "invalid") {
     console.error("Import file is invalid:");
