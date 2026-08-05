@@ -1,9 +1,4 @@
-import type { SubmissionValues } from "../model";
-
-export type SubmissionDuplicateEntry = {
-  id: string;
-  definition: string;
-};
+import type { SubmissionDuplicateEntry, SubmissionValues } from "../model";
 
 export type SubmissionCreatedEntry = {
   acronym: string;

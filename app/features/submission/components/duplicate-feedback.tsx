@@ -1,7 +1,4 @@
-type DuplicateEntry = {
-  id: string;
-  definition: string;
-};
+import type { SubmissionDuplicateEntry } from "../model";
 
 export function DuplicateFeedback({
   acronym,
@@ -9,8 +6,8 @@ export function DuplicateFeedback({
   existingEntries,
 }: {
   acronym: string;
-  exactDuplicate: DuplicateEntry | null;
-  existingEntries: DuplicateEntry[];
+  exactDuplicate: SubmissionDuplicateEntry | null;
+  existingEntries: SubmissionDuplicateEntry[];
 }) {
   if (exactDuplicate) {
     return (
@@ -49,7 +46,7 @@ export function DuplicateFeedback({
   );
 }
 
-function DefinitionList({ entries }: { entries: DuplicateEntry[] }) {
+function DefinitionList({ entries }: { entries: SubmissionDuplicateEntry[] }) {
   return (
     <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
       {entries.map((entry) => (

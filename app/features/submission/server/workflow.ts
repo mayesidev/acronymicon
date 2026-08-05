@@ -1,18 +1,10 @@
-import type { SubmissionValues } from "../model";
-import { evaluateDuplicatePolicy, getDefinitionError } from "../policy";
 import type {
   SubmissionDuplicateEntry,
-  SubmissionRepository,
-  SubmissionSubmitter,
-} from "./repository";
-
-export type DuplicatePreview = {
-  checkedAcronym: string;
-  checkedDefinition: string;
-  existingEntries: SubmissionDuplicateEntry[];
-  exactDuplicate: SubmissionDuplicateEntry | null;
-  definitionError: string | null;
-};
+  SubmissionDuplicatePreview,
+  SubmissionValues,
+} from "../model";
+import { evaluateDuplicatePolicy, getDefinitionError } from "../policy";
+import type { SubmissionRepository, SubmissionSubmitter } from "./repository";
 
 export type SubmissionOutcome =
   | {
@@ -33,7 +25,7 @@ export function createSubmissionWorkflow(repository: SubmissionRepository) {
   async function loadDuplicatePreview(input: {
     acronym: string;
     definition: string;
-  }): Promise<DuplicatePreview> {
+  }): Promise<SubmissionDuplicatePreview> {
     const acronym = input.acronym.trim();
     const definition = input.definition;
 
@@ -116,7 +108,7 @@ export function createSubmissionWorkflow(repository: SubmissionRepository) {
   return { loadDuplicatePreview, submit };
 }
 
-const emptyDuplicatePreview: DuplicatePreview = {
+const emptyDuplicatePreview: SubmissionDuplicatePreview = {
   checkedAcronym: "",
   checkedDefinition: "",
   existingEntries: [],
