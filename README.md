@@ -86,21 +86,23 @@ The import command accepts either an array of entries or an object with an `entr
 
 Browsing does not require login. Submitting acronyms requires a signed-in user.
 
-OIDC configuration is provider-neutral. Keycloak can be used for local development, but production can use any compatible provider.
+OIDC configuration is provider-neutral. Keycloak can be used for local
+development, but production can use any compatible provider. `SESSION_SECRET`
+is required in production.
 
-Required OIDC environment variables:
+To enable OIDC, configure all three provider credentials:
 
 ```txt
-SESSION_SECRET
 OIDC_ISSUER_URL
 OIDC_CLIENT_ID
 OIDC_CLIENT_SECRET
-OIDC_REDIRECT_URI
 ```
 
-For provider logout, set `OIDC_POST_LOGOUT_REDIRECT_URI` to a URI registered
-with the OIDC provider. Optional claim mapping variables are documented in
-`.env.example`.
+If any OIDC setting is present without those credentials, startup fails with a
+configuration error. `OIDC_REDIRECT_URI` defaults to `/auth/callback` on the
+request origin. For provider logout, set `OIDC_POST_LOGOUT_REDIRECT_URI` to a
+URI registered with the OIDC provider. Boolean settings accept only `true` or
+`false`; optional claim mapping variables are documented in `.env.example`.
 
 ## Verification
 

@@ -1,15 +1,12 @@
 import * as oidc from "openid-client";
 
+import { getAppConfig } from "../config.server";
 import type { AuthUser } from "./session.server";
 
 let cachedConfig: Promise<oidc.Configuration | null> | null = null;
 
 export function isOidcConfigured() {
-  return Boolean(
-    process.env.OIDC_ISSUER_URL &&
-      process.env.OIDC_CLIENT_ID &&
-      process.env.OIDC_CLIENT_SECRET,
-  );
+  return getAppConfig().oidc !== null;
 }
 
 export async function getOidcConfig() {
@@ -22,20 +19,20 @@ export async function getOidcConfig() {
 
 export function getOidcRedirectUri(request: Request) {
   return (
-    process.env.OIDC_REDIRECT_URI ??
+    getAppConfig().oidc?.redirectUri ??
     new URL("/auth/callback", request.url).toString()
   );
 }
 
 export function getOidcPostLogoutRedirectUri(request: Request) {
   return (
-    process.env.OIDC_POST_LOGOUT_REDIRECT_URI ||
+    getAppConfig().oidc?.postLogoutRedirectUri ??
     new URL("/", request.url).toString()
   );
 }
 
 export function getOidcScopes() {
-  return process.env.OIDC_SCOPES ?? "openid profile email";
+  return getAppConfig().oidc?.scopes ?? "openid profile email";
 }
 
 export async function buildAuthorizationUrl(input: {
@@ -137,23 +134,32 @@ export function randomOidcCodeVerifier() {
 }
 
 async function discoverOidcConfig() {
-  if (!isOidcConfigured()) {
+  const config = getAppConfig().oidc;
+
+  if (!config) {
     return null;
   }
 
   return oidc.discovery(
-    new URL(requiredEnv("OIDC_ISSUER_URL")),
-    requiredEnv("OIDC_CLIENT_ID"),
-    requiredEnv("OIDC_CLIENT_SECRET"),
+    new URL(config.issuerUrl),
+    config.clientId,
+    config.clientSecret,
     undefined,
-    process.env.OIDC_ALLOW_INSECURE_HTTP === "true"
+    config.allowInsecureHttp
       ? { execute: [oidc.allowInsecureRequests] }
       : undefined,
   );
 }
 
 export function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
-  const id = getClaimString(claims, process.env.OIDC_CLAIM_USER_ID ?? "sub");
+  const claimConfig = getAppConfig().oidc?.claims ?? {
+    userId: "sub",
+    username: undefined,
+    displayName: undefined,
+    email: "email",
+    groups: "groups",
+  };
+  const id = getClaimString(claims, claimConfig.userId);
 
   if (!id) {
     throw new Error("OIDC claims did not include a stable user identifier.");
@@ -163,7 +169,7 @@ export function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
     id,
     username:
       getFirstClaimString(claims, [
-        process.env.OIDC_CLAIM_USERNAME,
+        claimConfig.username,
         "preferred_username",
         "upn",
         "email",
@@ -171,14 +177,11 @@ export function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
         "sub",
       ]) ?? id,
     displayName: getFirstClaimString(claims, [
-      process.env.OIDC_CLAIM_DISPLAY_NAME,
+      claimConfig.displayName,
       "name",
     ]),
-    email: getClaimString(claims, process.env.OIDC_CLAIM_EMAIL ?? "email"),
-    groups: getClaimStringArray(
-      claims,
-      process.env.OIDC_CLAIM_GROUPS ?? "groups",
-    ),
+    email: getClaimString(claims, claimConfig.email),
+    groups: getClaimStringArray(claims, claimConfig.groups),
   };
 }
 
@@ -217,14 +220,4 @@ function getClaimStringArray(
   }
 
   return value.filter((item): item is string => typeof item === "string");
-}
-
-function requiredEnv(name: string) {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`${name} is required.`);
-  }
-
-  return value;
 }
