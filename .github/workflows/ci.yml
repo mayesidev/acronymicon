@@ -39,10 +39,11 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           CURRENT_SHA: ${{ github.sha }}
         run: |
-          if [[ "$EVENT_NAME" == "workflow_call" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_call" || ( -z "$PR_BASE_SHA" && -z "$BEFORE_SHA" ) ]]; then
             echo "browser=true" >> "$GITHUB_OUTPUT"
             echo "application=true" >> "$GITHUB_OUTPUT"
             echo "container=true" >> "$GITHUB_OUTPUT"
+            echo "multi_arch=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
