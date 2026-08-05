@@ -13,7 +13,7 @@ import {
   findExactDuplicate,
   findPublishedByAcronym,
   findPublishedByVariant,
-  listPublishedAcronyms,
+  listPublishedEntries,
 } from "./acronyms.server";
 import { createTestDatabase } from "../../test/helpers/database";
 
@@ -78,29 +78,7 @@ describe("acronym repository", () => {
     ).resolves.toBeNull();
   });
 
-  it("searches published entries through user-visible fields", async () => {
-    const database = createTestDatabase();
-    databases.push(database);
-    const repository = createAcronymRepository(database.db);
-
-    repository.createAcronymEntry({
-      acronym: "API",
-      definition: "Application Programming Interface",
-      notes: "Systems integration",
-    });
-
-    await expect(
-      repository.listPublishedAcronyms("interface"),
-    ).resolves.toHaveLength(1);
-    await expect(
-      repository.listPublishedAcronyms("integration"),
-    ).resolves.toHaveLength(0);
-    await expect(
-      repository.listPublishedAcronyms("missing"),
-    ).resolves.toHaveLength(0);
-  });
-
-  it("lists published entries alphabetically by default", async () => {
+  it("lists published entries as feature read models", async () => {
     const database = createTestDatabase();
     databases.push(database);
     const repository = createAcronymRepository(database.db);
@@ -114,40 +92,10 @@ describe("acronym repository", () => {
       definition: "Alpha Definition",
     });
 
-    await expect(repository.listPublishedAcronyms("")).resolves.toMatchObject([
+    await expect(repository.listPublishedEntries()).resolves.toMatchObject([
       { acronym: "ALPHA", variant: 1 },
       { acronym: "ZULU", variant: 1 },
     ]);
-  });
-
-  it("ranks exact matches before substring and minor typo matches", async () => {
-    const database = createTestDatabase();
-    databases.push(database);
-    const repository = createAcronymRepository(database.db);
-
-    repository.createAcronymEntry({
-      acronym: "APP",
-      definition: "Application Profile",
-    });
-    repository.createAcronymEntry({
-      acronym: "API",
-      definition: "Application Programming Interface",
-    });
-    repository.createAcronymEntry({
-      acronym: "APR",
-      definition: "Annual Performance Review",
-    });
-
-    await expect(
-      repository.listPublishedAcronyms("api"),
-    ).resolves.toMatchObject([
-      { acronym: "API" },
-      { acronym: "APP" },
-      { acronym: "APR" },
-    ]);
-    await expect(
-      repository.listPublishedAcronyms("applcation"),
-    ).resolves.toMatchObject([{ acronym: "API" }, { acronym: "APP" }]);
   });
 
   it("assigns stable variants per acronym for shareable links", async () => {
@@ -221,11 +169,13 @@ describe("acronym repository", () => {
         acronym: "api",
         definition: "Application Programming Interface",
       }),
-    ).resolves.toMatchObject({ definition: "Application Programming Interface" });
+    ).resolves.toMatchObject({
+      definition: "Application Programming Interface",
+    });
     await expect(findPublishedByAcronym("API")).resolves.toHaveLength(1);
     await expect(findPublishedByVariant("API", 1)).resolves.toMatchObject({
       acronym: "API",
     });
-    await expect(listPublishedAcronyms("API")).resolves.toHaveLength(1);
+    await expect(listPublishedEntries()).resolves.toHaveLength(1);
   });
 });

@@ -5,8 +5,13 @@ import { Form, useSubmit } from "react-router";
 import { getOptionalUser } from "../auth/session.server";
 import { DictionaryList } from "../components/dictionary-list";
 import { HeaderActions } from "../components/header-actions";
-import { listPublishedAcronyms } from "../db/acronyms.server";
+import { listPublishedEntries } from "../db/acronyms.server";
 import type { DictionarySort } from "../features/dictionary/model";
+import { createDictionaryReadService } from "../features/dictionary/server/read";
+
+const dictionaryReadService = createDictionaryReadService({
+  listPublishedEntries,
+});
 
 export function meta() {
   return [
@@ -24,7 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const sort: DictionarySort =
     url.searchParams.get("sort") === "recent" ? "recent" : "alphabetical";
   const [entries, user] = await Promise.all([
-    listPublishedAcronyms(query, sort),
+    dictionaryReadService.listPublishedAcronyms(query, sort),
     getOptionalUser(request),
   ]);
 
