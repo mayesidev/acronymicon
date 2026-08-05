@@ -1,5 +1,7 @@
 import { createCookie, createCookieSessionStorage } from "react-router";
 
+import { getAppConfig } from "../config.server";
+
 export type AuthUser = {
   id: string;
   username: string;
@@ -19,19 +21,7 @@ type SessionFlashData = {
   authError: string;
 };
 
-const sessionSecret =
-  process.env.SESSION_SECRET ??
-  (process.env.NODE_ENV === "production"
-    ? undefined
-    : "dev-session-secret-change-me");
-
-if (!sessionSecret) {
-  throw new Error("SESSION_SECRET is required in production.");
-}
-
-const secureCookie =
-  process.env.SESSION_COOKIE_SECURE ??
-  (process.env.NODE_ENV === "production" ? "true" : "false");
+const sessionConfig = getAppConfig().session;
 
 const forceReauthenticationCookie = createCookie(
   "__acronymicon_force_reauthentication",
@@ -40,8 +30,8 @@ const forceReauthenticationCookie = createCookie(
     maxAge: 60 * 5,
     path: "/",
     sameSite: "lax",
-    secrets: [sessionSecret],
-    secure: secureCookie !== "false",
+    secrets: [sessionConfig.secret],
+    secure: sessionConfig.secureCookie,
   },
 );
 
@@ -53,8 +43,8 @@ export const { getSession, commitSession, destroySession } =
       maxAge: 60 * 60 * 8,
       path: "/",
       sameSite: "lax",
-      secrets: [sessionSecret],
-      secure: secureCookie !== "false",
+      secrets: [sessionConfig.secret],
+      secure: sessionConfig.secureCookie,
     },
   });
 

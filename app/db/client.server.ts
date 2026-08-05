@@ -4,6 +4,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { dirname } from "node:path";
 import { mkdirSync } from "node:fs";
 
+import { getAppConfig } from "../config.server";
 import * as schema from "./schema";
 
 export function createDatabase(options: {
@@ -11,8 +12,8 @@ export function createDatabase(options: {
   migrationsFolder?: string;
   runMigrations?: boolean;
 } = {}) {
-  const databasePath =
-    options.databasePath ?? process.env.DATABASE_PATH ?? "./data/acronymicon.sqlite";
+  const config = getAppConfig().database;
+  const databasePath = options.databasePath ?? config.path;
 
   mkdirSync(dirname(databasePath), { recursive: true });
 
@@ -22,15 +23,9 @@ export function createDatabase(options: {
 
   const db = drizzle(sqlite, { schema });
 
-  if (
-    options.runMigrations ??
-    process.env.RUN_MIGRATIONS_ON_STARTUP !== "false"
-  ) {
+  if (options.runMigrations ?? config.runMigrations) {
     migrate(db, {
-      migrationsFolder:
-        options.migrationsFolder ??
-        process.env.DRIZZLE_MIGRATIONS_PATH ??
-        "./drizzle",
+      migrationsFolder: options.migrationsFolder ?? config.migrationsFolder,
     });
   }
 
