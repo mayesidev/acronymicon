@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   DefinitionText,
   DictionaryList,
+  formatSubmittedDate,
 } from "./dictionary-list";
 
 const loaderData = {
@@ -35,10 +36,10 @@ describe("home dictionary view", () => {
     expect(
       screen.getByText("Application Programming Interface"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Submitted by Local User")).toBeInTheDocument();
+    expect(screen.getByText("Submitted Jan 1, 2026")).toBeInTheDocument();
   });
 
-  it("emphasizes marked definition ranges", () => {
+  it("underlines marked definition ranges", () => {
     render(
       <DefinitionText
         definition="Radio Detection And Ranging"
@@ -52,7 +53,41 @@ describe("home dictionary view", () => {
     );
 
     expect(
-      screen.getAllByText(/^(Ra|D|A|R)$/, { selector: "strong" }),
+      screen.getAllByText(/^(Ra|D|A|R)$/, { selector: "u" }),
     ).toHaveLength(4);
+  });
+
+  it("does not add emphasis when no ranges are defined", () => {
+    render(
+      <DefinitionText
+        definition="Application Programming Interface"
+        ranges={[]}
+      />,
+    );
+
+    expect(
+      screen.queryByText("Application Programming Interface", { selector: "u" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("groups alphabetically browsed entries by initial", () => {
+    render(
+      <DictionaryList
+        entries={[
+          { ...loaderData.entries[0], acronym: "API" },
+          { ...loaderData.entries[0], id: "entry-2", acronym: "RADAR" },
+          { ...loaderData.entries[0], id: "entry-3", acronym: "42" },
+        ]}
+        groupByLetter
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "#" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "A" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "R" })).toBeInTheDocument();
+  });
+
+  it("formats stored UTC timestamps for users", () => {
+    expect(formatSubmittedDate("2026-01-01 00:00:00")).toBe("Jan 1, 2026");
   });
 });
