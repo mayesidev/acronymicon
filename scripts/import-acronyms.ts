@@ -4,10 +4,11 @@ import { getAppConfig } from "../app/config.server";
 import { createDatabase } from "../app/db/client.server";
 import { importAcronymEntries } from "../app/db/import.server";
 
-const inputPath = process.argv[2];
+const inputArguments = process.argv.slice(2).filter((argument) => argument !== "--");
+const inputPath = inputArguments.length === 1 ? inputArguments[0] : undefined;
 
 if (!inputPath) {
-  console.error("Usage: pnpm run import:acronyms -- <path-to-json>");
+  console.error("Usage: pnpm run import:acronyms [--] <path-to-json>");
   process.exit(1);
 }
 

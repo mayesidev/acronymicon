@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { asc } from "drizzle-orm";
 
 import { createTestDatabase } from "../../test/helpers/database";
 import { importAcronymEntries } from "./import.server";
+import { acronymEntries } from "./schema";
 
 describe("acronym import", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];
@@ -18,7 +20,9 @@ describe("acronym import", () => {
     const entries = [
       {
         acronym: "API",
-        definition: "Application Programming Interface",
+        definition: "[A]pplication [P]rogramming [I]nterface",
+        notes: "  Common software term  ",
+        aliases: ["Web API"],
       },
       {
         acronym: "API",
@@ -34,6 +38,31 @@ describe("acronym import", () => {
       skippedDuplicates: 0,
       failed: 0,
     });
+
+    await expect(
+      database.db
+        .select()
+        .from(acronymEntries)
+        .orderBy(asc(acronymEntries.variant)),
+    ).resolves.toMatchObject([
+      {
+        acronym: "API",
+        definition: "Application Programming Interface",
+        definitionRanges: [
+          { start: 0, end: 1 },
+          { start: 12, end: 13 },
+          { start: 24, end: 25 },
+        ],
+        variant: 1,
+        notes: "Common software term",
+        aliases: ["Web API"],
+      },
+      {
+        acronym: "API",
+        definition: "Annual Performance Index",
+        variant: 2,
+      },
+    ]);
 
     await expect(
       importAcronymEntries(database.db, entries),

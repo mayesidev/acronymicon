@@ -8,14 +8,14 @@
     "pnpm": ">=11.20.0 <12"
   },
   "scripts": {
-    "build": "react-router build",
+    "build": "react-router build && vite build --config vite.importer.config.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate-database.ts",
     "db:seed": "tsx scripts/import-acronyms.ts seeds/acronyms.seed.json",
-    "db:seed:container": "node scripts/import-acronyms.mjs seeds/acronyms.seed.json",
+    "db:seed:container": "node build/scripts/import-acronyms.mjs seeds/acronyms.seed.json",
     "dev": "react-router dev",
     "import:acronyms": "tsx scripts/import-acronyms.ts",
-    "import:acronyms:container": "node scripts/import-acronyms.mjs",
+    "import:acronyms:container": "node build/scripts/import-acronyms.mjs",
     "lint": "eslint .",
     "lint:commit": "commitlint",
     "start": "react-router-serve ./build/server/index.js",

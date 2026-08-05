@@ -22,7 +22,6 @@ COPY --from=build-env /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.
 COPY --from=build-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
 COPY --from=build-env /app/drizzle /app/drizzle
-COPY ./scripts/import-acronyms.mjs /app/scripts/
 COPY ./seeds /app/seeds
 WORKDIR /app
 EXPOSE 3000
