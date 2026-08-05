@@ -1,35 +1,23 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 
 import { getAppDatabase } from "../bootstrap.server";
+import type {
+  DictionaryEntry,
+  DictionarySort,
+} from "../features/dictionary/model";
 import type { AppDatabase } from "./client.server";
 import {
   normalizeAcronym,
   normalizeDefinition,
   parseDefinitionMarkup,
 } from "./normalize";
-import { acronymEntries, type AcronymEntry } from "./schema";
+import { acronymEntries } from "./schema";
 import { insertAcronymEntryAtomic } from "./write.server";
-
-export type AcronymSearchResult = Pick<
-  AcronymEntry,
-  | "id"
-  | "acronym"
-  | "variant"
-  | "definition"
-  | "definitionRanges"
-  | "notes"
-  | "aliases"
-  | "submittedByUsername"
-  | "submittedByDisplayName"
-  | "createdAt"
->;
-
-export type AcronymSort = "alphabetical" | "recent";
 
 export function createAcronymRepository(database: AppDatabase) {
   async function listPublishedAcronyms(
     searchTerm: string,
-    sort: AcronymSort = "alphabetical",
+    sort: DictionarySort = "alphabetical",
   ) {
     const entries = await database
       .select({
@@ -234,7 +222,7 @@ export function buildNewAcronymEntry(input: {
 }
 
 function getSearchScore(
-  entry: AcronymSearchResult,
+  entry: DictionaryEntry,
   normalizedSearch: string,
 ): number | null {
   const fields = [entry.acronym, entry.definition].map((field) =>
@@ -267,9 +255,9 @@ function getSearchScore(
 }
 
 function compareEntries(
-  left: AcronymSearchResult,
-  right: AcronymSearchResult,
-  sort: AcronymSort,
+  left: DictionaryEntry,
+  right: DictionaryEntry,
+  sort: DictionarySort,
 ) {
   if (sort === "recent" && left.createdAt !== right.createdAt) {
     return right.createdAt.localeCompare(left.createdAt);

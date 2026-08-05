@@ -5,19 +5,23 @@ import { Form, useSubmit } from "react-router";
 import { getOptionalUser } from "../auth/session.server";
 import { DictionaryList } from "../components/dictionary-list";
 import { HeaderActions } from "../components/header-actions";
-import { listPublishedAcronyms, type AcronymSort } from "../db/acronyms.server";
+import { listPublishedAcronyms } from "../db/acronyms.server";
+import type { DictionarySort } from "../features/dictionary/model";
 
 export function meta() {
   return [
     { title: "Acronymicon" },
-    { name: "description", content: "A quick reference for acronyms and definitions" },
+    {
+      name: "description",
+      content: "A quick reference for acronyms and definitions",
+    },
   ];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q") ?? "";
-  const sort: AcronymSort =
+  const sort: DictionarySort =
     url.searchParams.get("sort") === "recent" ? "recent" : "alphabetical";
   const [entries, user] = await Promise.all([
     listPublishedAcronyms(query, sort),
@@ -119,7 +123,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <select
               value={sortValue}
               onChange={(event) =>
-                setSortValue(event.target.value as AcronymSort)
+                setSortValue(event.target.value as DictionarySort)
               }
               className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-950"
             >

@@ -36,6 +36,13 @@ The app runs at:
 http://localhost:5173
 ```
 
+## Architecture
+
+The target source layout and allowed dependency direction are documented in
+[the application module boundaries](docs/architecture/modules.md). Keep tests
+beside their owning modules and preserve these boundaries when adding or moving
+application code.
+
 ## Database
 
 The MVP uses app-owned SQLite through Drizzle.

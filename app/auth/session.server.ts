@@ -1,14 +1,7 @@
 import { createCookie, createCookieSessionStorage } from "react-router";
 
 import { getAppConfig } from "../config.server";
-
-export type AuthUser = {
-  id: string;
-  username: string;
-  displayName?: string;
-  email?: string;
-  groups: string[];
-};
+import type { AuthUser } from "../features/authentication/model";
 
 type SessionData = {
   user: AuthUser;
@@ -59,9 +52,8 @@ export async function createForceReauthenticationCookie() {
 
 export async function hasForceReauthentication(request: Request) {
   return (
-    (await forceReauthenticationCookie.parse(
-      request.headers.get("Cookie"),
-    )) === true
+    (await forceReauthenticationCookie.parse(request.headers.get("Cookie"))) ===
+    true
   );
 }
 

@@ -7,7 +7,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import type { DefinitionRange } from "./normalize";
+import type { DefinitionRange } from "../domain/acronym";
 
 export const acronymEntries = sqliteTable(
   "acronym_entries",
