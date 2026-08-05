@@ -149,6 +149,10 @@ docker compose pull app
 docker compose up -d
 ```
 
+The `v0.2.0` image is currently published for `linux/amd64`. On an ARM64
+host, also export `DOCKER_DEFAULT_PLATFORM=linux/amd64` before running those
+commands.
+
 The published image applies bundled database migrations on startup. Open the
 app at `http://localhost:3000`. Remove the `ACRONYMICON_IMAGE` variable and
 run `docker compose up --build` to return to the local source build.
