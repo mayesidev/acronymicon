@@ -65,7 +65,7 @@ export default function Define({ loaderData }: Route.ComponentProps) {
         </p>
         <a
           href={`/define?acr=${encodeURIComponent(loaderData.acronym)}`}
-          className="mt-4 inline-block text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+          className="text-link mt-4 inline-block text-sm"
         >
           View all definitions for {loaderData.acronym}
         </a>
@@ -131,7 +131,7 @@ function BackLink() {
   return (
     <a
       href="/"
-      className="mt-6 inline-block text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+      className="text-link mt-6 inline-block text-sm"
     >
       Back to dictionary
     </a>

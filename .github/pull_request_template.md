@@ -7,12 +7,16 @@ or `feat: allow editing definitions`.
 
 ## Validation
 
-- [ ] `pnpm run lint`
-- [ ] `pnpm run typecheck`
-- [ ] `pnpm test`
-- [ ] `pnpm run build`
+- [ ] `pnpm run verify`
 - [ ] `pnpm run security:check`
 - [ ] `pnpm test:e2e` when browser or authentication behavior changed
+- [ ] `pnpm run test:container` when container behavior changed
+
+## Delivery
+
+- [ ] Changes are committed on a focused branch and pushed
+- [ ] Required pull request checks have passed
+- [ ] The pull request is ready to squash-merge
 
 ## Notes
 

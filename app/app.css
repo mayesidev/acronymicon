@@ -83,6 +83,31 @@ html.dark .text-red-700 {
   color: #fca5a5;
 }
 
+html.dark .bg-red-50 {
+  background-color: #450a0a;
+}
+
+html.dark .text-red-950 {
+  color: #fee2e2;
+}
+
+html.dark .border-red-300 {
+  border-color: #b91c1c;
+}
+
+.text-link {
+  @apply font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+html.dark .text-link,
+html.dark .text-link:hover {
+  color: #93c5fd;
+}
+
+html.dark .text-link {
+  text-decoration-color: #60a5fa;
+}
+
 .form-input {
   @apply w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200;
 }

@@ -27,7 +27,7 @@ required for the Keycloak-backed end-to-end suite.
 Run the development server:
 
 ```bash
-pnpm run dev -- --host 0.0.0.0
+pnpm run dev --host 0.0.0.0
 ```
 
 The app runs at:
@@ -107,12 +107,10 @@ with the OIDC provider. Optional claim mapping variables are documented in
 Run the automated checks relevant to a change:
 
 ```bash
-pnpm run lint
-pnpm run typecheck
-pnpm test
-pnpm run build
+pnpm run verify
 pnpm run security:check
 pnpm test:e2e
+pnpm run test:container
 ```
 
 Pull requests use Conventional Commit titles, such as `fix: correct logout
@@ -121,17 +119,8 @@ semantic-release creates releases automatically after successful builds on
 `main`. Use squash merging so the validated pull request title is retained
 for release analysis.
 
-Run typecheck:
-
-```bash
-pnpm run typecheck
-```
-
-Build for production:
-
-```bash
-pnpm run build
-```
+`pnpm run verify` runs type generation and typechecking, linting, unit and
+server tests with enforced coverage thresholds, and a production build.
 
 ## Docker
 
@@ -199,7 +188,7 @@ docker compose start app
 Seed the running container explicitly when needed:
 
 ```bash
-docker compose exec app pnpm run db:seed:container
+docker compose exec app node scripts/import-acronyms.mjs seeds/acronyms.seed.json
 ```
 
 Import another JSON file into the running container by copying it into the
@@ -207,5 +196,5 @@ container first, then running the container importer:
 
 ```bash
 docker cp path/to/acronyms.json $(docker compose ps -q app):/tmp/acronyms.json
-docker compose exec app pnpm run import:acronyms:container -- /tmp/acronyms.json
+docker compose exec app node scripts/import-acronyms.mjs /tmp/acronyms.json
 ```
