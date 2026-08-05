@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type {
   SubmissionFieldErrors,
+  SubmissionFormValues,
   SubmissionValues,
 } from "../model";
 import { getDefinitionError } from "../policy";
@@ -23,12 +24,6 @@ export type SubmissionValidationResult =
       status: "valid";
       values: SubmissionValues;
     };
-
-type SubmissionFormValues = {
-  acronym: string;
-  definition: string;
-  notes?: string;
-};
 
 export function validateSubmissionInput(
   input: Record<string, unknown>,
