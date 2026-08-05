@@ -16,6 +16,15 @@ RUN pnpm run build \
 
 # Keep build tools and development dependencies out of the runtime image.
 FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
+RUN rm -rf \
+  /opt/yarn-v1.22.22 \
+  /usr/local/lib/node_modules/corepack \
+  /usr/local/lib/node_modules/npm \
+  /usr/local/bin/corepack \
+  /usr/local/bin/npm \
+  /usr/local/bin/npx \
+  /usr/local/bin/yarn \
+  /usr/local/bin/yarnpkg
 ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=build-env /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/
