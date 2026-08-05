@@ -23,11 +23,13 @@
     "security:audit:signatures": "pnpm audit signatures",
     "security:check": "pnpm run security:audit && pnpm run security:audit:signatures",
     "test": "vitest run",
+    "test:container": "node scripts/smoke-container.mjs",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:server": "node scripts/e2e-server.mjs",
     "test:watch": "vitest",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test:coverage && pnpm run build"
   },
   "dependencies": {
     "@react-router/node": "^8.3.0",

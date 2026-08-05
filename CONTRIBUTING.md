@@ -36,13 +36,15 @@ pnpm install
 Before opening a pull request, run the checks that apply to the change:
 
 ```bash
-pnpm run lint
-pnpm run typecheck
-pnpm test
-pnpm run build
+pnpm run verify
 pnpm run security:check
 pnpm test:e2e
+pnpm run test:container
 ```
+
+`pnpm run verify` is the canonical local and CI quality check. It runs
+typechecking, linting, tests with coverage thresholds, and the production
+build so that local and CI validation do not drift apart.
 
 The end-to-end suite requires Docker and a local Keycloak container. GitHub
 Actions runs the complete quality, browser, security, build, and container

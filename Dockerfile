@@ -18,7 +18,6 @@ RUN pnpm run build \
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production
 ENV PORT=3000
-RUN corepack enable
 COPY --from=build-env /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/
 COPY --from=build-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
@@ -27,4 +26,4 @@ COPY ./scripts/import-acronyms.mjs /app/scripts/
 COPY ./seeds /app/seeds
 WORKDIR /app
 EXPOSE 3000
-CMD ["pnpm", "run", "start"]
+CMD ["node", "node_modules/@react-router/serve/bin.cjs", "./build/server/index.js"]
