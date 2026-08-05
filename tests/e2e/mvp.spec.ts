@@ -55,7 +55,9 @@ test("users can submit, review duplicates, sign out, and switch accounts", async
 
   await page.goto("/submit");
   await submit(page, "E2E", "Browser Integration Verification");
-  await expect(page.getByRole("alert")).toContainText("E2E already exists");
+  await expect(
+    page.getByRole("heading", { name: "E2E already exists" }),
+  ).toBeVisible();
   await expect(page.getByText("End To End Verification")).toBeVisible();
   await page.getByRole("button", { name: "Submit Anyway" }).click();
   await expect(page).toHaveURL(/q=E2E/);
