@@ -14,7 +14,7 @@ import {
   DefinitionMarkupError,
   parseDefinitionMarkup,
   validateDefinitionRanges,
-} from "../db/normalize";
+} from "../domain/acronym";
 
 const submissionSchema = z.object({
   acronym: z.string().trim().min(1, "Acronym is required."),

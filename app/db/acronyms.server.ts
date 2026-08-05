@@ -5,12 +5,12 @@ import type {
   DictionaryEntry,
   DictionarySort,
 } from "../features/dictionary/model";
-import type { AppDatabase } from "./client.server";
 import {
   normalizeAcronym,
   normalizeDefinition,
   parseDefinitionMarkup,
-} from "./normalize";
+} from "../domain/acronym";
+import type { AppDatabase } from "./client.server";
 import { acronymEntries } from "./schema";
 import { insertAcronymEntryAtomic } from "./write.server";
 
