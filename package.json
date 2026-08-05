@@ -22,6 +22,7 @@
     "security:audit": "pnpm audit --audit-level low",
     "security:audit:signatures": "pnpm audit signatures",
     "security:check": "pnpm run security:audit && pnpm run security:audit:signatures",
+    "security:container-policy": "node scripts/check-container-scan.mjs",
     "test": "vitest run",
     "test:container": "node scripts/smoke-container.mjs",
     "test:coverage": "vitest run --coverage",
