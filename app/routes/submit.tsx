@@ -149,7 +149,7 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  const entry = await createAcronymEntry({
+  const result = createAcronymEntry({
     acronym: values.acronym,
     definition: values.definition,
     notes: values.notes,
@@ -158,7 +158,21 @@ export async function action({ request }: Route.ActionArgs) {
     submittedByDisplayName: user.displayName,
   });
 
-  return redirect(`/?q=${encodeURIComponent(entry.acronym)}`);
+  if (result.status === "duplicate") {
+    return data(
+      {
+        status: "error" as const,
+        errors: {
+          definition: [exactDuplicateMessage],
+        },
+        exactDuplicate: result.duplicate,
+        values,
+      },
+      { status: 400 },
+    );
+  }
+
+  return redirect(`/?q=${encodeURIComponent(result.entry.acronym)}`);
 }
 
 export default function SubmitAcronym({

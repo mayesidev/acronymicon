@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, max } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 import { getAppDatabase } from "../bootstrap.server";
 import type { AppDatabase } from "./client.server";
@@ -8,6 +8,7 @@ import {
   parseDefinitionMarkup,
 } from "./normalize";
 import { acronymEntries, type AcronymEntry } from "./schema";
+import { insertAcronymEntryAtomic } from "./write.server";
 
 export type AcronymSearchResult = Pick<
   AcronymEntry,
@@ -154,29 +155,10 @@ export function createAcronymRepository(database: AppDatabase) {
     return duplicate ?? null;
   }
 
-  async function createAcronymEntry(
+  function createAcronymEntry(
     input: Parameters<typeof buildNewAcronymEntry>[0],
   ) {
-    const normalizedAcronym = normalizeAcronym(input.acronym);
-    const [latest] = await database
-      .select({ variant: max(acronymEntries.variant) })
-      .from(acronymEntries)
-      .where(eq(acronymEntries.normalizedAcronym, normalizedAcronym));
-
-    const [entry] = await database
-      .insert(acronymEntries)
-      .values({
-        ...buildNewAcronymEntry(input),
-        variant: (latest?.variant ?? 0) + 1,
-      })
-      .returning({
-        id: acronymEntries.id,
-        acronym: acronymEntries.acronym,
-        variant: acronymEntries.variant,
-        definition: acronymEntries.definition,
-      });
-
-    return entry;
+    return insertAcronymEntryAtomic(database, buildNewAcronymEntry(input));
   }
 
   return {

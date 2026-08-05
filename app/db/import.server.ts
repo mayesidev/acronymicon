@@ -1,4 +1,3 @@
-import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 
 import type { AppDatabase } from "./client.server";
@@ -7,7 +6,7 @@ import {
   normalizeDefinition,
   parseDefinitionMarkup,
 } from "./normalize";
-import { acronymEntries } from "./schema";
+import { insertAcronymEntryAtomic } from "./write.server";
 
 export const importEntrySchema = z.object({
   acronym: z.string().trim().min(1),
@@ -25,8 +24,6 @@ export const importFileSchema = z.union([
   z.object({ entries: z.array(importEntrySchema) }),
 ]);
 
-type ImportEntry = z.infer<typeof importEntrySchema>;
-
 export type ImportResult =
   | {
       status: "invalid";
@@ -40,10 +37,10 @@ export type ImportResult =
       errors: Array<{ index: number; error: unknown }>;
     };
 
-export async function importAcronymEntries(
+export function importAcronymEntries(
   database: AppDatabase,
   input: unknown,
-): Promise<ImportResult> {
+): ImportResult {
   const parsedInput = importFileSchema.safeParse(input);
 
   if (!parsedInput.success) {
@@ -62,25 +59,12 @@ export async function importAcronymEntries(
 
   for (const [index, entry] of entries.entries()) {
     try {
-      const duplicate = await findDuplicate(database, entry);
-
-      if (duplicate) {
-        skippedDuplicates += 1;
-        continue;
-      }
-
       const normalizedAcronym = normalizeAcronym(entry.acronym);
-      const [latest] = await database
-        .select({ variant: max(acronymEntries.variant) })
-        .from(acronymEntries)
-        .where(eq(acronymEntries.normalizedAcronym, normalizedAcronym));
-
-      await database.insert(acronymEntries).values({
+      const writeResult = insertAcronymEntryAtomic(database, {
         ...parseImportedDefinition(entry.definition),
         id: crypto.randomUUID(),
         acronym: entry.acronym.trim(),
         normalizedAcronym,
-        variant: (latest?.variant ?? 0) + 1,
         notes: normalizeOptional(entry.notes),
         aliases: entry.aliases,
         status: entry.status,
@@ -90,6 +74,11 @@ export async function importAcronymEntries(
         submittedByDisplayName:
           normalizeOptional(entry.submittedByDisplayName) ?? "Seed Import",
       });
+
+      if (writeResult.status === "duplicate") {
+        skippedDuplicates += 1;
+        continue;
+      }
 
       inserted += 1;
     } catch (error) {
@@ -104,24 +93,6 @@ export async function importAcronymEntries(
     failed: errors.length,
     errors,
   };
-}
-
-async function findDuplicate(database: AppDatabase, entry: ImportEntry) {
-  const [duplicate] = await database
-    .select({ id: acronymEntries.id })
-    .from(acronymEntries)
-    .where(
-      and(
-        eq(acronymEntries.normalizedAcronym, normalizeAcronym(entry.acronym)),
-        eq(
-          acronymEntries.normalizedDefinition,
-          normalizeDefinition(entry.definition),
-        ),
-      ),
-    )
-    .limit(1);
-
-  return duplicate;
 }
 
 function normalizeOptional(value: string | undefined) {
