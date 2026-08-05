@@ -5,6 +5,7 @@ import type {
   DictionaryEntry,
   DictionarySort,
 } from "../features/dictionary/model";
+import type { SubmissionRepository } from "../features/submission/server/repository";
 import {
   normalizeAcronym,
   normalizeDefinition,
@@ -149,13 +150,16 @@ export function createAcronymRepository(database: AppDatabase) {
     return insertAcronymEntryAtomic(database, buildNewAcronymEntry(input));
   }
 
-  return {
+  const repository = {
     listPublishedAcronyms,
     findPublishedByAcronym,
     findPublishedByVariant,
     findExactDuplicate,
     createAcronymEntry,
   };
+
+  repository satisfies SubmissionRepository;
+  return repository;
 }
 
 type AcronymRepository = ReturnType<typeof createAcronymRepository>;

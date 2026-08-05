@@ -10,7 +10,6 @@ import {
 import { getOptionalUser } from "../auth/session.server";
 import { DuplicateFeedback } from "../components/duplicate-feedback";
 import {
-  evaluateDuplicatePolicy,
   exactDuplicateMessage,
   getDefinitionError,
 } from "../features/submission/policy";
@@ -19,6 +18,13 @@ import type {
   SubmissionFieldName,
 } from "../features/submission/model";
 import { validateSubmissionInput } from "../features/submission/server/input";
+import { createSubmissionWorkflow } from "../features/submission/server/workflow";
+
+const submissionWorkflow = createSubmissionWorkflow({
+  createAcronymEntry,
+  findExactDuplicate,
+  findPublishedByAcronym,
+});
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -32,47 +38,15 @@ export async function loader({ request }: Route.LoaderArgs) {
     return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
 
-  const url = new URL(request.url);
-  const acronym = url.searchParams.get("acronym")?.trim() ?? "";
-  const definition = url.searchParams.get("definition") ?? "";
-
-  if (!acronym) {
-    return {
-      user,
-      checkedAcronym: "",
-      checkedDefinition: "",
-      existingEntries: [],
-      exactDuplicate: null,
-      definitionError: null,
-    };
-  }
-
-  const definitionError = getDefinitionError(acronym, definition);
-  if (definitionError) {
-    return {
-      user,
-      checkedAcronym: acronym,
-      checkedDefinition: definition,
-      existingEntries: await findPublishedByAcronym(acronym),
-      exactDuplicate: null,
-      definitionError,
-    };
-  }
-
-  const [existingEntries, exactDuplicate] = await Promise.all([
-    findPublishedByAcronym(acronym),
-    definition
-      ? findExactDuplicate({ acronym, definition })
-      : Promise.resolve(null),
-  ]);
+  const searchParameters = new URL(request.url).searchParams;
+  const duplicatePreview = await submissionWorkflow.loadDuplicatePreview({
+    acronym: searchParameters.get("acronym") ?? "",
+    definition: searchParameters.get("definition") ?? "",
+  });
 
   return {
     user,
-    checkedAcronym: acronym,
-    checkedDefinition: definition,
-    existingEntries,
-    exactDuplicate,
-    definitionError: null,
+    ...duplicatePreview,
   };
 }
 
@@ -99,68 +73,32 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const values = validation.values;
-  const exactDuplicate = await findExactDuplicate(values);
-  const exactDuplicateOutcome = evaluateDuplicatePolicy(values, {
-    exactDuplicate,
-    existingEntries: [],
-  });
+  const outcome = await submissionWorkflow.submit(values, user);
 
-  if (exactDuplicateOutcome.status === "exact-duplicate") {
+  if (outcome.status === "exact-duplicate") {
     return data(
       {
         status: "error" as const,
-        errors: exactDuplicateOutcome.errors,
-        exactDuplicate: exactDuplicateOutcome.duplicate,
+        errors: outcome.errors,
+        exactDuplicate: outcome.duplicate,
         values,
       },
       { status: 400 },
     );
   }
 
-  const existingEntries = await findPublishedByAcronym(values.acronym);
-  const duplicateOutcome = evaluateDuplicatePolicy(values, {
-    exactDuplicate: null,
-    existingEntries,
-  });
-
-  if (duplicateOutcome.status === "duplicate-warning") {
+  if (outcome.status === "duplicate-warning") {
     return data(
       {
         status: "duplicate-warning" as const,
-        existingEntries: duplicateOutcome.existingEntries,
+        existingEntries: outcome.existingEntries,
         values,
       },
       { status: 409 },
     );
   }
 
-  const result = createAcronymEntry({
-    acronym: values.acronym,
-    definition: values.definition,
-    notes: values.notes,
-    submittedByUserId: user.id,
-    submittedByUsername: user.username,
-    submittedByDisplayName: user.displayName,
-  });
-
-  if (result.status === "duplicate") {
-    const concurrentDuplicateOutcome = evaluateDuplicatePolicy(values, {
-      exactDuplicate: result.duplicate,
-      existingEntries: [],
-    });
-
-    return data(
-      {
-        status: "error" as const,
-        errors: concurrentDuplicateOutcome.errors,
-        exactDuplicate: concurrentDuplicateOutcome.duplicate,
-        values,
-      },
-      { status: 400 },
-    );
-  }
-
-  return redirect(`/?q=${encodeURIComponent(result.entry.acronym)}`);
+  return redirect(`/?q=${encodeURIComponent(outcome.acronym)}`);
 }
 
 export default function SubmitAcronym({
@@ -224,10 +162,7 @@ export default function SubmitAcronym({
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <header className="border-b border-slate-200 pb-5">
-          <a
-            href="/"
-            className="text-link text-sm"
-          >
+          <a href="/" className="text-link text-sm">
             Back to dictionary
           </a>
           <h1 className="mt-4 text-3xl font-semibold tracking-normal">
@@ -269,8 +204,7 @@ export default function SubmitAcronym({
             <Field
               label="Definition"
               error={
-                (definitionFieldError ===
-                exactDuplicateMessage
+                (definitionFieldError === exactDuplicateMessage
                   ? undefined
                   : definitionFieldError) ??
                 definitionError ??
