@@ -1,9 +1,108 @@
 @import "tailwindcss";
 
-@theme {
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
   --font-sans:
     ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-surface: var(--destructive-surface);
+  --color-destructive-border: var(--destructive-border);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-border: var(--warning-border);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+  --color-link-decoration: var(--link-decoration);
+  --radius-sm: calc(var(--radius) * 0.75);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.25);
+  --spacing-control: 2.75rem;
+}
+
+:root {
+  --background: var(--color-slate-50);
+  --foreground: var(--color-slate-950);
+  --surface: var(--color-white);
+  --surface-foreground: var(--color-slate-950);
+  --card: var(--surface);
+  --card-foreground: var(--surface-foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--surface-foreground);
+  --primary: var(--color-slate-950);
+  --primary-foreground: var(--color-white);
+  --secondary: var(--color-slate-100);
+  --secondary-foreground: var(--color-slate-900);
+  --muted: var(--color-slate-100);
+  --muted-foreground: var(--color-slate-600);
+  --accent: var(--color-slate-100);
+  --accent-foreground: var(--color-slate-900);
+  --destructive: var(--color-red-700);
+  --destructive-foreground: var(--color-red-950);
+  --destructive-surface: var(--color-red-50);
+  --destructive-border: var(--color-red-300);
+  --warning: var(--color-amber-700);
+  --warning-foreground: var(--color-amber-950);
+  --warning-surface: var(--color-amber-50);
+  --warning-border: var(--color-amber-300);
+  --border: var(--color-slate-200);
+  --input: var(--color-slate-300);
+  --ring: var(--color-blue-500);
+  --link: var(--color-blue-700);
+  --link-hover: var(--color-blue-900);
+  --link-decoration: var(--color-blue-300);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: var(--color-slate-900);
+  --foreground: var(--color-slate-50);
+  --surface: var(--color-slate-800);
+  --surface-foreground: var(--color-slate-50);
+  --primary: var(--color-slate-200);
+  --primary-foreground: var(--color-slate-900);
+  --secondary: var(--color-slate-700);
+  --secondary-foreground: var(--color-slate-100);
+  --muted: var(--color-slate-700);
+  --muted-foreground: var(--color-slate-400);
+  --accent: var(--color-slate-700);
+  --accent-foreground: var(--color-slate-100);
+  --destructive: var(--color-red-300);
+  --destructive-foreground: var(--color-red-100);
+  --destructive-surface: var(--color-red-950);
+  --destructive-border: var(--color-red-700);
+  --warning: var(--color-amber-300);
+  --warning-foreground: var(--color-amber-100);
+  --warning-surface: var(--color-amber-950);
+  --warning-border: var(--color-amber-700);
+  --border: var(--color-slate-700);
+  --input: var(--color-slate-600);
+  --ring: var(--color-blue-400);
+  --link: var(--color-blue-300);
+  --link-hover: var(--color-blue-200);
+  --link-decoration: var(--color-blue-400);
 }
 
 html,
