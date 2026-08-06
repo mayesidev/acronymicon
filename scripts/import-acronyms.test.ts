@@ -35,7 +35,9 @@ describe("acronym import command", () => {
       ...process.env,
       DATABASE_PATH: join(directory, "acronymicon.sqlite"),
       DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
-      NODE_ENV: "test",
+      NODE_ENV: "production",
+      OIDC_CLIENT_ID: "unrelated-partial-configuration",
+      SESSION_SECRET: "",
     };
 
     const firstImport = runImporter([inputPath], environment);
@@ -75,7 +77,9 @@ describe("acronym import command", () => {
         ...process.env,
         DATABASE_PATH: databasePath,
         DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
-        NODE_ENV: "test",
+        NODE_ENV: "production",
+        OIDC_CLIENT_ID: "unrelated-partial-configuration",
+        SESSION_SECRET: "",
       };
       runCommand("db:migrate", [], environment);
       environment.RUN_MIGRATIONS_ON_STARTUP = "false";

@@ -10,6 +10,7 @@ try {
   startContainer();
   await waitForApplication();
   verifyRuntimeHardening();
+  verifyStandaloneContainerImporter();
   verifyFreshContainerImporter();
 
   removeContainer();
@@ -125,6 +126,35 @@ function verifyFreshContainerImporter() {
 
   if (!secondImport.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
     throw new Error(`Container importer is not idempotent: ${secondImport}`);
+  }
+}
+
+function verifyStandaloneContainerImporter() {
+  const importResult = execFileSync(
+    "docker",
+    [
+      "run",
+      "--rm",
+      "--entrypoint",
+      runtimeNode,
+      "--env",
+      "DATABASE_PATH=/data/standalone.sqlite",
+      "--volume",
+      `${volumeName}:/data`,
+      image,
+      "build/scripts/import-acronyms.mjs",
+      "seeds/acronyms.seed.json",
+    ],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  if (!importResult.includes("9 inserted, 0 duplicates skipped, 0 failed")) {
+    throw new Error(
+      `Standalone container importer required unrelated application configuration: ${importResult}`,
+    );
   }
 }
 
