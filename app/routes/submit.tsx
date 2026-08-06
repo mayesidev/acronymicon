@@ -6,7 +6,7 @@ import {
   findExactDuplicate,
   findPublishedByAcronym,
 } from "../db/acronyms.server";
-import { getOptionalUser } from "../auth/session.server";
+import { getOptionalUser } from "../features/authentication/server/session";
 import { SubmissionForm } from "../features/submission/components/submission-form";
 import { validateSubmissionInput } from "../features/submission/server/input";
 import { createSubmissionWorkflow } from "../features/submission/server/workflow";

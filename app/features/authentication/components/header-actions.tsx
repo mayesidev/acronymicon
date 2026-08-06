@@ -1,6 +1,6 @@
 import { Form } from "react-router";
 
-import type { AuthUser } from "../features/authentication/model";
+import type { AuthUser } from "../model";
 
 export function HeaderActions({ user }: { user: AuthUser | null }) {
   return (

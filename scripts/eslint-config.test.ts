@@ -18,7 +18,7 @@ expect(container.firstChild).not.toBeNull();
 
 describe("UI test lint configuration", () => {
   it.each([
-    "app/components/header-actions.test.tsx",
+    "app/features/authentication/components/header-actions.test.tsx",
     "app/features/submission/components/submission-form.test.tsx",
     "app/features/submission/use-duplicate-preview.test.tsx",
   ])(

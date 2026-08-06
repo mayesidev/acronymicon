@@ -146,9 +146,9 @@ export default tseslint.config(
     },
   },
   {
-    // Dictionary, submission, and authentication extractions remove the
-    // remaining legacy route imports. New target-platform imports are
-    // prohibited now so the gap cannot grow.
+    // Authentication and target-platform regressions are prohibited now so
+    // completed boundaries cannot drift. Legacy database imports remain until
+    // their feature-facing platform adapters are moved.
     files: ["app/routes/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
@@ -156,9 +156,14 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["~/platform/**", "../platform/**"],
+              group: [
+                "~/platform/**",
+                "../platform/**",
+                "~/auth/**",
+                "../auth/**",
+              ],
               message:
-                "Route adapters compose feature APIs instead of importing platform implementations.",
+                "Route adapters compose feature APIs instead of importing platform or legacy authentication implementations.",
             },
           ],
         },

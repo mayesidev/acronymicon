@@ -1,24 +1,17 @@
 import { data, redirect } from "react-router";
 
 import type { Route } from "./+types/auth.login";
-import {
-  buildAuthorizationUrl,
-  isOidcConfigured,
-  randomOidcCodeVerifier,
-  randomOidcState,
-} from "../auth/oidc.server";
-import {
-  commitSession,
-  getSession,
-  hasForceReauthentication,
-} from "../auth/session.server";
+import { SignInUnavailable } from "../features/authentication/components/sign-in-unavailable";
+import { authenticationWorkflow } from "../features/authentication/server/workflow";
 
 export function meta() {
   return [{ title: "Sign in | Acronymicon" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  if (!isOidcConfigured()) {
+  const outcome = await authenticationWorkflow.beginSignIn(request);
+
+  if (outcome.status === "not-configured") {
     return data(
       {
         configured: false,
@@ -27,61 +20,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     );
   }
 
-  const session = await getSession(request.headers.get("Cookie"));
-  const url = new URL(request.url);
-  const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
-  const state = randomOidcState();
-  const codeVerifier = randomOidcCodeVerifier();
-  const forceReauthentication = await hasForceReauthentication(request);
-  const redirectTo = await buildAuthorizationUrl({
-    request,
-    state,
-    codeVerifier,
-    forceReauthentication,
-  });
-
-  session.set("oidcState", state);
-  session.set("oidcCodeVerifier", codeVerifier);
-  session.set("returnTo", returnTo);
-
-  return redirect(redirectTo.href, {
+  return redirect(outcome.location, {
     headers: {
-      "Set-Cookie": await commitSession(session),
+      "Set-Cookie": outcome.cookies[0],
     },
   });
 }
 
-export default function Login({ loaderData }: Route.ComponentProps) {
-  if (loaderData.configured) {
-    return null;
-  }
-
-  return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950">
-      <section className="mx-auto max-w-xl rounded border border-slate-200 bg-white p-6">
-        <h1 className="text-xl font-semibold tracking-normal">
-          Sign-in is not configured
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-700">
-          Browsing is available, but acronym submission requires OIDC
-          configuration. Set the OIDC environment variables before using
-          sign-in.
-        </p>
-        <a
-          href="/"
-          className="text-link mt-5 inline-block text-sm"
-        >
-          Return to dictionary
-        </a>
-      </section>
-    </main>
-  );
-}
-
-function safeReturnTo(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-
-  return value;
+export default function Login() {
+  return <SignInUnavailable />;
 }
