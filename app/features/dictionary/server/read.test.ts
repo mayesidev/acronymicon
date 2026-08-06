@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { DictionaryEntry } from "../model";
-import type { DictionaryRepository } from "./repository";
+import type { DictionaryListRepository } from "./repository";
 import { createDictionaryReadService } from "./read";
 
 describe("dictionary list, search, and sort", () => {
@@ -79,7 +79,7 @@ describe("dictionary list, search, and sort", () => {
 });
 
 function createService(entries: DictionaryEntry[]) {
-  const repository: DictionaryRepository = {
+  const repository: DictionaryListRepository = {
     listPublishedEntries: vi.fn(() => Promise.resolve(entries)),
   };
   return createDictionaryReadService(repository);

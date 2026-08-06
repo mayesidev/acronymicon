@@ -1,8 +1,10 @@
 import type { DictionaryEntry, DictionarySort } from "../model";
 import { normalizeAcronym } from "../../../domain/acronym";
-import type { DictionaryRepository } from "./repository";
+import type { DictionaryListRepository } from "./repository";
 
-export function createDictionaryReadService(repository: DictionaryRepository) {
+export function createDictionaryReadService(
+  repository: DictionaryListRepository,
+) {
   async function listPublishedAcronyms(
     searchTerm: string,
     sort: DictionarySort = "alphabetical",
