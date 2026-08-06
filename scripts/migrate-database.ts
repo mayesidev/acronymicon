@@ -1,4 +1,4 @@
-import { getAppConfig } from "../app/config.server";
+import { getAppConfig } from "../app/platform/config/runtime.server";
 import { createDatabase } from "../app/db/client.server";
 
 const config = getAppConfig();

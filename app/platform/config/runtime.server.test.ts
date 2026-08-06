@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAppConfig } from "./config.server";
+import { parseAppConfig } from "./runtime.server";
 
 describe("application configuration", () => {
   it("applies development defaults without configuring OIDC", () => {

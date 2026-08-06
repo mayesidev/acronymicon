@@ -1,4 +1,7 @@
-import { getAppConfig, type AppConfig } from "./config.server";
+import {
+  getAppConfig,
+  type AppConfig,
+} from "./platform/config/runtime.server";
 import {
   createDatabase,
   type AppDatabase,

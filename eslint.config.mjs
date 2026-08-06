@@ -106,9 +106,7 @@ export default tseslint.config(
                 "../auth/**",
                 "../../auth/**",
                 "../../../auth/**",
-                "~/config.server",
-                "../config.server",
-                "../../config.server",
+                "**/config.server",
                 "~/bootstrap.server",
                 "../bootstrap.server",
                 "../../bootstrap.server",
@@ -140,6 +138,11 @@ export default tseslint.config(
               message:
                 "Platform implementations cannot depend on route or presentation modules.",
             },
+            {
+              group: ["**/config.server"],
+              message:
+                "Runtime configuration is owned by app/platform/config.",
+            },
           ],
         },
       ],
@@ -161,9 +164,33 @@ export default tseslint.config(
                 "../platform/**",
                 "~/auth/**",
                 "../auth/**",
+                "**/config.server",
               ],
               message:
-                "Route adapters compose feature APIs instead of importing platform or legacy authentication implementations.",
+                "Route adapters compose feature APIs instead of importing platform or legacy implementation paths.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      "app/*.{ts,tsx}",
+      "app/db/**/*.{ts,tsx}",
+      "app/features/**/*.server.{ts,tsx}",
+      "app/features/**/server/**/*.{ts,tsx}",
+      "scripts/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/config.server"],
+              message:
+                "Runtime configuration is owned by app/platform/config.",
             },
           ],
         },
