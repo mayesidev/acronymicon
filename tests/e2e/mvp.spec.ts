@@ -90,7 +90,15 @@ test("users can open a specific definition variant and see marked ranges", async
 
   await page.goto("/define?acr=radar&var=1");
 
-  await expect(page.getByRole("heading", { name: "RADAR" })).toBeVisible();
+  const definitionHeading = page.getByRole("heading", { name: "RADAR" });
+  const backLink = page.getByRole("link", { name: "Back to dictionary" });
+  await expect(definitionHeading).toBeVisible();
+  await expect(backLink).toHaveAttribute("href", "/");
+  const backLinkBox = await backLink.boundingBox();
+  const definitionHeadingBox = await definitionHeading.boundingBox();
+  expect(backLinkBox).not.toBeNull();
+  expect(definitionHeadingBox).not.toBeNull();
+  expect(backLinkBox!.y).toBeLessThan(definitionHeadingBox!.y);
   await expect(page.getByText("Radio Detection And Ranging")).toBeVisible();
   await expect(page.locator("u")).toHaveCount(4);
 
@@ -101,6 +109,13 @@ test("users can open a specific definition variant and see marked ranges", async
   await expect(
     page.getByRole("link", { name: "View all definitions for radar" }),
   ).toHaveAttribute("href", "/define?acr=radar");
+  await expect(backLink).toBeVisible();
+
+  await page.goto("/define");
+  await expect(
+    page.getByRole("heading", { name: "Choose an acronym" }),
+  ).toBeVisible();
+  await expect(backLink).toBeVisible();
 });
 
 test("users can submit and review duplicate definitions", async ({ page }) => {
