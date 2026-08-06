@@ -43,8 +43,9 @@ The practical rules are:
    implementations, route modules, or the legacy `app/db` and `app/auth`
    implementations.
 3. Server-only feature modules are named `*.server.ts`/`*.server.tsx` or live
-   under a feature `server/` directory. They expose feature-facing operations,
-   not database-shaped results.
+   under a feature `server/` directory. Their API entry points are narrow
+   composition roots that bind platform adapters to feature-owned contracts
+   and expose feature-facing operations rather than database-shaped results.
 4. Platform adapters may implement contracts owned by a feature and use domain
    value types. Platform modules cannot depend on routes or presentation.
 5. Shared UI cannot depend on a product feature. A feature-specific component
@@ -64,12 +65,10 @@ server-to-client leaks cannot be introduced during the migration.
 The repository will reach the target layout in focused changes rather than one
 large rename. These are the only planned structural gaps:
 
-| Current gap                                                                                               | Planned resolution                                                                                         |
-| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Home and definition routes import the legacy acronym repository                                           | Introduce dictionary read/search services and route-facing result contracts                               |
-| The submit route combines transport, policy, client state, and persistence                                | Extract pure policy first, followed by server orchestration and client presentation                        |
-| Persistence adapters and import tooling remain in `app/db` modules                                        | Move them behind feature contracts, then update maintenance entry points and remove the legacy directory  |
-| Reusable UI remains under `app/components` while its foundation is evaluated                              | Keep the UI-foundation decision and any resulting component migration as a separate architectural change  |
+| Current gap                                                                  | Planned resolution                                                                                       |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Maintenance import tooling remains in `app/db` modules                       | Move it behind supported platform and feature entry points, then remove the legacy directory             |
+| Reusable UI remains under `app/components` while its foundation is evaluated | Keep the UI-foundation decision and any resulting component migration as a separate architectural change |
 
 Each structural pull request moves one boundary, colocates its tests, tightens
 the corresponding lint rule, and preserves user-visible behavior. Router, UI

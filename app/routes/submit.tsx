@@ -1,21 +1,13 @@
 import { data, redirect } from "react-router";
 
 import type { Route } from "./+types/submit";
-import {
-  createAcronymEntry,
-  findExactDuplicate,
-  findPublishedByAcronym,
-} from "../db/acronyms.server";
 import { getOptionalUser } from "../features/authentication/server/session";
 import { SubmissionForm } from "../features/submission/components/submission-form";
+import {
+  loadDuplicatePreview,
+  submitAcronym,
+} from "../features/submission/server/api";
 import { validateSubmissionInput } from "../features/submission/server/input";
-import { createSubmissionWorkflow } from "../features/submission/server/workflow";
-
-const submissionWorkflow = createSubmissionWorkflow({
-  createAcronymEntry,
-  findExactDuplicate,
-  findPublishedByAcronym,
-});
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -30,7 +22,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   const searchParameters = new URL(request.url).searchParams;
-  const duplicatePreview = await submissionWorkflow.loadDuplicatePreview({
+  const duplicatePreview = await loadDuplicatePreview({
     acronym: searchParameters.get("acronym") ?? "",
     definition: searchParameters.get("definition") ?? "",
   });
@@ -64,7 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const values = validation.values;
-  const outcome = await submissionWorkflow.submit(values, user);
+  const outcome = await submitAcronym(values, user);
 
   if (outcome.status === "exact-duplicate") {
     return data(

@@ -1,18 +1,29 @@
 import { and, asc, eq } from "drizzle-orm";
 
-import { getAppDatabase } from "../platform/database/lifecycle.server";
-import type { DictionaryRepository } from "../features/dictionary/server/repository";
-import type { SubmissionRepository } from "../features/submission/server/repository";
+import type { DictionaryRepository } from "../../features/dictionary/server/repository";
+import type {
+  SubmissionCreateResult,
+  SubmissionRepository,
+} from "../../features/submission/server/repository";
 import {
   normalizeAcronym,
   normalizeDefinition,
   parseDefinitionMarkup,
-} from "../domain/acronym";
-import type { AppDatabase } from "../platform/database/client.server";
-import { acronymEntries } from "../platform/database/schema";
-import { insertAcronymEntryAtomic } from "../platform/database/write.server";
+} from "../../domain/acronym";
+import type { AppDatabase } from "./client.server";
+import { acronymEntries } from "./schema";
+import { insertAcronymEntryAtomic } from "./write.server";
 
-export function createAcronymRepository(database: AppDatabase) {
+type AcronymRepository = DictionaryRepository &
+  Omit<SubmissionRepository, "createAcronymEntry"> & {
+    createAcronymEntry: (
+      input: Parameters<SubmissionRepository["createAcronymEntry"]>[0],
+    ) => SubmissionCreateResult;
+  };
+
+export function createAcronymRepository(
+  database: AppDatabase,
+): AcronymRepository {
   async function listPublishedEntries() {
     return database
       .select({
@@ -116,53 +127,13 @@ export function createAcronymRepository(database: AppDatabase) {
     return insertAcronymEntryAtomic(database, buildNewAcronymEntry(input));
   }
 
-  const repository = {
+  return {
     listPublishedEntries,
     findPublishedByAcronym,
     findPublishedByVariant,
     findExactDuplicate,
     createAcronymEntry,
   };
-
-  repository satisfies SubmissionRepository;
-  repository satisfies DictionaryRepository;
-  return repository;
-}
-
-type AcronymRepository = ReturnType<typeof createAcronymRepository>;
-
-function getAcronymRepository() {
-  return createAcronymRepository(getAppDatabase());
-}
-
-export function listPublishedEntries(
-  ...arguments_: Parameters<AcronymRepository["listPublishedEntries"]>
-) {
-  return getAcronymRepository().listPublishedEntries(...arguments_);
-}
-
-export function findPublishedByAcronym(
-  ...arguments_: Parameters<AcronymRepository["findPublishedByAcronym"]>
-) {
-  return getAcronymRepository().findPublishedByAcronym(...arguments_);
-}
-
-export function findPublishedByVariant(
-  ...arguments_: Parameters<AcronymRepository["findPublishedByVariant"]>
-) {
-  return getAcronymRepository().findPublishedByVariant(...arguments_);
-}
-
-export function findExactDuplicate(
-  ...arguments_: Parameters<AcronymRepository["findExactDuplicate"]>
-) {
-  return getAcronymRepository().findExactDuplicate(...arguments_);
-}
-
-export function createAcronymEntry(
-  ...arguments_: Parameters<AcronymRepository["createAcronymEntry"]>
-) {
-  return getAcronymRepository().createAcronymEntry(...arguments_);
 }
 
 export function buildNewAcronymEntry(input: {

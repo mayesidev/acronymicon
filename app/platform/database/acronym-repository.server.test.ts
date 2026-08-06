@@ -1,38 +1,17 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 import { afterEach, describe, expect, it } from "vitest";
 
-import { parseAppConfig } from "../platform/config/runtime.server";
-import {
-  closeApplication,
-  initializeApplication,
-} from "../platform/database/lifecycle.server";
 import {
   buildNewAcronymEntry,
-  createAcronymEntry,
   createAcronymRepository,
-  findExactDuplicate,
-  findPublishedByAcronym,
-  findPublishedByVariant,
-  listPublishedEntries,
-} from "./acronyms.server";
-import { createTestDatabase } from "../../test/helpers/database";
+} from "./acronym-repository.server";
+import { createTestDatabase } from "../../../test/helpers/database";
 
 describe("acronym repository", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];
-  const applicationDirectories: string[] = [];
 
   afterEach(() => {
-    closeApplication();
-
     for (const database of databases.splice(0)) {
       database.remove();
-    }
-
-    for (const directory of applicationDirectories.splice(0)) {
-      rmSync(directory, { recursive: true, force: true });
     }
   });
 
@@ -63,6 +42,8 @@ describe("acronym repository", () => {
     repository.createAcronymEntry({
       acronym: "API",
       definition: "Application Programming Interface",
+      submittedByUserId: "user-id",
+      submittedByUsername: "user",
     });
 
     const duplicate = await repository.findExactDuplicate({
@@ -89,10 +70,14 @@ describe("acronym repository", () => {
     repository.createAcronymEntry({
       acronym: "ZULU",
       definition: "Zulu Definition",
+      submittedByUserId: "user-id",
+      submittedByUsername: "user",
     });
     repository.createAcronymEntry({
       acronym: "ALPHA",
       definition: "Alpha Definition",
+      submittedByUserId: "user-id",
+      submittedByUsername: "user",
     });
 
     await expect(repository.listPublishedEntries()).resolves.toMatchObject([
@@ -110,6 +95,8 @@ describe("acronym repository", () => {
       repository.createAcronymEntry({
         acronym: "API",
         definition: "Application Programming Interface",
+        submittedByUserId: "user-id",
+        submittedByUsername: "user",
       }),
     ).toMatchObject({
       status: "created",
@@ -120,6 +107,8 @@ describe("acronym repository", () => {
       repository.createAcronymEntry({
         acronym: "API",
         definition: "Annual Performance Index",
+        submittedByUserId: "user-id",
+        submittedByUsername: "user",
       }),
     ).toMatchObject({
       status: "created",
@@ -130,6 +119,8 @@ describe("acronym repository", () => {
       repository.createAcronymEntry({
         acronym: " api ",
         definition: "[A]pplication [P]rogramming [I]nterface",
+        submittedByUserId: "user-id",
+        submittedByUsername: "user",
       }),
     ).toMatchObject({
       status: "duplicate",
@@ -146,39 +137,5 @@ describe("acronym repository", () => {
     await expect(
       repository.findPublishedByVariant("api", 3),
     ).resolves.toBeNull();
-  });
-
-  it("serves route-facing operations through the initialized application", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "acronymicon-app-db-test-"));
-    applicationDirectories.push(directory);
-    const config = parseAppConfig({
-      NODE_ENV: "test",
-      DATABASE_PATH: join(directory, "acronymicon.sqlite"),
-      DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
-    });
-    initializeApplication(config, { registerShutdownHandlers: false });
-
-    expect(
-      createAcronymEntry({
-        acronym: "API",
-        definition: "Application Programming Interface",
-      }),
-    ).toMatchObject({
-      status: "created",
-      entry: { variant: 1 },
-    });
-    await expect(
-      findExactDuplicate({
-        acronym: "api",
-        definition: "Application Programming Interface",
-      }),
-    ).resolves.toMatchObject({
-      definition: "Application Programming Interface",
-    });
-    await expect(findPublishedByAcronym("API")).resolves.toHaveLength(1);
-    await expect(findPublishedByVariant("API", 1)).resolves.toMatchObject({
-      acronym: "API",
-    });
-    await expect(listPublishedEntries()).resolves.toHaveLength(1);
   });
 });
