@@ -15,6 +15,7 @@ import { Button } from "../ui/components/button";
 import { Card } from "../ui/components/card";
 import { Field } from "../ui/components/field";
 import { Input } from "../ui/components/input";
+import { TextLink } from "../ui/components/link";
 import { NativeSelect } from "../ui/components/native-select";
 import { PageShell } from "../ui/components/page-shell";
 
@@ -76,22 +77,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <PageShell width="wide" contentClassName="gap-6">
-      <header className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-start md:justify-between">
+      <header className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-normal text-foreground">
-            Acronymicon
-          </h1>
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-3xl font-semibold tracking-normal text-foreground">
+              Acronymicon
+            </h1>
+            <TextLink
+              aria-label="About Acronymicon"
+              href={buildAboutHref(
+                `${location.pathname}${location.search}${location.hash}`,
+              )}
+              className="text-sm"
+            >
+              About
+            </TextLink>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             A book of knowledge for acronyms
           </p>
         </div>
 
-        <HeaderActions
-          aboutHref={buildAboutHref(
-            `${location.pathname}${location.search}${location.hash}`,
-          )}
-          user={user}
-        />
+        <HeaderActions user={user} />
       </header>
 
       <section aria-label="Search dictionary">
