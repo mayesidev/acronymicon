@@ -15,15 +15,20 @@ Use a Conventional Commit title for every pull request. Examples:
 ```txt
 fix: correct logout redirect
 feat: allow users to edit definitions
-chore: update dependencies
+refactor: reorganize runtime modules
+chore(deps-runtime): update an application dependency
+build(runtime): change the shipped container
 ```
 
 CI validates the pull request title with commitlint. Use squash merging so
 that the validated title becomes the commit analyzed by semantic-release.
 After a successful `main` build, semantic-release determines the next
-version and creates the GitHub release and tag. `fix` changes produce patch
-releases, `feat` changes produce minor releases, and a `BREAKING CHANGE`
-produces a major release. Normal changes should not be tagged manually.
+version and creates the GitHub release and tag. `fix`, `perf`, `refactor`,
+`chore(deps-runtime)`, and `build(runtime)` changes produce patch releases;
+`feat` changes produce minor releases; and a `BREAKING CHANGE` produces a
+major release. Test-only, CI-only, documentation-only, generic `chore`,
+unscoped `build`, and `chore(deps)` development-tooling changes do not create
+a release. Normal changes should not be tagged manually.
 
 ## Development
 
