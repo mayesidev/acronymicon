@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { asc } from "drizzle-orm";
 
-import { createTestDatabase } from "../../test/helpers/database";
-import { acronymEntries } from "../platform/database/schema";
+import { createTestDatabase } from "../../../test/helpers/database";
+import { acronymEntries } from "./schema";
 import { importAcronymEntries } from "./import.server";
 
 describe("acronym import", () => {
@@ -30,9 +30,7 @@ describe("acronym import", () => {
       },
     ];
 
-    expect(
-      importAcronymEntries(database.db, entries),
-    ).toMatchObject({
+    expect(importAcronymEntries(database.db, entries)).toMatchObject({
       status: "complete",
       inserted: 2,
       skippedDuplicates: 0,
@@ -64,9 +62,7 @@ describe("acronym import", () => {
       },
     ]);
 
-    expect(
-      importAcronymEntries(database.db, entries),
-    ).toMatchObject({
+    expect(importAcronymEntries(database.db, entries)).toMatchObject({
       status: "complete",
       inserted: 0,
       skippedDuplicates: 2,

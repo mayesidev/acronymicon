@@ -193,7 +193,6 @@ export default tseslint.config(
   {
     files: [
       "app/*.{ts,tsx}",
-      "app/db/**/*.{ts,tsx}",
       "app/features/**/*.server.{ts,tsx}",
       "app/features/**/server/**/*.{ts,tsx}",
       "scripts/**/*.{ts,tsx}",

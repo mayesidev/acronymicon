@@ -104,9 +104,9 @@ describe("platform database boundary", () => {
       source: 'import "./bootstrap.server";',
     },
     {
-      filePath: "app/db/import.server.ts",
+      filePath: "app/platform/database/import.server.ts",
       source:
-        'import "./client.server";\nimport "./schema";\nimport "./write.server";',
+        'import "../../db/client.server";\nimport "../../db/schema";\nimport "../../db/write.server";',
     },
     {
       filePath: "app/routes/home.tsx",
