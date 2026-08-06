@@ -28,7 +28,7 @@ const loaderData = {
   user: null,
 };
 
-describe("home dictionary view", () => {
+describe("dictionary list", () => {
   it("renders an entry with user-visible reference details", () => {
     render(<DictionaryList entries={loaderData.entries} />);
 

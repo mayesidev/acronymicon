@@ -39,7 +39,6 @@ export default defineConfig({
           lines: 30,
         },
         // Presentation keeps the same policy whether it is shared or feature-owned.
-        "app/components/**": presentationCoverageThresholds,
         "app/features/**/components/**": presentationCoverageThresholds,
         "app/features/**/{hooks/**,use-*.{ts,tsx}}":
           presentationCoverageThresholds,

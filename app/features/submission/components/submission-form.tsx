@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Form } from "react-router";
 
 import { Button } from "../../../ui/components/button";
+import { Card } from "../../../ui/components/card";
 import { Field } from "../../../ui/components/field";
 import { Input } from "../../../ui/components/input";
 import { ActionLink } from "../../../ui/components/link";
@@ -44,73 +45,72 @@ export function SubmissionForm({
         />
       ) : null}
 
-      <Form
-        method="post"
-        className="rounded border border-slate-200 bg-white p-5"
-      >
-        {showDuplicateWarning ? (
-          <input type="hidden" name="confirmDuplicate" value="true" />
-        ) : null}
+      <Card>
+        <Form method="post" className="p-5">
+          {showDuplicateWarning ? (
+            <input type="hidden" name="confirmDuplicate" value="true" />
+          ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Acronym"
+              error={getSubmissionFieldError(actionData, "acronym")}
+              className="mt-4"
+            >
+              <Input
+                name="acronym"
+                value={acronym}
+                onChange={(event) => setAcronym(event.target.value)}
+                autoComplete="off"
+              />
+            </Field>
+
+            <Field
+              label="Definition"
+              error={
+                (definitionFieldError === exactDuplicateMessage
+                  ? undefined
+                  : definitionFieldError) ??
+                definitionError ??
+                undefined
+              }
+              className="mt-4"
+            >
+              <Input
+                name="definition"
+                value={definition}
+                onChange={(event) => setDefinition(event.target.value)}
+                autoComplete="off"
+              />
+            </Field>
+          </div>
+
           <Field
-            label="Acronym"
-            error={getSubmissionFieldError(actionData, "acronym")}
+            label="Notes"
+            error={getSubmissionFieldError(actionData, "notes")}
             className="mt-4"
           >
-            <Input
-              name="acronym"
-              value={acronym}
-              onChange={(event) => setAcronym(event.target.value)}
-              autoComplete="off"
-            />
+            <Textarea name="notes" defaultValue={values?.notes} />
           </Field>
 
-          <Field
-            label="Definition"
-            error={
-              (definitionFieldError === exactDuplicateMessage
-                ? undefined
-                : definitionFieldError) ??
-              definitionError ??
-              undefined
-            }
-            className="mt-4"
-          >
-            <Input
-              name="definition"
-              value={definition}
-              onChange={(event) => setDefinition(event.target.value)}
-              autoComplete="off"
-            />
-          </Field>
-        </div>
-
-        <Field
-          label="Notes"
-          error={getSubmissionFieldError(actionData, "notes")}
-          className="mt-4"
-        >
-          <Textarea name="notes" defaultValue={values?.notes} />
-        </Field>
-
-        <div className="mt-5 flex items-center gap-3">
-          <Button
-            type="submit"
-            disabled={Boolean(
-              exactDuplicate ||
-              definitionError ||
-              !acronym.trim() ||
-              !definition.trim(),
-            )}
-          >
-            {showDuplicateWarning ? "Submit Anyway" : "Submit"}
-          </Button>
-          <ActionLink href="/" variant="secondary">
-            Cancel
-          </ActionLink>
-        </div>
-      </Form>
+          <div className="mt-5 flex items-center gap-3">
+            <Button
+              type="submit"
+              disabled={Boolean(
+                exactDuplicate ||
+                  definitionError ||
+                  !acronym.trim() ||
+                  !definition.trim(),
+              )}
+            >
+              {showDuplicateWarning ? "Submit Anyway" : "Submit"}
+            </Button>
+            <ActionLink href="/" variant="secondary">
+              Cancel
+            </ActionLink>
+          </div>
+        </Form>
+      </Card>
     </>
   );
 }

@@ -59,6 +59,17 @@ describe("UI test lint configuration", () => {
     expect(config?.rules?.["testing-library/no-node-access"]).toEqual([2]);
   });
 
+  it("rejects product feature imports from shared UI", async () => {
+    const [result] = await eslint.lintText(
+      'import "../../features/dictionary/model";',
+      { filePath: "app/ui/components/card.tsx" },
+    );
+
+    expect(result.messages.map((message) => message.ruleId)).toContain(
+      "no-restricted-imports",
+    );
+  });
+
   it.each([
     "app/features/submission/policy.test.ts",
     "app/features/submission/server/workflow.test.ts",

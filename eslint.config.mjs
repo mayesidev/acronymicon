@@ -9,11 +9,41 @@ import testingLibrary from "eslint-plugin-testing-library";
 import tseslint from "typescript-eslint";
 
 const uiTestFiles = [
-  "app/components/**/*.test.{ts,tsx}",
   "app/features/**/components/**/*.test.{ts,tsx}",
   "app/features/**/hooks/**/*.test.{ts,tsx}",
   "app/features/**/use-*.test.{ts,tsx}",
   "app/ui/**/*.test.{ts,tsx}",
+];
+
+const clientImplementationImportPatterns = [
+  {
+    group: [
+      "**/*.server",
+      "**/*.server.*",
+      "~/platform/**",
+      "../platform/**",
+      "../../platform/**",
+      "../../../platform/**",
+      "~/routes/**",
+      "../routes/**",
+      "../../routes/**",
+      "../../../routes/**",
+      "~/db/**",
+      "../db/**",
+      "../../db/**",
+      "../../../db/**",
+      "~/auth/**",
+      "../auth/**",
+      "../../auth/**",
+      "../../../auth/**",
+      "**/config.server",
+      "~/bootstrap.server",
+      "../bootstrap.server",
+      "../../bootstrap.server",
+    ],
+    message:
+      "Client-capable UI and contracts must not depend on server or platform implementations.",
+  },
 ];
 
 export default tseslint.config(
@@ -73,7 +103,6 @@ export default tseslint.config(
   },
   {
     files: [
-      "app/components/**/*.{ts,tsx}",
       "app/domain/**/*.{ts,tsx}",
       "app/features/**/*.{ts,tsx}",
       "app/ui/**/*.{ts,tsx}",
@@ -86,34 +115,27 @@ export default tseslint.config(
       "no-restricted-imports": [
         "error",
         {
+          patterns: clientImplementationImportPatterns,
+        },
+      ],
+    },
+  },
+  {
+    files: ["app/ui/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
           patterns: [
+            ...clientImplementationImportPatterns,
             {
               group: [
-                "**/*.server",
-                "**/*.server.*",
-                "~/platform/**",
-                "../platform/**",
-                "../../platform/**",
-                "../../../platform/**",
-                "~/routes/**",
-                "../routes/**",
-                "../../routes/**",
-                "../../../routes/**",
-                "~/db/**",
-                "../db/**",
-                "../../db/**",
-                "../../../db/**",
-                "~/auth/**",
-                "../auth/**",
-                "../../auth/**",
-                "../../../auth/**",
-                "**/config.server",
-                "~/bootstrap.server",
-                "../bootstrap.server",
-                "../../bootstrap.server",
+                "~/features/**",
+                "../../features/**",
+                "../../../features/**",
               ],
               message:
-                "Client-capable UI and contracts must not depend on server or platform implementations.",
+                "Shared UI cannot depend on product feature implementations.",
             },
           ],
         },

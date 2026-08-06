@@ -62,13 +62,8 @@ server-to-client leaks cannot be introduced during the migration.
 
 ## Current migration gaps
 
-The repository will reach the target layout in focused changes rather than one
-large rename. These are the only planned structural gaps:
-
-| Current gap                                                                  | Planned resolution                                                                                       |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Reusable UI remains under `app/components` while the accepted foundation is introduced | Migrate focused component groups into `app/ui` using the [shared UI foundation](./ui-foundation.md); do not combine the migration with feature behavior |
-
-Each structural pull request moves one boundary, colocates its tests, tightens
-the corresponding lint rule, and preserves user-visible behavior. Router, UI
-foundation, database, and search-engine decisions remain separate changes.
+No known structural gaps remain between the current application source layout
+and the target paths above. New boundary changes should colocate tests, tighten
+the corresponding lint rule when practical, and preserve user-visible
+behavior. Router, UI-foundation, database, and search-engine decisions remain
+separate changes.
