@@ -8,9 +8,9 @@ import {
   closeApplication,
   getAppDatabase,
   initializeApplication,
-} from "./bootstrap.server";
-import { parseAppConfig } from "./platform/config/runtime.server";
-import { acronymEntries } from "./db/schema";
+} from "./lifecycle.server";
+import { parseAppConfig } from "../config/runtime.server";
+import { acronymEntries } from "./schema";
 
 describe("application lifecycle", () => {
   const directories: string[] = [];

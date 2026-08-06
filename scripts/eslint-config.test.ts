@@ -96,3 +96,39 @@ describe("platform configuration boundary", () => {
     15_000,
   );
 });
+
+describe("platform database boundary", () => {
+  it.each([
+    {
+      filePath: "app/entry.server.tsx",
+      source: 'import "./bootstrap.server";',
+    },
+    {
+      filePath: "app/db/acronyms.server.ts",
+      source:
+        'import "./client.server";\nimport "./schema";\nimport "./write.server";',
+    },
+    {
+      filePath: "scripts/migrate-database.ts",
+      source: 'import "../app/db/client.server";',
+    },
+    {
+      filePath: "test/helpers/database.ts",
+      source: 'import "../../app/db/client.server";',
+    },
+    {
+      filePath: "drizzle.config.ts",
+      source: 'import "./app/db/schema";',
+    },
+  ])(
+    "rejects retired database ownership paths from $filePath",
+    async ({ filePath, source }) => {
+      const [result] = await eslint.lintText(source, { filePath });
+
+      expect(result.messages.map((message) => message.ruleId)).toContain(
+        "no-restricted-imports",
+      );
+    },
+    15_000,
+  );
+});

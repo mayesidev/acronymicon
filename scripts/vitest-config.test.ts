@@ -14,6 +14,11 @@ it.each([
     source: "app/features/submission/use-duplicate-preview.ts",
     threshold: '"app/features/**/{hooks/**,use-*.{ts,tsx}}" threshold (80%)',
   },
+  {
+    source: "app/platform/database/client.server.ts",
+    threshold:
+      '"app/platform/database/{client.server,schema,write.server}.ts" threshold (90%)',
+  },
 ])(
   "rejects $source below its presentation threshold",
   ({ source, threshold }) => {

@@ -5,8 +5,8 @@ import {
   normalizeDefinition,
   parseDefinitionMarkup,
 } from "../domain/acronym";
-import type { AppDatabase } from "./client.server";
-import { insertAcronymEntryAtomic } from "./write.server";
+import type { AppDatabase } from "../platform/database/client.server";
+import { insertAcronymEntryAtomic } from "../platform/database/write.server";
 
 export const importEntrySchema = z.object({
   acronym: z.string().trim().min(1),
