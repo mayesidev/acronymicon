@@ -61,6 +61,7 @@ jobs:
     needs: scope
     if: needs.scope.outputs.application == 'true' || needs.scope.outputs.container == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out source
@@ -100,8 +101,8 @@ jobs:
           context: .
           load: true
           tags: acronymicon:ci
-          cache-from: type=gha,scope=ci
-          cache-to: type=gha,mode=min,scope=ci
+          cache-from: type=gha,scope=ci,timeout=3m
+          cache-to: type=gha,mode=min,scope=ci,timeout=2m,ignore-error=true
 
       - name: Smoke test container
         if: needs.scope.outputs.container == 'true'
