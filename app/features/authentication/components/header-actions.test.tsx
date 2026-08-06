@@ -29,11 +29,11 @@ describe("header actions", () => {
       screen.getByRole("link", { name: "Submit acronym" }),
     ).toHaveAttribute("href", "/submit");
     expect(
-      screen.getByRole("link", { name: "About Acronymicon" }),
-    ).toHaveAttribute("href", "/about?returnTo=%2F");
-    expect(
       within(account).getByRole("button", { name: "Sign out" }),
     ).toHaveAttribute("type", "submit");
+    expect(
+      within(account).getByRole("button", { name: "Sign out" }),
+    ).toHaveClass("border");
   });
 
   it("presents sign-in as a visible text link", () => {
@@ -43,6 +43,9 @@ describe("header actions", () => {
       "href",
       "/auth/login",
     );
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveClass(
+      "border",
+    );
   });
 });
 
@@ -51,7 +54,7 @@ function renderActions(user: Parameters<typeof HeaderActions>[0]["user"]) {
     [
       {
         path: "/",
-        element: <HeaderActions aboutHref="/about?returnTo=%2F" user={user} />,
+        element: <HeaderActions user={user} />,
       },
     ],
     { initialEntries: ["/"] },
