@@ -2,13 +2,25 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
-const qualityJob = workflow
+const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
+const publishWorkflow = readFileSync(
+  ".github/workflows/publish-container.yml",
+  "utf8",
+);
+const qualityJob = ciWorkflow
   .split("\n  quality:\n", 2)[1]
   ?.split("\n  browser:\n", 1)[0];
+const publishJob = publishWorkflow.split("\n  publish:\n", 2)[1];
+const qemuStep = publishJob
+  ?.split("\n      - name: Set up QEMU\n", 2)[1]
+  ?.split("\n      - name:", 1)[0];
 
 if (!qualityJob) {
   throw new Error("CI must define a quality job before the browser job.");
+}
+
+if (!publishJob || !qemuStep) {
+  throw new Error("Container publishing must define a QEMU setup step.");
 }
 
 describe("CI container-build policy", () => {
@@ -30,5 +42,18 @@ describe("CI container-build policy", () => {
     expect(qualityJob.indexOf(step)).toBeGreaterThan(
       qualityJob.indexOf("- name: Build container"),
     );
+  });
+});
+
+describe("release container-publish policy", () => {
+  it("disables the QEMU image cache without granting cache-write access", () => {
+    expect(qemuStep).toContain("cache-image: false");
+    expect(publishWorkflow).not.toContain("actions: write");
+  });
+
+  it("retains multi-architecture publication and supply-chain metadata", () => {
+    expect(publishJob).toContain("platforms: linux/amd64,linux/arm64");
+    expect(publishJob).toContain("provenance: mode=max");
+    expect(publishJob).toContain("sbom: true");
   });
 });
