@@ -112,8 +112,10 @@ describe("dictionary list", () => {
       />,
     );
 
+    const alphabeticHeading = screen.getByRole("heading", { name: "A" });
     expect(screen.getByRole("heading", { name: "#" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "A" })).toBeInTheDocument();
+    expect(alphabeticHeading).toHaveClass("text-xl", "text-foreground");
+    expect(alphabeticHeading).not.toHaveClass("text-sm");
     expect(screen.getByRole("heading", { name: "R" })).toBeInTheDocument();
   });
 

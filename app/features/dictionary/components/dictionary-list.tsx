@@ -16,7 +16,7 @@ export function DictionaryList({
       <ol className="space-y-8">
         {groups.map((group) => (
           <li key={group.letter}>
-            <h2 className="mb-2 border-b border-border pb-2 text-sm font-semibold text-muted-foreground">
+            <h2 className="mb-2 border-b border-border pb-2 text-xl font-semibold text-foreground">
               {group.letter}
             </h2>
             <Card className="overflow-hidden">
