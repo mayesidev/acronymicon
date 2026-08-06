@@ -20,7 +20,10 @@ export function resolveAboutReturnTo(value: string | null) {
   try {
     const url = new URL(value, applicationOrigin);
 
-    if (url.origin !== applicationOrigin) {
+    if (
+      url.origin !== applicationOrigin ||
+      url.pathname.endsWith(".data")
+    ) {
       return "/";
     }
 

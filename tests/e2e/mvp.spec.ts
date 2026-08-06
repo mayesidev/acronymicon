@@ -40,6 +40,10 @@ test("anonymous users can browse and search seeded entries", async ({
   await expect(
     page.getByText("Application Programming Interface"),
   ).toBeHidden();
+  await expect(aboutLink).toHaveAttribute(
+    "href",
+    "/about?returnTo=%2F%3Fq%3Dperformance%26sort%3Dalphabetical",
+  );
 
   await aboutLink.click();
   await expect(
@@ -57,7 +61,12 @@ test("anonymous users can browse and search seeded entries", async ({
   ).toHaveAttribute("href", "https://github.com/mayesidev/acronymicon");
 
   await page.getByRole("link", { name: "Back to dictionary" }).click();
-  await expect(page).toHaveURL(/q=performance/);
+  await expect(page).toHaveURL((url) => {
+    return url.pathname === "/" && url.searchParams.get("q") === "performance";
+  });
+  await expect(
+    page.getByRole("heading", { name: "Acronymicon" }),
+  ).toBeVisible();
   await expect(page.getByText("Annual Performance Index")).toBeVisible();
   await expect(
     page.getByText("Application Programming Interface"),
