@@ -1,7 +1,4 @@
 FROM node:24.19.0-trixie-slim@sha256:0711b541c1c33a8a530ac4f0d391baa9a15b3d804695b1b24a47daa5fb60e74d AS development-dependencies-env
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 WORKDIR /app
@@ -11,8 +8,8 @@ FROM development-dependencies-env AS build-env
 COPY . /app/
 RUN pnpm run build \
   && pnpm prune --prod \
-  && rm -r node_modules/better-sqlite3/prebuilds \
-  && pnpm --dir node_modules/better-sqlite3 run build-release \
+  && find node_modules/better-sqlite3/prebuilds \
+    -type f ! -name 'linux-*.node' -delete \
   && mkdir -p /app/runtime-data
 
 # Keep the shell, package managers, build tools, and development dependencies

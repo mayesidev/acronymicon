@@ -1,6 +1,7 @@
-# Build scripts are denied by default; these are the reviewed native/tooling builds.
+# Build scripts are denied by default; reviewed dependencies are explicit here.
 allowBuilds:
-  better-sqlite3: true
+  # The package includes the Linux binaries used by the production image.
+  better-sqlite3: false
   esbuild: true
 blockExoticSubdeps: true
 engineStrict: true
