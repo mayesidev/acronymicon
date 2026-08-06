@@ -8,6 +8,12 @@ import {
   findPublishedByAcronym,
   findPublishedByVariant,
 } from "../db/acronyms.server";
+import { createDictionaryDefinitionService } from "../features/dictionary/server/definition";
+
+const dictionaryDefinitionService = createDictionaryDefinitionService({
+  findPublishedByAcronym,
+  findPublishedByVariant,
+});
 
 export function meta() {
   return [{ title: "Definition | Acronymicon" }];
@@ -15,30 +21,10 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const params = new URL(request.url).searchParams;
-  const acronym = params.get("acr")?.trim() ?? "";
-  const variantParam = params.get("var");
-
-  if (!acronym) {
-    return { status: "missing-acronym" as const, acronym: "" };
-  }
-
-  if (variantParam === null) {
-    return {
-      status: "list" as const,
-      acronym,
-      entries: await findPublishedByAcronym(acronym),
-    };
-  }
-
-  const variant = Number(variantParam);
-  if (!Number.isSafeInteger(variant) || variant < 1) {
-    return { status: "not-found" as const, acronym, variant: variantParam };
-  }
-
-  const entry = await findPublishedByVariant(acronym, variant);
-  return entry
-    ? { status: "entry" as const, acronym, entry }
-    : { status: "not-found" as const, acronym, variant };
+  return dictionaryDefinitionService.lookupDefinition({
+    acronym: params.get("acr") ?? "",
+    variant: params.get("var"),
+  });
 }
 
 export default function Define({ loaderData }: Route.ComponentProps) {
@@ -129,10 +115,7 @@ function Page({ children }: { children: React.ReactNode }) {
 
 function BackLink() {
   return (
-    <a
-      href="/"
-      className="text-link mt-6 inline-block text-sm"
-    >
+    <a href="/" className="text-link mt-6 inline-block text-sm">
       Back to dictionary
     </a>
   );
