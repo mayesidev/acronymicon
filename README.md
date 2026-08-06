@@ -41,7 +41,9 @@ http://localhost:5173
 The target source layout and allowed dependency direction are documented in
 [the application module boundaries](docs/architecture/modules.md). Keep tests
 beside their owning modules and preserve these boundaries when adding or moving
-application code.
+application code. The supported single-instance topology, persistence and
+backup ownership, scaling triggers, and automatic release gates are documented
+in [the deployment and release decision](docs/architecture/deployment.md).
 
 ## Database
 
