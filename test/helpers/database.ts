@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createDatabase } from "../../app/db/client.server";
+import { createDatabase } from "../../app/platform/database/client.server";
 
 export function createTestDatabase() {
   const directory = mkdtempSync(join(tmpdir(), "acronymicon-db-test-"));

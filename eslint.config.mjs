@@ -143,6 +143,16 @@ export default tseslint.config(
               message:
                 "Runtime configuration is owned by app/platform/config.",
             },
+            {
+              group: [
+                "**/bootstrap.server",
+                "**/db/client.server",
+                "**/db/schema",
+                "**/db/write.server",
+              ],
+              message:
+                "Database lifecycle and schema are owned by app/platform/database.",
+            },
           ],
         },
       ],
@@ -165,6 +175,10 @@ export default tseslint.config(
                 "~/auth/**",
                 "../auth/**",
                 "**/config.server",
+                "**/bootstrap.server",
+                "**/db/client.server",
+                "**/db/schema",
+                "**/db/write.server",
               ],
               message:
                 "Route adapters compose feature APIs instead of importing platform or legacy implementation paths.",
@@ -181,6 +195,8 @@ export default tseslint.config(
       "app/features/**/*.server.{ts,tsx}",
       "app/features/**/server/**/*.{ts,tsx}",
       "scripts/**/*.{ts,tsx}",
+      "test/**/*.{ts,tsx}",
+      "drizzle.config.ts",
     ],
     rules: {
       "no-restricted-imports": [
@@ -191,6 +207,19 @@ export default tseslint.config(
               group: ["**/config.server"],
               message:
                 "Runtime configuration is owned by app/platform/config.",
+            },
+            {
+              group: [
+                "**/bootstrap.server",
+                "./client.server",
+                "./schema",
+                "./write.server",
+                "**/db/client.server",
+                "**/db/schema",
+                "**/db/write.server",
+              ],
+              message:
+                "Database lifecycle and schema are owned by app/platform/database.",
             },
           ],
         },

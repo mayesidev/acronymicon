@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { asc } from "drizzle-orm";
 
 import { createTestDatabase } from "../../test/helpers/database";
+import { acronymEntries } from "../platform/database/schema";
 import { importAcronymEntries } from "./import.server";
-import { acronymEntries } from "./schema";
 
 describe("acronym import", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];

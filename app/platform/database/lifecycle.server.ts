@@ -1,12 +1,12 @@
 import {
   getAppConfig,
   type AppConfig,
-} from "./platform/config/runtime.server";
+} from "../config/runtime.server";
 import {
   createDatabase,
   type AppDatabase,
   type DatabaseResource,
-} from "./db/client.server";
+} from "./client.server";
 
 let databaseResource: DatabaseResource | null = null;
 let shutdownHandlersRegistered = false;

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { getAppConfig } from "../app/platform/config/runtime.server";
-import { createDatabase } from "../app/db/client.server";
+import { createDatabase } from "../app/platform/database/client.server";
 import { importAcronymEntries } from "../app/db/import.server";
 
 const inputArguments = process.argv.slice(2).filter((argument) => argument !== "--");

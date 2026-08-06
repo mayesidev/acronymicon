@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 
-import { getAppDatabase } from "../bootstrap.server";
+import { getAppDatabase } from "../platform/database/lifecycle.server";
 import type { DictionaryRepository } from "../features/dictionary/server/repository";
 import type { SubmissionRepository } from "../features/submission/server/repository";
 import {
@@ -8,9 +8,9 @@ import {
   normalizeDefinition,
   parseDefinitionMarkup,
 } from "../domain/acronym";
-import type { AppDatabase } from "./client.server";
-import { acronymEntries } from "./schema";
-import { insertAcronymEntryAtomic } from "./write.server";
+import type { AppDatabase } from "../platform/database/client.server";
+import { acronymEntries } from "../platform/database/schema";
+import { insertAcronymEntryAtomic } from "../platform/database/write.server";
 
 export function createAcronymRepository(database: AppDatabase) {
   async function listPublishedEntries() {

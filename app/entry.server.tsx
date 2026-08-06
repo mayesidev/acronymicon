@@ -7,7 +7,7 @@ import { renderToPipeableStream } from "react-dom/server";
 import type { EntryContext } from "react-router";
 import { ServerRouter } from "react-router";
 
-import { initializeApplication } from "./bootstrap.server";
+import { initializeApplication } from "./platform/database/lifecycle.server";
 
 initializeApplication();
 

@@ -7,6 +7,13 @@ const presentationCoverageThresholds = {
   lines: 80,
 };
 
+const databaseCoverageThresholds = {
+  statements: 90,
+  branches: 80,
+  functions: 90,
+  lines: 90,
+};
+
 export default defineConfig({
   test: {
     include: ["app/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
@@ -36,12 +43,9 @@ export default defineConfig({
         "app/features/**/components/**": presentationCoverageThresholds,
         "app/features/**/{hooks/**,use-*.{ts,tsx}}":
           presentationCoverageThresholds,
-        "app/db/**": {
-          statements: 90,
-          branches: 80,
-          functions: 90,
-          lines: 90,
-        },
+        "app/db/**": databaseCoverageThresholds,
+        "app/platform/database/{client.server,schema,write.server}.ts":
+          databaseCoverageThresholds,
       },
     },
   },
