@@ -79,7 +79,19 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   await signIn(page, "user");
 
   await expect(page.getByText("Signed in as Local User")).toBeVisible();
-  await submit(page, "E2E", "End To End Verification");
+  const acronym = page.getByRole("textbox", { name: "Acronym" });
+  const definition = page.getByRole("textbox", { name: "Definition" });
+  await acronym.fill("E2E");
+  await definition.fill("[End] To End Verification");
+  await expect(definition).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(/Marked definition ranges/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit" })).toBeDisabled();
+
+  await definition.fill("End To End Verification");
+  await expect(definition).not.toHaveAttribute("aria-invalid");
+  const keyboardResponse = waitForSubmitResponse(page);
+  await definition.press("Enter");
+  await keyboardResponse;
   await expect(page).toHaveURL(/q=E2E/);
   await expect(page.getByText("End To End Verification")).toBeVisible();
 

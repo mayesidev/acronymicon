@@ -34,6 +34,14 @@ describe("submission form", () => {
       "Recovered notes",
     );
     expect(screen.getByText("Acronym is required.")).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Acronym" })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByRole("textbox", { name: "Acronym" })).toHaveAttribute(
+      "aria-describedby",
+      expect.stringMatching(/-error$/),
+    );
     expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
   });
 
@@ -52,6 +60,9 @@ describe("submission form", () => {
       "This definition already exists",
     );
     expect(screen.queryByText(exactDuplicateMessage)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Definition" }),
+    ).not.toHaveAttribute("aria-invalid");
     expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
 
     fireEvent.change(screen.getByRole("textbox", { name: "Definition" }), {

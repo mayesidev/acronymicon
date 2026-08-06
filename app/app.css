@@ -193,13 +193,3 @@ html.dark .text-red-950 {
 html.dark .border-red-300 {
   border-color: #b91c1c;
 }
-
-.form-input {
-  @apply w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200;
-}
-
-html.dark .form-input,
-html.dark select {
-  color: #f8fafc;
-  background-color: #1e293b;
-}

@@ -8,6 +8,9 @@ import { getOptionalUser } from "../features/authentication/server/session";
 import type { DictionarySort } from "../features/dictionary/model";
 import { listPublishedAcronyms } from "../features/dictionary/server/api";
 import { Button } from "../ui/components/button";
+import { Field } from "../ui/components/field";
+import { Input } from "../ui/components/input";
+import { NativeSelect } from "../ui/components/native-select";
 
 export function meta() {
   return [
@@ -81,19 +84,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </header>
 
         <section aria-label="Search dictionary">
-          <Form method="get" className="flex w-full gap-2">
-            <label htmlFor="search" className="sr-only">
-              Search acronyms
-            </label>
-            <input
+          <Form method="get" className="flex w-full items-start gap-2">
+            <Field
               id="search"
-              name="q"
-              type="search"
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Search acronym or definition"
-              className="min-h-11 flex-1 rounded border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-200"
-            />
+              label="Search acronyms"
+              labelClassName="sr-only"
+              className="flex-1"
+            >
+              <Input
+                name="q"
+                type="search"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder="Search acronym or definition"
+              />
+            </Field>
             <input type="hidden" name="sort" value={sortValue} />
             {isFiltered ? (
               <Button
@@ -115,19 +120,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               ? `${entries.length} result${entries.length === 1 ? "" : "s"} for "${query}"`
               : `${entries.length} published entr${entries.length === 1 ? "y" : "ies"}`}
           </p>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <span>Sort results</span>
-            <select
+          <Field
+            label="Sort results"
+            className="flex items-center gap-2"
+            labelClassName="font-normal text-muted-foreground"
+          >
+            <NativeSelect
               value={sortValue}
               onChange={(event) =>
                 setSortValue(event.target.value as DictionarySort)
               }
-              className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-950"
+              className="min-h-9 w-auto py-1"
             >
               <option value="alphabetical">Alphabetical</option>
               <option value="recent">Most recent</option>
-            </select>
-          </label>
+            </NativeSelect>
+          </Field>
         </section>
 
         {hasEntries ? (
