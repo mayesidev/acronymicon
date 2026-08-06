@@ -51,6 +51,7 @@ describe("submission duplicate preview state", () => {
     expect(fetcher.load).toHaveBeenCalledWith(
       "/submit?acronym=API&definition=Application+Programming+Interface",
     );
+    expect(fetcher.load).toHaveBeenCalledTimes(1);
   });
 
   it("does not load a preview without an acronym", () => {
@@ -64,7 +65,7 @@ describe("submission duplicate preview state", () => {
     expect(fetcher.load).not.toHaveBeenCalled();
   });
 
-  it("ignores a stale response", () => {
+  it("retains acronym-level warnings while a definition preview refreshes", () => {
     fetcher.data = preview({ checkedDefinition: "Old definition" });
 
     const { result } = renderHook(() =>
@@ -73,9 +74,9 @@ describe("submission duplicate preview state", () => {
 
     expect(result.current).toMatchObject({
       exactDuplicate: null,
-      existingEntries: [],
-      showDuplicateFeedback: false,
-      showDuplicateWarning: false,
+      existingEntries: [existingEntry],
+      showDuplicateFeedback: true,
+      showDuplicateWarning: true,
     });
   });
 
