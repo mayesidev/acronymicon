@@ -36,81 +36,81 @@ export function SubmissionForm({
   );
 
   return (
-    <>
-      {showDuplicateFeedback ? (
-        <DuplicateFeedback
-          acronym={acronym}
-          exactDuplicate={exactDuplicate}
-          existingEntries={existingEntries}
-        />
-      ) : null}
+    <Card>
+      <Form method="post" aria-label="New dictionary entry" className="p-5">
+        {showDuplicateWarning ? (
+          <input type="hidden" name="confirmDuplicate" value="true" />
+        ) : null}
 
-      <Card>
-        <Form method="post" className="p-5">
-          {showDuplicateWarning ? (
-            <input type="hidden" name="confirmDuplicate" value="true" />
-          ) : null}
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Acronym"
-              error={getSubmissionFieldError(actionData, "acronym")}
-              className="mt-4"
-            >
-              <Input
-                name="acronym"
-                value={acronym}
-                onChange={(event) => setAcronym(event.target.value)}
-                autoComplete="off"
-              />
-            </Field>
-
-            <Field
-              label="Definition"
-              error={
-                (definitionFieldError === exactDuplicateMessage
-                  ? undefined
-                  : definitionFieldError) ??
-                definitionError ??
-                undefined
-              }
-              className="mt-4"
-            >
-              <Input
-                name="definition"
-                value={definition}
-                onChange={(event) => setDefinition(event.target.value)}
-                autoComplete="off"
-              />
-            </Field>
-          </div>
-
+        <div className="grid gap-4 md:grid-cols-2">
           <Field
-            label="Notes"
-            error={getSubmissionFieldError(actionData, "notes")}
+            label="Acronym"
+            error={getSubmissionFieldError(actionData, "acronym")}
             className="mt-4"
           >
-            <Textarea name="notes" defaultValue={values?.notes} />
+            <Input
+              name="acronym"
+              value={acronym}
+              onChange={(event) => setAcronym(event.target.value)}
+              autoComplete="off"
+            />
           </Field>
 
-          <div className="mt-5 flex items-center gap-3">
-            <Button
-              type="submit"
-              disabled={Boolean(
-                exactDuplicate ||
-                  definitionError ||
-                  !acronym.trim() ||
-                  !definition.trim(),
-              )}
-            >
-              {showDuplicateWarning ? "Submit Anyway" : "Submit"}
-            </Button>
-            <ActionLink href="/" variant="secondary">
-              Cancel
-            </ActionLink>
+          <Field
+            label="Definition"
+            error={
+              (definitionFieldError === exactDuplicateMessage
+                ? undefined
+                : definitionFieldError) ??
+              definitionError ??
+              undefined
+            }
+            className="mt-4"
+          >
+            <Input
+              name="definition"
+              value={definition}
+              onChange={(event) => setDefinition(event.target.value)}
+              autoComplete="off"
+            />
+          </Field>
+        </div>
+
+        <Field
+          label="Notes"
+          error={getSubmissionFieldError(actionData, "notes")}
+          className="mt-4"
+        >
+          <Textarea name="notes" defaultValue={values?.notes} />
+        </Field>
+
+        <div className="mt-5 flex items-center gap-3">
+          <Button
+            type="submit"
+            disabled={Boolean(
+              exactDuplicate ||
+                definitionError ||
+                !acronym.trim() ||
+                !definition.trim(),
+            )}
+          >
+            {showDuplicateWarning ? "Submit Anyway" : "Submit"}
+          </Button>
+          <ActionLink href="/" variant="secondary">
+            Cancel
+          </ActionLink>
+        </div>
+
+        {showDuplicateFeedback ? (
+          <div className="mt-5">
+            <DuplicateFeedback
+              acronym={acronym}
+              exactDuplicate={exactDuplicate}
+              existingEntries={existingEntries}
+            />
           </div>
-        </Form>
-      </Card>
-    </>
+        ) : null}
+      </Form>
+    </Card>
   );
 }
