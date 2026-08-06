@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it } from "vitest";
 
@@ -56,7 +56,8 @@ describe("submission form", () => {
       },
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    const form = screen.getByRole("form", { name: "New dictionary entry" });
+    expect(within(form).getByRole("alert")).toHaveTextContent(
       "This definition already exists",
     );
     expect(screen.queryByText(exactDuplicateMessage)).not.toBeInTheDocument();
@@ -82,7 +83,8 @@ describe("submission form", () => {
       },
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
+    const form = screen.getByRole("form", { name: "New dictionary entry" });
+    expect(within(form).getByRole("status")).toHaveTextContent(
       existingEntry.definition,
     );
     expect(screen.getByDisplayValue("true")).toHaveAttribute(

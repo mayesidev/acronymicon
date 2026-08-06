@@ -115,6 +115,12 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   await expect(page.getByText("Signed in as Local User")).toBeVisible();
   const acronym = page.getByRole("textbox", { name: "Acronym" });
   const definition = page.getByRole("textbox", { name: "Definition" });
+  const initialAcronymPosition = await acronym.boundingBox();
+  await acronym.fill("API");
+  await expect(page.getByRole("status")).toBeVisible();
+  const warningAcronymPosition = await acronym.boundingBox();
+  expect(warningAcronymPosition?.y).toBe(initialAcronymPosition?.y);
+
   await acronym.fill("E2E");
   await definition.fill("[End] To End Verification");
   await expect(definition).toHaveAttribute("aria-invalid", "true");
