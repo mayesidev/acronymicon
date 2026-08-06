@@ -20,7 +20,10 @@
         ]
       }
     ],
-    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/release-notes-generator",
+      { "config": "./scripts/release-notes-config.js" }
+    ],
     "@semantic-release/github"
   ]
 }

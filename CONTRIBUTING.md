@@ -28,7 +28,9 @@ version and creates the GitHub release and tag. `fix`, `perf`, `refactor`,
 `feat` changes produce minor releases; and a `BREAKING CHANGE` produces a
 major release. Test-only, CI-only, documentation-only, generic `chore`,
 unscoped `build`, and `chore(deps)` development-tooling changes do not create
-a release. Normal changes should not be tagged manually.
+a release. Generated notes include each change that caused the version bump;
+maintenance categories that do not trigger a release are omitted. Normal
+changes should not be tagged manually.
 
 ## Development
 
