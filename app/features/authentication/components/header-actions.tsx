@@ -4,10 +4,19 @@ import { Button } from "../../../ui/components/button";
 import { ActionLink, TextLink } from "../../../ui/components/link";
 import type { AuthUser } from "../model";
 
-export function HeaderActions({ user }: { user: AuthUser | null }) {
+export function HeaderActions({
+  aboutHref,
+  user,
+}: {
+  aboutHref: string;
+  user: AuthUser | null;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm md:justify-end">
-      <ActionLink href="/submit">Submit acronym</ActionLink>
+      <nav aria-label="Application" className="flex items-center gap-4">
+        <ActionLink href="/submit">Submit acronym</ActionLink>
+        <TextLink href={aboutHref}>About Acronymicon</TextLink>
+      </nav>
 
       {user ? (
         <div

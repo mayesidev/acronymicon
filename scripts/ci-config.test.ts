@@ -56,4 +56,25 @@ describe("release container-publish policy", () => {
     expect(publishJob).toContain("provenance: mode=max");
     expect(publishJob).toContain("sbom: true");
   });
+
+  it("builds the release tag into the published application metadata", () => {
+    expect(publishJob).toContain(
+      "ACRONYMICON_VERSION=${{ inputs.release_tag }}",
+    );
+  });
+});
+
+describe("CI build metadata policy", () => {
+  it("exercises a known version in container builds and smoke tests", () => {
+    expect(
+      ciWorkflow.match(
+        /ACRONYMICON_VERSION=\$\{\{ env\.ACRONYMICON_TEST_VERSION \}\}/g,
+      ),
+    ).toHaveLength(2);
+    expect(
+      ciWorkflow.match(
+        /EXPECTED_ACRONYMICON_VERSION: \$\{\{ env\.ACRONYMICON_TEST_VERSION \}\}/g,
+      ),
+    ).toHaveLength(2);
+  });
 });

@@ -1,3 +1,5 @@
+ARG ACRONYMICON_VERSION=development
+
 FROM node:24.19.0-trixie-slim@sha256:0711b541c1c33a8a530ac4f0d391baa9a15b3d804695b1b24a47daa5fb60e74d AS development-dependencies-env
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
@@ -5,6 +7,8 @@ WORKDIR /app
 RUN pnpm install --frozen-lockfile
 
 FROM development-dependencies-env AS build-env
+ARG ACRONYMICON_VERSION
+ENV VITE_ACRONYMICON_VERSION=$ACRONYMICON_VERSION
 COPY . /app/
 RUN pnpm run build \
   && pnpm prune --prod \

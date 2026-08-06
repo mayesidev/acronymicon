@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
 import { Form, useSubmit } from "react-router";
 
+import { buildAboutHref } from "../features/about/model";
 import { HeaderActions } from "../features/authentication/components/header-actions";
 import { getOptionalUser } from "../features/authentication/server/session";
 import { DictionaryList } from "../features/dictionary/components/dictionary-list";
@@ -35,6 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   ]);
 
   return {
+    aboutHref: buildAboutHref(`${url.pathname}${url.search}`),
     entries,
     query,
     sort,
@@ -81,7 +83,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </p>
         </div>
 
-        <HeaderActions user={user} />
+        <HeaderActions aboutHref={loaderData.aboutHref} user={user} />
       </header>
 
       <section aria-label="Search dictionary">
