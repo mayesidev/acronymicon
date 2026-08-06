@@ -18,6 +18,7 @@ describe("About navigation", () => {
     "https://example.test",
     "//example.test",
     "/\\example.test",
+    "/_.data?q=API&sort=alphabetical",
   ])(
     "falls back to the dictionary for an unsafe return location (%s)",
     (value) => {
