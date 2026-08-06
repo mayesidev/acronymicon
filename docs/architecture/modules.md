@@ -67,7 +67,7 @@ large rename. These are the only planned structural gaps:
 
 | Current gap                                                                  | Planned resolution                                                                                       |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Reusable UI remains under `app/components` while its foundation is evaluated | Keep the UI-foundation decision and any resulting component migration as a separate architectural change |
+| Reusable UI remains under `app/components` while the accepted foundation is introduced | Migrate focused component groups into `app/ui` using the [shared UI foundation](./ui-foundation.md); do not combine the migration with feature behavior |
 
 Each structural pull request moves one boundary, colocates its tests, tightens
 the corresponding lint rule, and preserves user-visible behavior. Router, UI
