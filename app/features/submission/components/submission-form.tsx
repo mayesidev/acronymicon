@@ -84,7 +84,7 @@ export function SubmissionForm({
           <Textarea name="notes" defaultValue={values?.notes} />
         </Field>
 
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
             type="submit"
             disabled={Boolean(
