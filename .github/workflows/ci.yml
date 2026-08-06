@@ -53,36 +53,8 @@ jobs:
             changed_files="$(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA")"
           fi
 
-          application=false
-          browser=false
-          container=false
-          multi_arch=false
-          while IFS= read -r file; do
-            [[ -z "$file" ]] && continue
-            case "$file" in
-              README.md|CONTRIBUTING.md|SECURITY.md|.agents/*|.github/ISSUE_TEMPLATE/*.md|.github/pull_request_template.md)
-                ;;
-              Dockerfile|.dockerignore|.github/workflows/publish-container.yml)
-                container=true
-                multi_arch=true
-                ;;
-              *)
-                application=true
-                browser=true
-                container=true
-                ;;
-            esac
-          done <<< "$changed_files"
-
-          if [[ "$application" == "true" ]]; then
-            browser=true
-            container=true
-          fi
-
-          echo "browser=$browser" >> "$GITHUB_OUTPUT"
-          echo "application=$application" >> "$GITHUB_OUTPUT"
-          echo "container=$container" >> "$GITHUB_OUTPUT"
-          echo "multi_arch=$multi_arch" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$changed_files" |
+            node scripts/classify-ci-scope.mjs >> "$GITHUB_OUTPUT"
 
   quality:
     name: Quality and build

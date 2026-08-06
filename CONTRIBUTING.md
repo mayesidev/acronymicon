@@ -49,7 +49,8 @@ build so that local and CI validation do not drift apart.
 The end-to-end suite requires Docker and a local Keycloak container. GitHub
 Actions runs the complete quality, browser, security, build, and container
 checks for application changes. Documentation-only pull requests still run
-commit metadata validation, but skip application quality and browser checks.
+the scope and commit metadata checks, but skip application quality, browser,
+and container checks.
 
 Changes to authentication, persistence, imports, or user-facing workflows
 should include focused tests. Changes to the browser workflow should include
