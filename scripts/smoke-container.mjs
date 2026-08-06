@@ -3,28 +3,20 @@ import { setTimeout } from "node:timers/promises";
 
 const image = process.env.CONTAINER_IMAGE ?? "acronymicon:ci";
 const containerName = `acronymicon-smoke-${process.pid}`;
+const volumeName = `acronymicon-smoke-data-${process.pid}`;
 const runtimeNode = "/nodejs/bin/node";
 
 try {
-  execFileSync(
-    "docker",
-    [
-      "run",
-      "--detach",
-      "--name",
-      containerName,
-      "--env",
-      "DATABASE_PATH=/tmp/acronymicon.sqlite",
-      "--env",
-      "SESSION_SECRET=container-smoke-session-secret",
-      image,
-    ],
-    { stdio: "pipe" },
-  );
-
+  startContainer();
   await waitForApplication();
   verifyRuntimeHardening();
-  verifyContainerImporter();
+  verifyFreshContainerImporter();
+
+  removeContainer();
+  startContainer();
+  await waitForApplication();
+  verifyPersistedContainerImporter();
+
   console.log(`Container smoke test passed for ${image}.`);
 } catch (error) {
   const logs = getContainerLogs();
@@ -33,6 +25,36 @@ try {
   }
   throw error;
 } finally {
+  removeContainer();
+
+  try {
+    execFileSync("docker", ["volume", "rm", volumeName], { stdio: "ignore" });
+  } catch {
+    // The volume may not exist if Docker failed before starting the container.
+  }
+}
+
+function startContainer() {
+  execFileSync(
+    "docker",
+    [
+      "run",
+      "--detach",
+      "--name",
+      containerName,
+      "--env",
+      "DATABASE_PATH=/data/acronymicon.sqlite",
+      "--env",
+      "SESSION_SECRET=container-smoke-session-secret",
+      "--volume",
+      `${volumeName}:/data`,
+      image,
+    ],
+    { stdio: "pipe" },
+  );
+}
+
+function removeContainer() {
   try {
     execFileSync("docker", ["rm", "--force", containerName], {
       stdio: "ignore",
@@ -91,22 +113,9 @@ function verifyRuntimeHardening() {
   );
 }
 
-function verifyContainerImporter() {
-  const importerArguments = [
-    "exec",
-    containerName,
-    runtimeNode,
-    "build/scripts/import-acronyms.mjs",
-    "seeds/acronyms.seed.json",
-  ];
-  const firstImport = execFileSync("docker", importerArguments, {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  const secondImport = execFileSync("docker", importerArguments, {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+function verifyFreshContainerImporter() {
+  const firstImport = runContainerImporter();
+  const secondImport = runContainerImporter();
 
   if (!firstImport.includes("9 inserted, 0 duplicates skipped, 0 failed")) {
     throw new Error(
@@ -117,6 +126,31 @@ function verifyContainerImporter() {
   if (!secondImport.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
     throw new Error(`Container importer is not idempotent: ${secondImport}`);
   }
+}
+
+function verifyPersistedContainerImporter() {
+  const importResult = runContainerImporter();
+
+  if (!importResult.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
+    throw new Error(
+      `Container importer did not preserve named-volume data: ${importResult}`,
+    );
+  }
+}
+
+function runContainerImporter() {
+  const importerArguments = [
+    "exec",
+    containerName,
+    runtimeNode,
+    "build/scripts/import-acronyms.mjs",
+    "seeds/acronyms.seed.json",
+  ];
+
+  return execFileSync("docker", importerArguments, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 }
 
 async function waitForApplication() {

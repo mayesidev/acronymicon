@@ -14,7 +14,7 @@ are intentionally shared.
 | `app/features/dictionary/`     | Published-entry read models, search/list behavior, and dictionary presentation                  |
 | `app/features/submission/`     | Submission validation, duplicate policy, write orchestration, and form behavior                 |
 | `app/platform/config/`         | Environment parsing and typed runtime configuration                                             |
-| `app/platform/database/`       | SQLite ownership, migrations, schema, and feature-facing persistence adapters                   |
+| `app/platform/database/`       | SQLite ownership, migrations, schema, and feature/maintenance persistence adapters              |
 | `app/ui/`                      | Reusable presentation primitives and the application shell; no product or persistence decisions |
 | `app/routes/`                  | React Router transport adapters and composition; route registration remains in `app/routes.ts`  |
 
@@ -40,8 +40,8 @@ The practical rules are:
    or domain policy.
 2. Feature models and client-capable feature/UI modules can depend on domain
    values and reusable UI. They cannot import `*.server.*`, platform
-   implementations, route modules, or the legacy `app/db` and `app/auth`
-   implementations.
+   implementations, route modules, or retired top-level persistence and
+   authentication implementation paths.
 3. Server-only feature modules are named `*.server.ts`/`*.server.tsx` or live
    under a feature `server/` directory. Their API entry points are narrow
    composition roots that bind platform adapters to feature-owned contracts
@@ -67,7 +67,6 @@ large rename. These are the only planned structural gaps:
 
 | Current gap                                                                  | Planned resolution                                                                                       |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Maintenance import tooling remains in `app/db` modules                       | Move it behind supported platform and feature entry points, then remove the legacy directory             |
 | Reusable UI remains under `app/components` while its foundation is evaluated | Keep the UI-foundation decision and any resulting component migration as a separate architectural change |
 
 Each structural pull request moves one boundary, colocates its tests, tightens
