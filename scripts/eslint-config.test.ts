@@ -104,9 +104,13 @@ describe("platform database boundary", () => {
       source: 'import "./bootstrap.server";',
     },
     {
-      filePath: "app/db/acronyms.server.ts",
+      filePath: "app/db/import.server.ts",
       source:
         'import "./client.server";\nimport "./schema";\nimport "./write.server";',
+    },
+    {
+      filePath: "app/routes/home.tsx",
+      source: 'import "../db/acronyms.server";',
     },
     {
       filePath: "scripts/migrate-database.ts",

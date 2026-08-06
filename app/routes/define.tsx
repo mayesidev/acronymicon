@@ -4,16 +4,7 @@ import {
   DefinitionText,
   formatSubmittedDate,
 } from "../components/dictionary-list";
-import {
-  findPublishedByAcronym,
-  findPublishedByVariant,
-} from "../db/acronyms.server";
-import { createDictionaryDefinitionService } from "../features/dictionary/server/definition";
-
-const dictionaryDefinitionService = createDictionaryDefinitionService({
-  findPublishedByAcronym,
-  findPublishedByVariant,
-});
+import { lookupDefinition } from "../features/dictionary/server/api";
 
 export function meta() {
   return [{ title: "Definition | Acronymicon" }];
@@ -21,7 +12,7 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const params = new URL(request.url).searchParams;
-  return dictionaryDefinitionService.lookupDefinition({
+  return lookupDefinition({
     acronym: params.get("acr") ?? "",
     variant: params.get("var"),
   });

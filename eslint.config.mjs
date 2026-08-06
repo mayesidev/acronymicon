@@ -146,12 +146,13 @@ export default tseslint.config(
             {
               group: [
                 "**/bootstrap.server",
+                "**/db/acronyms.server",
                 "**/db/client.server",
                 "**/db/schema",
                 "**/db/write.server",
               ],
               message:
-                "Database lifecycle and schema are owned by app/platform/database.",
+                "Database implementations are owned by app/platform/database.",
             },
           ],
         },
@@ -159,9 +160,8 @@ export default tseslint.config(
     },
   },
   {
-    // Authentication and target-platform regressions are prohibited now so
-    // completed boundaries cannot drift. Legacy database imports remain until
-    // their feature-facing platform adapters are moved.
+    // Completed route boundaries cannot drift back toward platform or legacy
+    // implementation imports.
     files: ["app/routes/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
@@ -172,6 +172,8 @@ export default tseslint.config(
               group: [
                 "~/platform/**",
                 "../platform/**",
+                "~/db/**",
+                "../db/**",
                 "~/auth/**",
                 "../auth/**",
                 "**/config.server",
@@ -211,6 +213,8 @@ export default tseslint.config(
             {
               group: [
                 "**/bootstrap.server",
+                "./acronyms.server",
+                "**/db/acronyms.server",
                 "./client.server",
                 "./schema",
                 "./write.server",
@@ -219,7 +223,7 @@ export default tseslint.config(
                 "**/db/write.server",
               ],
               message:
-                "Database lifecycle and schema are owned by app/platform/database.",
+                "Database implementations are owned by app/platform/database.",
             },
           ],
         },
