@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -32,11 +32,41 @@ describe("dictionary list", () => {
   it("renders an entry with user-visible reference details", () => {
     render(<DictionaryList entries={loaderData.entries} />);
 
-    expect(screen.getByText("API")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "API" })).toHaveClass(
+      "no-underline",
+    );
     expect(
-      screen.getByText("Application Programming Interface"),
-    ).toBeInTheDocument();
+      screen.getByRole("link", {
+        name: "Application Programming Interface",
+      }),
+    ).toHaveClass("no-underline");
     expect(screen.getByText("Submitted Jan 1, 2026")).toBeInTheDocument();
+  });
+
+  it("keeps marked ranges distinct inside an undecorated definition link", () => {
+    render(
+      <DictionaryList
+        entries={[
+          {
+            ...loaderData.entries[0],
+            definition: "Application Programming Interface",
+            definitionRanges: [
+              { start: 0, end: 1 },
+              { start: 12, end: 13 },
+              { start: 24, end: 25 },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    const definitionLink = screen.getByRole("link", {
+      name: "Application Programming Interface",
+    });
+    expect(definitionLink).toHaveClass("no-underline");
+    expect(
+      within(definitionLink).getAllByText(/^[API]$/, { selector: "u" }),
+    ).toHaveLength(3);
   });
 
   it("underlines marked definition ranges", () => {

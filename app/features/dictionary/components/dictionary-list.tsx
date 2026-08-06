@@ -49,7 +49,7 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
       <div>
         <TextLink
           href={`/define?acr=${encodeURIComponent(entry.acronym)}`}
-          className="text-2xl font-semibold tracking-normal text-foreground"
+          className="text-2xl font-semibold tracking-normal no-underline"
         >
           {entry.acronym}
         </TextLink>
@@ -59,7 +59,7 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
         <h2 className="text-lg font-semibold tracking-normal text-foreground">
           <TextLink
             href={`/define?acr=${encodeURIComponent(entry.acronym)}&var=${entry.variant}`}
-            className="text-foreground"
+            className="no-underline"
           >
             <DefinitionText
               definition={entry.definition}
