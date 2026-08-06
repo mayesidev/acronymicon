@@ -20,8 +20,10 @@ export function AboutPage({
           About Acronymicon
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Acronymicon is an open source reference for sharing and discovering
-          acronym definitions.
+          Acronymicon is self-hosted dictionary software for sharing and
+          discovering acronym definitions within an organization. The
+          application source code is open source; the contents of each hosted
+          dictionary are not part of the public source project.
         </p>
       </header>
 
