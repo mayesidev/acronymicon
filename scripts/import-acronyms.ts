@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { getAppConfig } from "../app/config.server";
+import { getAppConfig } from "../app/platform/config/runtime.server";
 import { createDatabase } from "../app/db/client.server";
 import { importAcronymEntries } from "../app/db/import.server";
 

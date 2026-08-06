@@ -1,6 +1,6 @@
 import { createCookie, createCookieSessionStorage } from "react-router";
 
-import { getAppConfig } from "../../../config.server";
+import { getAppConfig } from "../../../platform/config/runtime.server";
 import type { AuthUser } from "../model";
 
 type SessionData = {

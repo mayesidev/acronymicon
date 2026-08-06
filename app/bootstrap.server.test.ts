@@ -9,7 +9,7 @@ import {
   getAppDatabase,
   initializeApplication,
 } from "./bootstrap.server";
-import { parseAppConfig } from "./config.server";
+import { parseAppConfig } from "./platform/config/runtime.server";
 import { acronymEntries } from "./db/schema";
 
 describe("application lifecycle", () => {

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { closeApplication, initializeApplication } from "../bootstrap.server";
-import { parseAppConfig } from "../config.server";
+import { parseAppConfig } from "../platform/config/runtime.server";
 import {
   buildNewAcronymEntry,
   createAcronymEntry,

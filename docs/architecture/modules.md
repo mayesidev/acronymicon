@@ -68,7 +68,7 @@ large rename. These are the only planned structural gaps:
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Home and definition routes import the legacy acronym repository                                           | Introduce dictionary read/search services and route-facing result contracts                               |
 | The submit route combines transport, policy, client state, and persistence                                | Extract pure policy first, followed by server orchestration and client presentation                        |
-| Configuration, bootstrap, schema, repositories, and SQLite ownership remain in top-level/`app/db` modules | Move configuration and SQLite ownership after feature-facing persistence contracts have been established  |
+| Bootstrap, schema, repositories, and SQLite ownership remain in top-level/`app/db` modules                | Move SQLite ownership now that feature-facing persistence contracts have been established                 |
 | Reusable UI remains under `app/components` while its foundation is evaluated                              | Keep the UI-foundation decision and any resulting component migration as a separate architectural change  |
 
 Each structural pull request moves one boundary, colocates its tests, tightens

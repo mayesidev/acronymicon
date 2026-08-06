@@ -52,3 +52,34 @@ describe("UI test lint configuration", () => {
     15_000,
   );
 });
+
+describe("platform configuration boundary", () => {
+  it.each([
+    {
+      filePath: "app/platform/config/runtime.server.ts",
+      source: 'import "../../config.server";',
+    },
+    {
+      filePath: "app/routes/home.tsx",
+      source: 'import "../config.server";',
+    },
+    {
+      filePath: "app/features/authentication/server/oidc.ts",
+      source: 'import "../../../config.server";',
+    },
+    {
+      filePath: "scripts/import-acronyms.ts",
+      source: 'import "../app/config.server";',
+    },
+  ])(
+    "rejects the legacy configuration path from $filePath",
+    async ({ filePath, source }) => {
+      const [result] = await eslint.lintText(source, { filePath });
+
+      expect(result.messages.map((message) => message.ruleId)).toContain(
+        "no-restricted-imports",
+      );
+    },
+    15_000,
+  );
+});
