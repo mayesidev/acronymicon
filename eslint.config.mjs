@@ -13,6 +13,7 @@ const uiTestFiles = [
   "app/features/**/components/**/*.test.{ts,tsx}",
   "app/features/**/hooks/**/*.test.{ts,tsx}",
   "app/features/**/use-*.test.{ts,tsx}",
+  "app/ui/**/*.test.{ts,tsx}",
 ];
 
 export default tseslint.config(

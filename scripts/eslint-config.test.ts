@@ -1,4 +1,4 @@
-import { ESLint } from "eslint";
+import { ESLint, type Linter } from "eslint";
 import { describe, expect, it } from "vitest";
 
 const eslint = new ESLint({ cwd: process.cwd() });
@@ -49,6 +49,15 @@ describe("UI test lint configuration", () => {
     },
     15_000,
   );
+
+  it("applies DOM-specific rules to shared UI component tests", async () => {
+    const config = (await eslint.calculateConfigForFile(
+      "app/ui/components/button.test.tsx",
+    )) as Linter.Config | undefined;
+
+    expect(config?.rules?.["jest-dom/prefer-empty"]).toEqual([2]);
+    expect(config?.rules?.["testing-library/no-node-access"]).toEqual([2]);
+  });
 
   it.each([
     "app/features/submission/policy.test.ts",
