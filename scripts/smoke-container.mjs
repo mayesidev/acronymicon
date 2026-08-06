@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { setTimeout } from "node:timers/promises";
 
 const image = process.env.CONTAINER_IMAGE ?? "acronymicon:ci";
+const expectedVersion =
+  process.env.EXPECTED_ACRONYMICON_VERSION ?? "development";
 const containerName = `acronymicon-smoke-${process.pid}`;
 const volumeName = `acronymicon-smoke-data-${process.pid}`;
 const runtimeNode = "/nodejs/bin/node";
@@ -9,6 +11,7 @@ const runtimeNode = "/nodejs/bin/node";
 try {
   startContainer();
   await waitForApplication();
+  verifyAboutPage();
   verifyRuntimeHardening();
   verifyStandaloneContainerImporter();
   verifyFreshContainerImporter();
@@ -96,6 +99,33 @@ function verifyRuntimeHardening() {
 
     if (process.getuid?.() !== 65532 || process.getgid?.() !== 65532) {
       console.error(\`Unexpected runtime identity: \${process.getuid?.()}:\${process.getgid?.()}\`);
+      process.exit(1);
+    }
+  `;
+
+  execFileSync(
+    "docker",
+    [
+      "exec",
+      containerName,
+      runtimeNode,
+      "--input-type=module",
+      "--eval",
+      script,
+    ],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+}
+
+function verifyAboutPage() {
+  const expectedVersionLiteral = JSON.stringify(expectedVersion);
+  const script = `
+    const response = await fetch("http://127.0.0.1:3000/about");
+    const html = await response.text();
+    const expectedVersion = ${expectedVersionLiteral};
+
+    if (!response.ok || !html.includes(expectedVersion)) {
+      console.error("About page did not identify build " + expectedVersion + ".");
       process.exit(1);
     }
   `;

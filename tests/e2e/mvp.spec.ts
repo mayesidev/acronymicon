@@ -23,15 +23,40 @@ test("anonymous users can browse and search seeded entries", async ({
   ).toBeVisible();
 
   const submitLink = page.getByRole("link", { name: "Submit acronym" });
+  const aboutLink = page.getByRole("link", { name: "About Acronymicon" });
   await page.keyboard.press("Tab");
   await expect(submitLink).toBeFocused();
   await expect(submitLink).not.toHaveCSS("box-shadow", "none");
+  await page.keyboard.press("Tab");
+  await expect(aboutLink).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Sign in" })).toBeFocused();
 
   await page.locator('input[name="q"]').fill("performance");
   await page.getByRole("button", { name: "Search" }).click();
 
+  await expect(page).toHaveURL(/q=performance/);
+  await expect(page.getByText("Annual Performance Index")).toBeVisible();
+  await expect(
+    page.getByText("Application Programming Interface"),
+  ).toBeHidden();
+
+  await aboutLink.click();
+  await expect(
+    page.getByRole("heading", { name: "About Acronymicon" }),
+  ).toBeVisible();
+  await expect(page.getByText("v0.0.0-e2e")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Read the MIT License" }),
+  ).toHaveAttribute(
+    "href",
+    "https://github.com/mayesidev/acronymicon/blob/main/LICENSE",
+  );
+  await expect(
+    page.getByRole("link", { name: "View Acronymicon source on GitHub" }),
+  ).toHaveAttribute("href", "https://github.com/mayesidev/acronymicon");
+
+  await page.getByRole("link", { name: "Back to dictionary" }).click();
   await expect(page).toHaveURL(/q=performance/);
   await expect(page.getByText("Annual Performance Index")).toBeVisible();
   await expect(
@@ -137,6 +162,10 @@ test("users can sign out and switch accounts", async ({ page }) => {
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Submit acronym" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("link", { name: "About Acronymicon" }),
   ).toBeFocused();
   await page.keyboard.press("Tab");
   const signOut = account.getByRole("button", { name: "Sign out" });

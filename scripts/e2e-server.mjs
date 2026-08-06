@@ -10,6 +10,7 @@ const oidcIssuerUrl =
   "http://keycloak.localtest.me:8080/realms/acronymicon";
 const environment = {
   ...process.env,
+  VITE_ACRONYMICON_VERSION: "v0.0.0-e2e",
   DATABASE_PATH: databasePath,
   DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
   SESSION_SECRET: "e2e-session-secret",

@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  ACRONYMICON_TEST_VERSION: v0.0.0-ci
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -99,6 +102,8 @@ jobs:
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
+          build-args: |
+            ACRONYMICON_VERSION=${{ env.ACRONYMICON_TEST_VERSION }}
           load: true
           tags: acronymicon:ci
           cache-from: type=gha,scope=ci,timeout=3m
@@ -106,6 +111,8 @@ jobs:
 
       - name: Smoke test container
         if: needs.scope.outputs.container == 'true'
+        env:
+          EXPECTED_ACRONYMICON_VERSION: ${{ env.ACRONYMICON_TEST_VERSION }}
         run: node scripts/smoke-container.mjs
 
       - name: Scan final runtime image
@@ -193,6 +200,8 @@ jobs:
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
+          build-args: |
+            ACRONYMICON_VERSION=${{ env.ACRONYMICON_TEST_VERSION }}
           platforms: linux/arm64
           load: true
           tags: acronymicon:arm64-ci
@@ -200,6 +209,7 @@ jobs:
       - name: Smoke test ARM64 container
         env:
           CONTAINER_IMAGE: acronymicon:arm64-ci
+          EXPECTED_ACRONYMICON_VERSION: ${{ env.ACRONYMICON_TEST_VERSION }}
         run: node scripts/smoke-container.mjs
 
   commit:
