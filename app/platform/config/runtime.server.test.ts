@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAppConfig } from "./runtime.server";
+import { parseAppConfig, parseDatabaseConfig } from "./runtime.server";
 
 describe("application configuration", () => {
   it("applies development defaults without configuring OIDC", () => {
@@ -77,5 +77,37 @@ describe("application configuration", () => {
     expect(() =>
       parseAppConfig({ RUN_MIGRATIONS_ON_STARTUP: "yes" }),
     ).toThrow("RUN_MIGRATIONS_ON_STARTUP");
+  });
+});
+
+describe("database-only configuration", () => {
+  it("applies the shared database defaults in production without app settings", () => {
+    expect(parseDatabaseConfig({ NODE_ENV: "production" })).toEqual({
+      path: "./data/acronymicon.sqlite",
+      migrationsFolder: "./drizzle",
+      runMigrations: true,
+    });
+  });
+
+  it("parses explicit database settings without validating unrelated OIDC", () => {
+    expect(
+      parseDatabaseConfig({
+        NODE_ENV: "production",
+        DATABASE_PATH: "/data/acronymicon.sqlite",
+        DRIZZLE_MIGRATIONS_PATH: "/app/drizzle",
+        RUN_MIGRATIONS_ON_STARTUP: "false",
+        OIDC_CLIENT_ID: "partial-configuration-is-not-consumed",
+      }),
+    ).toEqual({
+      path: "/data/acronymicon.sqlite",
+      migrationsFolder: "/app/drizzle",
+      runMigrations: false,
+    });
+  });
+
+  it("rejects ambiguous database boolean values", () => {
+    expect(() =>
+      parseDatabaseConfig({ RUN_MIGRATIONS_ON_STARTUP: "yes" }),
+    ).toThrow("Invalid database configuration");
   });
 });

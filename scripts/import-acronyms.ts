@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { getAppConfig } from "../app/platform/config/runtime.server";
+import { getDatabaseConfig } from "../app/platform/config/runtime.server";
 import { createDatabase } from "../app/platform/database/client.server";
 import { importAcronymEntries } from "../app/platform/database/import.server";
 
@@ -12,11 +12,11 @@ if (!inputPath) {
   process.exit(1);
 }
 
-const config = getAppConfig();
+const config = getDatabaseConfig();
 const database = createDatabase({
-  databasePath: config.database.path,
-  migrationsFolder: config.database.migrationsFolder,
-  runMigrations: config.database.runMigrations,
+  databasePath: config.path,
+  migrationsFolder: config.migrationsFolder,
+  runMigrations: config.runMigrations,
 });
 let exitCode = 0;
 

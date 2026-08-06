@@ -1,10 +1,10 @@
-import { getAppConfig } from "../app/platform/config/runtime.server";
+import { getDatabaseConfig } from "../app/platform/config/runtime.server";
 import { createDatabase } from "../app/platform/database/client.server";
 
-const config = getAppConfig();
+const config = getDatabaseConfig();
 const database = createDatabase({
-  databasePath: config.database.path,
-  migrationsFolder: config.database.migrationsFolder,
+  databasePath: config.path,
+  migrationsFolder: config.migrationsFolder,
   runMigrations: true,
 });
 

@@ -18,14 +18,20 @@ const optionalBoolean = z.preprocess(
   z.enum(["true", "false"]).optional(),
 );
 
-const environmentSchema = z
+const databaseEnvironmentShape = {
+  DATABASE_PATH: optionalString,
+  DRIZZLE_MIGRATIONS_PATH: optionalString,
+  RUN_MIGRATIONS_ON_STARTUP: optionalBoolean,
+};
+
+const databaseEnvironmentSchema = z.object(databaseEnvironmentShape);
+
+const applicationEnvironmentSchema = z
   .object({
+    ...databaseEnvironmentShape,
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    DATABASE_PATH: optionalString,
-    DRIZZLE_MIGRATIONS_PATH: optionalString,
-    RUN_MIGRATIONS_ON_STARTUP: optionalBoolean,
     SESSION_SECRET: optionalString,
     SESSION_COOKIE_SECURE: optionalBoolean,
     OIDC_ISSUER_URL: optionalUrl,
@@ -76,19 +82,24 @@ const environmentSchema = z
     }
   });
 
+export type DatabaseConfig = ReturnType<typeof parseDatabaseConfig>;
 export type AppConfig = ReturnType<typeof parseAppConfig>;
 
-export function parseAppConfig(environment: NodeJS.ProcessEnv) {
-  const result = environmentSchema.safeParse(environment);
+export function parseDatabaseConfig(environment: NodeJS.ProcessEnv) {
+  const result = databaseEnvironmentSchema.safeParse(environment);
 
   if (!result.success) {
-    const details = result.error.issues
-      .map((issue) => `${issue.path.join(".") || "environment"}: ${issue.message}`)
-      .join("\n");
+    throwConfigurationError("database", result.error);
+  }
 
-    throw new Error(`Invalid application configuration:\n${details}`, {
-      cause: result.error,
-    });
+  return buildDatabaseConfig(result.data);
+}
+
+export function parseAppConfig(environment: NodeJS.ProcessEnv) {
+  const result = applicationEnvironmentSchema.safeParse(environment);
+
+  if (!result.success) {
+    throwConfigurationError("application", result.error);
   }
 
   const values = result.data;
@@ -100,11 +111,7 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
 
   return {
     environment: values.NODE_ENV,
-    database: {
-      path: values.DATABASE_PATH ?? "./data/acronymicon.sqlite",
-      migrationsFolder: values.DRIZZLE_MIGRATIONS_PATH ?? "./drizzle",
-      runMigrations: values.RUN_MIGRATIONS_ON_STARTUP !== "false",
-    },
+    database: buildDatabaseConfig(values),
     session: {
       secret:
         values.SESSION_SECRET ??
@@ -138,4 +145,30 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
 
 export function getAppConfig() {
   return parseAppConfig(process.env);
+}
+
+export function getDatabaseConfig() {
+  return parseDatabaseConfig(process.env);
+}
+
+function buildDatabaseConfig(values: {
+  DATABASE_PATH?: string;
+  DRIZZLE_MIGRATIONS_PATH?: string;
+  RUN_MIGRATIONS_ON_STARTUP?: "true" | "false";
+}) {
+  return {
+    path: values.DATABASE_PATH ?? "./data/acronymicon.sqlite",
+    migrationsFolder: values.DRIZZLE_MIGRATIONS_PATH ?? "./drizzle",
+    runMigrations: values.RUN_MIGRATIONS_ON_STARTUP !== "false",
+  };
+}
+
+function throwConfigurationError(scope: string, error: z.ZodError): never {
+  const details = error.issues
+    .map((issue) => `${issue.path.join(".") || "environment"}: ${issue.message}`)
+    .join("\n");
+
+  throw new Error(`Invalid ${scope} configuration:\n${details}`, {
+    cause: error,
+  });
 }
