@@ -8,7 +8,9 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
-import { ThemeToggle } from "./components/theme-toggle";
+import { Card } from "./ui/components/card";
+import { PageShell } from "./ui/components/page-shell";
+import { ThemeToggle } from "./ui/components/theme-toggle";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [];
@@ -63,14 +65,16 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <PageShell contentClassName="pt-16">
+      <Card className="p-4">
+        <h1 className="text-2xl font-semibold">{message}</h1>
+        <p className="mt-2 text-muted-foreground">{details}</p>
+        {stack ? (
+          <pre className="mt-4 w-full overflow-x-auto rounded-md bg-muted p-4 text-sm">
+            <code>{stack}</code>
+          </pre>
+        ) : null}
+      </Card>
+    </PageShell>
   );
 }

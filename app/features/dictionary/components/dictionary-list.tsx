@@ -1,5 +1,6 @@
-import type { DictionaryEntry } from "../features/dictionary/model";
-import { TextLink } from "../ui/components/link";
+import { Card } from "../../../ui/components/card";
+import { TextLink } from "../../../ui/components/link";
+import type { DictionaryEntry } from "../model";
 
 export function DictionaryList({
   entries,
@@ -15,14 +16,16 @@ export function DictionaryList({
       <ol className="space-y-8">
         {groups.map((group) => (
           <li key={group.letter}>
-            <h2 className="mb-2 border-b border-slate-300 pb-2 text-sm font-semibold text-slate-600">
+            <h2 className="mb-2 border-b border-border pb-2 text-sm font-semibold text-muted-foreground">
               {group.letter}
             </h2>
-            <ol className="divide-y divide-slate-200 overflow-hidden rounded border border-slate-200 bg-white">
-              {group.entries.map((entry) => (
-                <DictionaryEntryItem key={entry.id} entry={entry} />
-              ))}
-            </ol>
+            <Card className="overflow-hidden">
+              <ol className="divide-y divide-border">
+                {group.entries.map((entry) => (
+                  <DictionaryEntryItem key={entry.id} entry={entry} />
+                ))}
+              </ol>
+            </Card>
           </li>
         ))}
       </ol>
@@ -30,11 +33,13 @@ export function DictionaryList({
   }
 
   return (
-    <ol className="divide-y divide-slate-200 overflow-hidden rounded border border-slate-200 bg-white">
-      {entries.map((entry) => (
-        <DictionaryEntryItem key={entry.id} entry={entry} />
-      ))}
-    </ol>
+    <Card className="overflow-hidden">
+      <ol className="divide-y divide-border">
+        {entries.map((entry) => (
+          <DictionaryEntryItem key={entry.id} entry={entry} />
+        ))}
+      </ol>
+    </Card>
   );
 }
 
@@ -51,7 +56,7 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
       </div>
 
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold tracking-normal text-slate-950">
+        <h2 className="text-lg font-semibold tracking-normal text-foreground">
           <TextLink
             href={`/define?acr=${encodeURIComponent(entry.acronym)}&var=${entry.variant}`}
             className="text-foreground"
@@ -63,10 +68,12 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
           </TextLink>
         </h2>
         {entry.notes ? (
-          <p className="mt-2 text-sm leading-6 text-slate-700">{entry.notes}</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {entry.notes}
+          </p>
         ) : null}
 
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-xs text-muted-foreground">
           Submitted by{" "}
           {entry.submittedByDisplayName ??
             entry.submittedByUsername ??

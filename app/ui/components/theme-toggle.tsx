@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { Button } from "../ui/components/button";
+import { Button } from "./button";
 
 type Theme = "light" | "dark";
 

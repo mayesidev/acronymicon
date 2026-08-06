@@ -1,3 +1,4 @@
+import { Alert } from "../../../ui/components/alert";
 import type { SubmissionDuplicateEntry } from "../model";
 
 export function DuplicateFeedback({
@@ -11,10 +12,7 @@ export function DuplicateFeedback({
 }) {
   if (exactDuplicate) {
     return (
-      <section
-        className="rounded border border-red-300 bg-red-50 p-4 text-red-950"
-        role="alert"
-      >
+      <Alert variant="destructive" role="alert">
         <h2 className="font-semibold tracking-normal">
           This definition already exists
         </h2>
@@ -22,7 +20,7 @@ export function DuplicateFeedback({
           An identical acronym and definition is already in the dictionary.
         </p>
         <DefinitionList entries={[exactDuplicate]} />
-      </section>
+      </Alert>
     );
   }
 
@@ -31,10 +29,7 @@ export function DuplicateFeedback({
   }
 
   return (
-    <section
-      className="rounded border border-amber-300 bg-amber-50 p-4 text-amber-950"
-      role="status"
-    >
+    <Alert variant="warning" role="status">
       <h2 className="font-semibold tracking-normal">
         {acronym.toUpperCase()} already exists
       </h2>
@@ -42,7 +37,7 @@ export function DuplicateFeedback({
         Review the existing definitions before submitting another meaning.
       </p>
       <DefinitionList entries={existingEntries} />
-    </section>
+    </Alert>
   );
 }
 

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { ThemeToggle } from "./theme-toggle";
 
-describe("theme toggle", () => {
+describe("shared theme toggle", () => {
   afterEach(() => {
     window.localStorage.clear();
     document.documentElement.classList.remove("dark");

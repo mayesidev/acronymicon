@@ -13,11 +13,11 @@ export function HeaderActions({ user }: { user: AuthUser | null }) {
         <div
           role="group"
           aria-label="Account"
-          className="border-l border-slate-200 pl-4"
+          className="border-l border-border pl-4"
         >
-          <p className="text-xs text-slate-500">Signed in as</p>
+          <p className="text-xs text-muted-foreground">Signed in as</p>
           <div className="mt-0.5 flex items-center gap-3">
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-foreground">
               {user.displayName ?? user.username}
             </span>
             <Form method="post" action="/auth/logout">

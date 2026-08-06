@@ -9,6 +9,7 @@ import {
 } from "../features/submission/server/api";
 import { validateSubmissionInput } from "../features/submission/server/input";
 import { TextLink } from "../ui/components/link";
+import { PageShell } from "../ui/components/page-shell";
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -90,23 +91,20 @@ export default function SubmitAcronym({
   loaderData,
 }: Route.ComponentProps) {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-        <header className="border-b border-slate-200 pb-5">
-          <TextLink href="/" className="text-sm">
-            Back to dictionary
-          </TextLink>
-          <h1 className="mt-4 text-3xl font-semibold tracking-normal">
-            Submit acronym
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Signed in as{" "}
-            {loaderData.user.displayName ?? loaderData.user.username}
-          </p>
-        </header>
+    <PageShell contentClassName="gap-6">
+      <header className="border-b border-border pb-5">
+        <TextLink href="/" className="text-sm">
+          Back to dictionary
+        </TextLink>
+        <h1 className="mt-4 text-3xl font-semibold tracking-normal">
+          Submit acronym
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Signed in as {loaderData.user.displayName ?? loaderData.user.username}
+        </p>
+      </header>
 
-        <SubmissionForm actionData={actionData} />
-      </div>
-    </main>
+      <SubmissionForm actionData={actionData} />
+    </PageShell>
   );
 }
