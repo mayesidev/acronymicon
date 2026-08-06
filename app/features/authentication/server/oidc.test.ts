@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addReauthenticationPrompt,
   mapClaimsToUser,
-} from "./oidc.server";
+} from "./oidc";
 
 describe("OIDC claim mapping", () => {
   it("maps configured identity claims and group membership", () => {

@@ -25,7 +25,7 @@ export default defineConfig({
         branches: 30,
         functions: 50,
         lines: 45,
-        "app/auth/**": {
+        "app/features/authentication/server/**": {
           statements: 30,
           branches: 30,
           functions: 30,

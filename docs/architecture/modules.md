@@ -66,7 +66,6 @@ large rename. These are the only planned structural gaps:
 
 | Current gap                                                                                               | Planned resolution                                                                                         |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Authentication logic and auth-aware header presentation remain under `app/auth` and `app/components`      | Move session/OIDC behavior and auth-aware presentation behind an authentication feature boundary          |
 | Home and definition routes import the legacy acronym repository                                           | Introduce dictionary read/search services and route-facing result contracts                               |
 | The submit route combines transport, policy, client state, and persistence                                | Extract pure policy first, followed by server orchestration and client presentation                        |
 | Configuration, bootstrap, schema, repositories, and SQLite ownership remain in top-level/`app/db` modules | Move configuration and SQLite ownership after feature-facing persistence contracts have been established  |

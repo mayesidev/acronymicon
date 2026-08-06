@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
 import { Form, useSubmit } from "react-router";
 
-import { getOptionalUser } from "../auth/session.server";
 import { DictionaryList } from "../components/dictionary-list";
-import { HeaderActions } from "../components/header-actions";
 import { listPublishedEntries } from "../db/acronyms.server";
+import { HeaderActions } from "../features/authentication/components/header-actions";
+import { getOptionalUser } from "../features/authentication/server/session";
 import type { DictionarySort } from "../features/dictionary/model";
 import { createDictionaryReadService } from "../features/dictionary/server/read";
 

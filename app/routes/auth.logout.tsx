@@ -1,55 +1,23 @@
-import { Form, redirect } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/auth.logout";
-import { buildOidcLogoutUrl } from "../auth/oidc.server";
-import {
-  createForceReauthenticationCookie,
-  destroySession,
-  getSession,
-} from "../auth/session.server";
+import { SignOutConfirmation } from "../features/authentication/components/sign-out-confirmation";
+import { authenticationWorkflow } from "../features/authentication/server/workflow";
 
 export function meta() {
   return [{ title: "Sign out | Acronymicon" }];
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const session = await getSession(request.headers.get("Cookie"));
-  const providerLogoutUrl = await buildOidcLogoutUrl({ request });
+  const outcome = await authenticationWorkflow.signOut(request);
   const headers = new Headers();
-  headers.append("Set-Cookie", await destroySession(session));
-  headers.append(
-    "Set-Cookie",
-    await createForceReauthenticationCookie(),
-  );
+  for (const cookie of outcome.cookies) {
+    headers.append("Set-Cookie", cookie);
+  }
 
-  return redirect(providerLogoutUrl?.toString() ?? "/", {
-    headers,
-  });
+  return redirect(outcome.location, { headers });
 }
 
 export default function Logout() {
-  return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950">
-      <section className="mx-auto max-w-xl rounded border border-slate-200 bg-white p-6">
-        <h1 className="text-xl font-semibold tracking-normal">Sign out</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-700">
-          End your Acronymicon session on this browser.
-        </p>
-        <Form method="post" className="mt-5 flex gap-3">
-          <button
-            type="submit"
-            className="rounded bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Sign out
-          </button>
-          <a
-            href="/"
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-          >
-            Cancel
-          </a>
-        </Form>
-      </section>
-    </main>
-  );
+  return <SignOutConfirmation />;
 }

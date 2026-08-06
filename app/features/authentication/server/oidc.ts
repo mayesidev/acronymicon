@@ -1,7 +1,7 @@
 import * as oidc from "openid-client";
 
-import { getAppConfig } from "../config.server";
-import type { AuthUser } from "../features/authentication/model";
+import { getAppConfig } from "../../../config.server";
+import type { AuthUser } from "../model";
 
 let cachedConfig: Promise<oidc.Configuration | null> | null = null;
 
