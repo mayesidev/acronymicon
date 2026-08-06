@@ -14,3 +14,11 @@ export type DictionaryEntry = {
 };
 
 export type DictionarySort = "alphabetical" | "recent";
+
+export const dictionarySortOptions = [
+  { label: "Alphabetical", value: "alphabetical" },
+  { label: "Most recent", value: "recent" },
+] as const satisfies ReadonlyArray<{
+  label: string;
+  value: DictionarySort;
+}>;

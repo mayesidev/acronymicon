@@ -17,6 +17,7 @@ export function listPublishedAcronyms(
 export function lookupDefinition(input: {
   acronym: string;
   variant: string | null;
+  sort?: DictionarySort;
 }) {
   return createDictionaryDefinitionService(getRepository()).lookupDefinition(
     input,

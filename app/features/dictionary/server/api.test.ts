@@ -48,6 +48,15 @@ it("serves dictionary reads through the feature API", async () => {
     status: "entry",
     entry: { definition: "Annual Performance Index", variant: 2 },
   });
+  await expect(
+    lookupDefinition({ acronym: "api", variant: null, sort: "alphabetical" }),
+  ).resolves.toMatchObject({
+    status: "list",
+    entries: [
+      { definition: "Annual Performance Index", variant: 2 },
+      { definition: "Application Programming Interface", variant: 1 },
+    ],
+  });
 });
 
 function initializeTestApplication() {

@@ -1,12 +1,19 @@
 import type { Route } from "./+types/define";
+import { Form, useSubmit } from "react-router";
 
 import {
   DefinitionText,
   formatSubmittedDate,
 } from "../features/dictionary/components/dictionary-list";
 import { lookupDefinition } from "../features/dictionary/server/api";
+import {
+  dictionarySortOptions,
+  type DictionarySort,
+} from "../features/dictionary/model";
 import { Card } from "../ui/components/card";
+import { Field } from "../ui/components/field";
 import { TextLink } from "../ui/components/link";
+import { NativeSelect } from "../ui/components/native-select";
 import { PageShell } from "../ui/components/page-shell";
 
 export function meta() {
@@ -15,13 +22,18 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const params = new URL(request.url).searchParams;
-  return lookupDefinition({
+  const sort: DictionarySort =
+    params.get("sort") === "recent" ? "recent" : "alphabetical";
+  const result = await lookupDefinition({
     acronym: params.get("acr") ?? "",
     variant: params.get("var"),
+    sort,
   });
+  return { ...result, sort };
 }
 
 export default function Define({ loaderData }: Route.ComponentProps) {
+  const submit = useSubmit();
   if (loaderData.status === "missing-acronym") {
     return (
       <Page>
@@ -66,6 +78,37 @@ export default function Define({ loaderData }: Route.ComponentProps) {
           ? "Definition"
           : `${entries.length} definition${entries.length === 1 ? "" : "s"}`}
       </p>
+
+      {loaderData.status === "list" ? (
+        <Form method="get" className="mt-4 flex justify-end">
+          <input type="hidden" name="acr" value={loaderData.acronym} />
+          <Field
+            label="Sort definitions"
+            className="flex items-center gap-2"
+            labelClassName="font-normal text-muted-foreground"
+          >
+            <NativeSelect
+              name="sort"
+              value={loaderData.sort}
+              onChange={(event) => {
+                if (event.currentTarget.form) {
+                  void submit(event.currentTarget.form, {
+                    method: "get",
+                    replace: true,
+                  });
+                }
+              }}
+              className="min-h-9 w-auto py-1"
+            >
+              {dictionarySortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        </Form>
+      ) : null}
 
       <Card className="mt-6 overflow-hidden">
         <ol className="divide-y divide-border">

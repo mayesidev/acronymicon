@@ -77,6 +77,17 @@ test("anonymous users can browse and search seeded entries", async ({
 test("users can open a specific definition variant and see marked ranges", async ({
   page,
 }) => {
+  await page.goto("/define?acr=api");
+  await expect(page.getByLabel("Sort definitions")).toHaveValue(
+    "alphabetical",
+  );
+  await expect(page.locator("ol > li h2")).toHaveText([
+    "Annual Performance Index",
+    "Application Programming Interface",
+  ]);
+  await page.getByLabel("Sort definitions").selectOption("recent");
+  await expect(page).toHaveURL(/sort=recent/);
+
   await page.goto("/define?acr=radar&var=1");
 
   await expect(page.getByRole("heading", { name: "RADAR" })).toBeVisible();

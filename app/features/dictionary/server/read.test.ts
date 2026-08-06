@@ -5,16 +5,32 @@ import type { DictionaryListRepository } from "./repository";
 import { createDictionaryReadService } from "./read";
 
 describe("dictionary list, search, and sort", () => {
-  it("sorts unfiltered entries alphabetically by acronym and variant", async () => {
+  it("sorts unfiltered entries by normalized acronym and definition", async () => {
     const service = createService([
       entry({ id: "zulu", acronym: "ZULU" }),
-      entry({ id: "api-2", acronym: "API", variant: 2 }),
-      entry({ id: "api-1", acronym: "API" }),
+      entry({
+        id: "api-2",
+        acronym: "API",
+        definition: "Application Programming Interface",
+        variant: 2,
+      }),
+      entry({
+        id: "api-3",
+        acronym: "api",
+        definition: "actually Pretty Interesting",
+        variant: 3,
+      }),
+      entry({
+        id: "api-1",
+        acronym: "API",
+        definition: "Annual Performance Index",
+      }),
     ]);
 
     await expect(
       service.listPublishedAcronyms("", "alphabetical"),
     ).resolves.toMatchObject([
+      { id: "api-3" },
       { id: "api-1" },
       { id: "api-2" },
       { id: "zulu" },
