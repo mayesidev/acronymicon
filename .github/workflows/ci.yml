@@ -193,7 +193,13 @@ jobs:
         with:
           context: .
           platforms: linux/arm64
+          load: true
           tags: acronymicon:arm64-ci
+
+      - name: Smoke test ARM64 container
+        env:
+          CONTAINER_IMAGE: acronymicon:arm64-ci
+        run: node scripts/smoke-container.mjs
 
   commit:
     name: Commit metadata
