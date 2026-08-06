@@ -22,6 +22,13 @@ test("anonymous users can browse and search seeded entries", async ({
     page.getByText("Application Programming Interface"),
   ).toBeVisible();
 
+  const submitLink = page.getByRole("link", { name: "Submit acronym" });
+  await page.keyboard.press("Tab");
+  await expect(submitLink).toBeFocused();
+  await expect(submitLink).not.toHaveCSS("box-shadow", "none");
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Sign in" })).toBeFocused();
+
   await page.locator('input[name="q"]').fill("performance");
   await page.getByRole("button", { name: "Search" }).click();
 
@@ -115,7 +122,15 @@ test("users can sign out and switch accounts", async ({ page }) => {
   const account = page.getByRole("group", { name: "Account" });
   await expect(account).toContainText("Signed in as");
   await expect(account).toContainText("Local User");
-  await account.getByRole("button", { name: "Sign out" }).click();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("link", { name: "Submit acronym" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  const signOut = account.getByRole("button", { name: "Sign out" });
+  await expect(signOut).toBeFocused();
+  await expect(signOut).not.toHaveCSS("box-shadow", "none");
+  await signOut.click();
   await page.getByRole("button", { name: "Logout" }).click();
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
 

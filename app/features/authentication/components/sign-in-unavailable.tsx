@@ -1,3 +1,5 @@
+import { TextLink } from "../../../ui/components/link";
+
 export function SignInUnavailable() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950">
@@ -10,9 +12,9 @@ export function SignInUnavailable() {
           configuration. Set the OIDC environment variables before using
           sign-in.
         </p>
-        <a href="/" className="text-link mt-5 inline-block text-sm">
+        <TextLink href="/" className="mt-5 inline-block text-sm">
           Return to dictionary
-        </a>
+        </TextLink>
       </section>
     </main>
   );

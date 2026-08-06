@@ -1,5 +1,8 @@
 import { Form } from "react-router";
 
+import { Button } from "../../../ui/components/button";
+import { ActionLink } from "../../../ui/components/link";
+
 export function SignOutConfirmation() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950">
@@ -9,18 +12,10 @@ export function SignOutConfirmation() {
           End your Acronymicon session on this browser.
         </p>
         <Form method="post" className="mt-5 flex gap-3">
-          <button
-            type="submit"
-            className="rounded bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Sign out
-          </button>
-          <a
-            href="/"
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-          >
+          <Button type="submit">Sign out</Button>
+          <ActionLink href="/" variant="secondary">
             Cancel
-          </a>
+          </ActionLink>
         </Form>
       </section>
     </main>

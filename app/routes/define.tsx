@@ -5,6 +5,7 @@ import {
   formatSubmittedDate,
 } from "../components/dictionary-list";
 import { lookupDefinition } from "../features/dictionary/server/api";
+import { TextLink } from "../ui/components/link";
 
 export function meta() {
   return [{ title: "Definition | Acronymicon" }];
@@ -40,12 +41,12 @@ export default function Define({ loaderData }: Route.ComponentProps) {
           Variant {loaderData.variant} is not available for {loaderData.acronym}
           .
         </p>
-        <a
+        <TextLink
           href={`/define?acr=${encodeURIComponent(loaderData.acronym)}`}
-          className="text-link mt-4 inline-block text-sm"
+          className="mt-4 inline-block text-sm"
         >
           View all definitions for {loaderData.acronym}
-        </a>
+        </TextLink>
       </Page>
     );
   }
@@ -106,8 +107,8 @@ function Page({ children }: { children: React.ReactNode }) {
 
 function BackLink() {
   return (
-    <a href="/" className="text-link mt-6 inline-block text-sm">
+    <TextLink href="/" className="mt-6 inline-block text-sm">
       Back to dictionary
-    </a>
+    </TextLink>
   );
 }

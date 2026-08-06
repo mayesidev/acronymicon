@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Form } from "react-router";
 
+import { Button } from "../../../ui/components/button";
+import { ActionLink } from "../../../ui/components/link";
 import type { SubmissionActionData } from "../model";
 import { exactDuplicateMessage } from "../policy";
 import {
@@ -93,7 +95,7 @@ export function SubmissionForm({
         </Field>
 
         <div className="mt-5 flex items-center gap-3">
-          <button
+          <Button
             type="submit"
             disabled={Boolean(
               exactDuplicate ||
@@ -101,16 +103,12 @@ export function SubmissionForm({
               !acronym.trim() ||
               !definition.trim(),
             )}
-            className="rounded bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {showDuplicateWarning ? "Submit Anyway" : "Submit"}
-          </button>
-          <a
-            href="/"
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-          >
+          </Button>
+          <ActionLink href="/" variant="secondary">
             Cancel
-          </a>
+          </ActionLink>
         </div>
       </Form>
     </>

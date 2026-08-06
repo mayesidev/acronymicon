@@ -27,14 +27,18 @@ describe("header actions", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Submit acronym" }),
-    ).toHaveClass("bg-slate-950", "text-white");
+    ).toHaveAttribute("href", "/submit");
+    expect(
+      within(account).getByRole("button", { name: "Sign out" }),
+    ).toHaveAttribute("type", "submit");
   });
 
   it("presents sign-in as a visible text link", () => {
     renderActions(null);
 
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveClass(
-      "text-link",
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/auth/login",
     );
   });
 });
