@@ -43,7 +43,9 @@ The target source layout and allowed dependency direction are documented in
 beside their owning modules and preserve these boundaries when adding or moving
 application code. The supported single-instance topology, persistence and
 backup ownership, scaling triggers, and automatic release gates are documented
-in [the deployment and release decision](docs/architecture/deployment.md).
+in [the deployment and release decision](docs/architecture/deployment.md). The
+current framework choice and the evidence required to revisit it are recorded
+in [the router framework decision](docs/architecture/router.md).
 
 ## Database
 
