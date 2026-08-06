@@ -17,6 +17,19 @@ expect(container.firstChild).not.toBeNull();
 `;
 
 describe("UI test lint configuration", () => {
+  it(
+    "initializes the TypeScript UI configuration within the cold-start budget",
+    async () => {
+      const [result] = await eslint.lintText("export {};", {
+        filePath:
+          "app/features/authentication/components/header-actions.test.tsx",
+      });
+
+      expect(result.fatalErrorCount).toBe(0);
+    },
+    30_000,
+  );
+
   it.each([
     "app/features/authentication/components/header-actions.test.tsx",
     "app/features/submission/components/submission-form.test.tsx",
