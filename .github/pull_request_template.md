@@ -7,15 +7,17 @@ or `feat: allow editing definitions`.
 
 ## Validation
 
-- [ ] `pnpm run verify`
-- [ ] `pnpm run security:check`
-- [ ] `pnpm test:e2e` when browser or authentication behavior changed
-- [ ] `pnpm run test:container` when container behavior changed
+List the focused local commands or evidence used to establish the changed
+behavior. Include security, browser, or container checks only when applicable.
+
+- [ ] Relevant linting or typechecking
+- [ ] Relevant focused automated tests
+- [ ] Additional change-specific validation, if applicable
 
 ## Delivery
 
 - [ ] Changes are committed on a focused branch and pushed
-- [ ] Required pull request checks have passed
+- [ ] Required CI checks have passed; CI is the authoritative acceptance gate
 - [ ] The pull request is ready to squash-merge
 
 ## Notes
