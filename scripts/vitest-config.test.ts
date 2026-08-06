@@ -3,7 +3,28 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import vitestConfig from "../vitest.config";
+
+describe("presentation coverage configuration", () => {
+  it("applies the presentation policy to shared UI source", () => {
+    expect(vitestConfig).toMatchObject({
+      test: {
+        coverage: {
+          thresholds: {
+            "app/ui/**": {
+              statements: 80,
+              branches: 55,
+              functions: 75,
+              lines: 80,
+            },
+          },
+        },
+      },
+    });
+  });
+});
 
 it.each([
   {

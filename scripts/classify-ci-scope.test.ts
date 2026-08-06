@@ -28,6 +28,7 @@ describe("CI scope classification", () => {
 
   it.each([
     ["application source", ["app/root.tsx"]],
+    ["shared UI source", ["app/ui/components/button.tsx"]],
     ["dependency metadata", ["package.json", "pnpm-lock.yaml"]],
     ["executable scripts", ["scripts/import-acronyms.ts"]],
     ["workflow configuration", [".github/workflows/ci.yml"]],
