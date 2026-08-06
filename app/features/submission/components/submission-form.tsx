@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Form } from "react-router";
 
 import { Button } from "../../../ui/components/button";
+import { Field } from "../../../ui/components/field";
+import { Input } from "../../../ui/components/input";
 import { ActionLink } from "../../../ui/components/link";
+import { Textarea } from "../../../ui/components/textarea";
 import type { SubmissionActionData } from "../model";
 import { exactDuplicateMessage } from "../policy";
 import {
@@ -53,12 +56,12 @@ export function SubmissionForm({
           <Field
             label="Acronym"
             error={getSubmissionFieldError(actionData, "acronym")}
+            className="mt-4"
           >
-            <input
+            <Input
               name="acronym"
               value={acronym}
               onChange={(event) => setAcronym(event.target.value)}
-              className="form-input"
               autoComplete="off"
             />
           </Field>
@@ -72,12 +75,12 @@ export function SubmissionForm({
               definitionError ??
               undefined
             }
+            className="mt-4"
           >
-            <input
+            <Input
               name="definition"
               value={definition}
               onChange={(event) => setDefinition(event.target.value)}
-              className="form-input"
               autoComplete="off"
             />
           </Field>
@@ -86,12 +89,9 @@ export function SubmissionForm({
         <Field
           label="Notes"
           error={getSubmissionFieldError(actionData, "notes")}
+          className="mt-4"
         >
-          <textarea
-            name="notes"
-            defaultValue={values?.notes}
-            className="form-input min-h-28 resize-y"
-          />
+          <Textarea name="notes" defaultValue={values?.notes} />
         </Field>
 
         <div className="mt-5 flex items-center gap-3">
@@ -112,23 +112,5 @@ export function SubmissionForm({
         </div>
       </Form>
     </>
-  );
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="mt-4 block text-sm font-medium text-slate-700">
-      <span>{label}</span>
-      <div className="mt-1">{children}</div>
-      {error ? <p className="mt-1 text-sm text-red-700">{error}</p> : null}
-    </label>
   );
 }
