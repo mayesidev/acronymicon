@@ -1,4 +1,5 @@
 import type { DictionaryEntry } from "../features/dictionary/model";
+import { TextLink } from "../ui/components/link";
 
 export function DictionaryList({
   entries,
@@ -41,25 +42,25 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
   return (
     <li className="grid gap-4 p-4 md:grid-cols-[8rem_1fr]">
       <div>
-        <a
+        <TextLink
           href={`/define?acr=${encodeURIComponent(entry.acronym)}`}
-          className="text-2xl font-semibold tracking-normal text-slate-950 underline-offset-4 hover:underline"
+          className="text-2xl font-semibold tracking-normal text-foreground"
         >
           {entry.acronym}
-        </a>
+        </TextLink>
       </div>
 
       <div className="min-w-0">
         <h2 className="text-lg font-semibold tracking-normal text-slate-950">
-          <a
+          <TextLink
             href={`/define?acr=${encodeURIComponent(entry.acronym)}&var=${entry.variant}`}
-            className="underline-offset-4 hover:underline"
+            className="text-foreground"
           >
             <DefinitionText
               definition={entry.definition}
               ranges={entry.definitionRanges}
             />
-          </a>
+          </TextLink>
         </h2>
         {entry.notes ? (
           <p className="mt-2 text-sm leading-6 text-slate-700">{entry.notes}</p>

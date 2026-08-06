@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 
+import { Button } from "../ui/components/button";
+
 type Theme = "light" | "dark";
 
 const themeStorageKey = "acronymicon-theme";
@@ -43,15 +45,16 @@ export function ThemeToggle() {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
       onClick={toggleTheme}
-      className="fixed bottom-4 right-4 z-10 rounded border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-100"
+      className="fixed right-4 bottom-4 z-10 px-3 text-xs"
       aria-label="Toggle color theme"
       title="Toggle color theme"
     >
       Theme
-    </button>
+    </Button>
   );
 }
 

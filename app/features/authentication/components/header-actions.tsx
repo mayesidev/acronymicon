@@ -1,16 +1,13 @@
 import { Form } from "react-router";
 
+import { Button } from "../../../ui/components/button";
+import { ActionLink, TextLink } from "../../../ui/components/link";
 import type { AuthUser } from "../model";
 
 export function HeaderActions({ user }: { user: AuthUser | null }) {
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm md:justify-end">
-      <a
-        href="/submit"
-        className="rounded bg-slate-950 px-4 py-2 font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-      >
-        Submit acronym
-      </a>
+      <ActionLink href="/submit">Submit acronym</ActionLink>
 
       {user ? (
         <div
@@ -24,16 +21,14 @@ export function HeaderActions({ user }: { user: AuthUser | null }) {
               {user.displayName ?? user.username}
             </span>
             <Form method="post" action="/auth/logout">
-              <button type="submit" className="text-link">
+              <Button type="submit" variant="text">
                 Sign out
-              </button>
+              </Button>
             </Form>
           </div>
         </div>
       ) : (
-        <a href="/auth/login" className="text-link">
-          Sign in
-        </a>
+        <TextLink href="/auth/login">Sign in</TextLink>
       )}
     </div>
   );

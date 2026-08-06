@@ -7,6 +7,7 @@ import { HeaderActions } from "../features/authentication/components/header-acti
 import { getOptionalUser } from "../features/authentication/server/session";
 import type { DictionarySort } from "../features/dictionary/model";
 import { listPublishedAcronyms } from "../features/dictionary/server/api";
+import { Button } from "../ui/components/button";
 
 export function meta() {
   return [
@@ -95,20 +96,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             />
             <input type="hidden" name="sort" value={sortValue} />
             {isFiltered ? (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={clearSearch}
-                className="min-h-11 rounded border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                className="px-3"
               >
                 Clear
-              </button>
+              </Button>
             ) : null}
-            <button
-              type="submit"
-              className="min-h-11 rounded bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-            >
-              Search
-            </button>
+            <Button type="submit">Search</Button>
           </Form>
         </section>
 
