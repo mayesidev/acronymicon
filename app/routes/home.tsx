@@ -6,7 +6,10 @@ import { buildAboutHref } from "../features/about/model";
 import { HeaderActions } from "../features/authentication/components/header-actions";
 import { getOptionalUser } from "../features/authentication/server/session";
 import { DictionaryList } from "../features/dictionary/components/dictionary-list";
-import type { DictionarySort } from "../features/dictionary/model";
+import {
+  dictionarySortOptions,
+  type DictionarySort,
+} from "../features/dictionary/model";
 import { listPublishedAcronyms } from "../features/dictionary/server/api";
 import { Button } from "../ui/components/button";
 import { Card } from "../ui/components/card";
@@ -140,8 +143,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             }
             className="min-h-9 w-auto py-1"
           >
-            <option value="alphabetical">Alphabetical</option>
-            <option value="recent">Most recent</option>
+            {dictionarySortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </NativeSelect>
         </Field>
       </section>

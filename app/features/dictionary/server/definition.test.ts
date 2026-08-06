@@ -16,14 +16,42 @@ describe("dictionary definition service", () => {
     expect(repository.findPublishedByVariant).not.toHaveBeenCalled();
   });
 
-  it("lists all definitions when no variant is requested", async () => {
-    const { repository, service } = setup({ entries: [entry] });
+  it("lists definitions alphabetically when no variant is requested", async () => {
+    const annual = dictionaryEntry({
+      id: "annual",
+      definition: "Annual Performance Index",
+      variant: 1,
+    });
+    const application = dictionaryEntry({
+      id: "application",
+      definition: "Application Programming Interface",
+      variant: 2,
+    });
+    const { repository, service } = setup({ entries: [application, annual] });
 
     await expect(
       service.lookupDefinition({ acronym: " api ", variant: null }),
-    ).resolves.toEqual({ status: "list", acronym: "api", entries: [entry] });
+    ).resolves.toEqual({
+      status: "list",
+      acronym: "api",
+      entries: [annual, application],
+    });
     expect(repository.findPublishedByAcronym).toHaveBeenCalledWith("api");
     expect(repository.findPublishedByVariant).not.toHaveBeenCalled();
+  });
+
+  it("lists definitions by recency when requested", async () => {
+    const older = dictionaryEntry({ id: "older", createdAt: "2026-08-01" });
+    const newer = dictionaryEntry({ id: "newer", createdAt: "2026-08-06" });
+    const { service } = setup({ entries: [older, newer] });
+
+    await expect(
+      service.lookupDefinition({
+        acronym: "api",
+        variant: null,
+        sort: "recent",
+      }),
+    ).resolves.toMatchObject({ entries: [{ id: "newer" }, { id: "older" }] });
   });
 
   it("returns the requested definition variant", async () => {

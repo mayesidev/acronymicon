@@ -1,6 +1,9 @@
 import type { DictionaryEntry, DictionarySort } from "../model";
-import { normalizeAcronym } from "../../../domain/acronym";
 import type { DictionaryListRepository } from "./repository";
+import {
+  compareDictionaryEntries,
+  sortDictionaryEntries,
+} from "./sort";
 
 export function createDictionaryReadService(
   repository: DictionaryListRepository,
@@ -24,12 +27,10 @@ export function createDictionaryReadService(
           .sort(
             (left, right) =>
               left.score - right.score ||
-              compareEntries(left.entry, right.entry, sort),
+              compareDictionaryEntries(left.entry, right.entry, sort),
           )
           .map((result) => result.entry)
-      : [...entries].sort((left, right) =>
-          compareBrowseEntries(left, right, sort),
-        );
+      : sortDictionaryEntries(entries, sort);
 
     return matches;
   }
@@ -68,36 +69,6 @@ function getSearchScore(
   )
     ? 3
     : null;
-}
-
-function compareEntries(
-  left: DictionaryEntry,
-  right: DictionaryEntry,
-  sort: DictionarySort,
-) {
-  if (sort === "recent" && left.createdAt !== right.createdAt) {
-    return right.createdAt.localeCompare(left.createdAt);
-  }
-
-  return (
-    left.acronym.localeCompare(right.acronym) || left.variant - right.variant
-  );
-}
-
-function compareBrowseEntries(
-  left: DictionaryEntry,
-  right: DictionaryEntry,
-  sort: DictionarySort,
-) {
-  if (sort === "recent" && left.createdAt !== right.createdAt) {
-    return right.createdAt.localeCompare(left.createdAt);
-  }
-
-  return (
-    normalizeAcronym(left.acronym).localeCompare(
-      normalizeAcronym(right.acronym),
-    ) || left.variant - right.variant
-  );
 }
 
 function levenshteinDistance(left: string, right: string) {

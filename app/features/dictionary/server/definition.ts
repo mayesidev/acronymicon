@@ -1,5 +1,6 @@
-import type { DictionaryEntry } from "../model";
+import type { DictionaryEntry, DictionarySort } from "../model";
 import type { DictionaryDefinitionRepository } from "./repository";
+import { sortDictionaryEntries } from "./sort";
 
 export type DictionaryDefinitionResult =
   | { status: "missing-acronym"; acronym: "" }
@@ -17,6 +18,7 @@ export function createDictionaryDefinitionService(
   async function lookupDefinition(input: {
     acronym: string;
     variant: string | null;
+    sort?: DictionarySort;
   }): Promise<DictionaryDefinitionResult> {
     const acronym = input.acronym.trim();
 
@@ -28,7 +30,10 @@ export function createDictionaryDefinitionService(
       return {
         status: "list",
         acronym,
-        entries: await repository.findPublishedByAcronym(acronym),
+        entries: sortDictionaryEntries(
+          await repository.findPublishedByAcronym(acronym),
+          input.sort ?? "alphabetical",
+        ),
       };
     }
 
