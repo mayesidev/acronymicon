@@ -6,24 +6,21 @@
       "package": "libc6",
       "version": "2.41-12+deb13u3",
       "expiresOn": "2026-09-04",
-      "reason": "Debian rates this scanf %mc explicit-width overflow as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05.",
-      "trackingIssue": "ACR-60"
+      "reason": "Debian rates this scanf %mc explicit-width overflow as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05. Re-evaluate before expiry."
     },
     {
       "vulnerability": "CVE-2026-5435",
       "package": "libc6",
       "version": "2.41-12+deb13u3",
       "expiresOn": "2026-09-04",
-      "reason": "Debian rates this deprecated resolver-debug buffer issue as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05.",
-      "trackingIssue": "ACR-60"
+      "reason": "Debian rates this deprecated resolver-debug buffer issue as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05. Re-evaluate before expiry."
     },
     {
       "vulnerability": "CVE-2026-5928",
       "package": "libc6",
       "version": "2.41-12+deb13u3",
       "expiresOn": "2026-09-04",
-      "reason": "Debian rates this ungetwc overlapping non-Unicode conversion issue as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05.",
-      "trackingIssue": "ACR-60"
+      "reason": "Debian rates this ungetwc overlapping non-Unicode conversion issue as minor/no-DSA for Trixie; no stable fix was available on 2026-08-05. Re-evaluate before expiry."
     }
   ]
 }

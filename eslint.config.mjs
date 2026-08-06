@@ -146,8 +146,9 @@ export default tseslint.config(
     },
   },
   {
-    // ACR-42, ACR-43, and ACR-63 remove the remaining legacy route imports.
-    // New target-platform imports are prohibited now so the gap cannot grow.
+    // Dictionary, submission, and authentication extractions remove the
+    // remaining legacy route imports. New target-platform imports are
+    // prohibited now so the gap cannot grow.
     files: ["app/routes/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [

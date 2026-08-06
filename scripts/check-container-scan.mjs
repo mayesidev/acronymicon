@@ -84,7 +84,6 @@ function validateException(exception, index) {
     "version",
     "expiresOn",
     "reason",
-    "trackingIssue",
   ]) {
     if (typeof exception?.[field] !== "string" || !exception[field].trim()) {
       throw new Error(`Container scan exception ${index} requires ${field}.`);
@@ -133,7 +132,7 @@ function matches(exception, finding) {
 }
 
 function formatException(exception) {
-  return `${exception.vulnerability} in ${exception.package}@${exception.version} (expires ${exception.expiresOn}, ${exception.trackingIssue})`;
+  return `${exception.vulnerability} in ${exception.package}@${exception.version} (expires ${exception.expiresOn})`;
 }
 
 function isIsoDate(value) {

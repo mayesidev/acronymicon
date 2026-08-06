@@ -26,7 +26,7 @@ describe("container vulnerability policy", () => {
     );
   });
 
-  it("accepts a current exact exception", () => {
+  it("accepts a current exact, self-contained exception", () => {
     const exceptionsPath = writeExceptions([
       buildException({ expiresOn: "2026-08-06" }),
     ]);
@@ -75,6 +75,5 @@ function buildException({ expiresOn }: { expiresOn: string }) {
     version: "1.0.0",
     expiresOn,
     reason: "Controlled policy test fixture.",
-    trackingIssue: "ACR-35",
   };
 }
