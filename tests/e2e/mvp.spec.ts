@@ -128,9 +128,21 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   const definition = page.getByRole("textbox", { name: "Definition" });
   const initialAcronymPosition = await acronym.boundingBox();
   await acronym.fill("API");
-  await expect(page.getByRole("status")).toBeVisible();
+  const warningButton = page.getByRole("button", { name: "See warning" });
+  await expect(warningButton).toBeVisible();
   const warningAcronymPosition = await acronym.boundingBox();
   expect(warningAcronymPosition?.y).toBe(initialAcronymPosition?.y);
+  await definition.fill("A");
+  await expect(warningButton).toBeVisible();
+  await definition.fill("An");
+  await expect(warningButton).toBeVisible();
+  await warningButton.click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Application Programming Interface",
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(warningButton).toBeFocused();
 
   await acronym.fill("E2E");
   await definition.fill("[End] To End Verification");
@@ -150,10 +162,12 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   expect(
     (await submit(page, "E2E", "Browser Integration Verification")).status(),
   ).toBe(409);
-  await expect(
-    page.getByRole("heading", { name: "E2E already exists" }),
-  ).toBeVisible();
-  await expect(page.getByText("End To End Verification")).toBeVisible();
+  await page.getByRole("button", { name: "See warning" }).click();
+  await expect(page.getByRole("dialog")).toContainText("E2E already exists");
+  await expect(page.getByRole("dialog")).toContainText(
+    "End To End Verification",
+  );
+  await page.getByRole("button", { name: "Close" }).click();
   const confirmedResponse = waitForSubmitResponse(page);
   await page.getByRole("button", { name: "Submit Anyway" }).click();
   await confirmedResponse;
@@ -166,7 +180,8 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   expect((await submit(page, "E2E", "End To End Verification")).status()).toBe(
     400,
   );
-  const exactDuplicateWarning = page.getByRole("alert");
+  await page.getByRole("button", { name: "See warning" }).click();
+  const exactDuplicateWarning = page.getByRole("dialog");
   await expect(exactDuplicateWarning).toContainText(
     "This definition already exists",
   );

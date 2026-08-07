@@ -57,7 +57,10 @@ describe("submission form", () => {
     });
 
     const form = screen.getByRole("form", { name: "New dictionary entry" });
-    expect(within(form).getByRole("alert")).toHaveTextContent(
+    fireEvent.click(
+      within(form).getByRole("button", { name: "See warning" }),
+    );
+    expect(within(form).getByRole("dialog")).toHaveTextContent(
       "This definition already exists",
     );
     expect(screen.queryByText(exactDuplicateMessage)).not.toBeInTheDocument();
@@ -69,7 +72,9 @@ describe("submission form", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Definition" }), {
       target: { value: "Annual Performance Index" },
     });
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "See warning" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();
   });
 
@@ -84,7 +89,10 @@ describe("submission form", () => {
     });
 
     const form = screen.getByRole("form", { name: "New dictionary entry" });
-    expect(within(form).getByRole("status")).toHaveTextContent(
+    fireEvent.click(
+      within(form).getByRole("button", { name: "See warning" }),
+    );
+    expect(within(form).getByRole("dialog")).toHaveTextContent(
       existingEntry.definition,
     );
     expect(screen.getByDisplayValue("true")).toHaveAttribute(
@@ -97,8 +105,9 @@ describe("submission form", () => {
   it("renders the unchanged empty form without duplicate feedback", () => {
     renderForm();
 
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "See warning" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute(
       "href",
       "/",

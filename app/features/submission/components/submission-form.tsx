@@ -84,7 +84,7 @@ export function SubmissionForm({
           <Textarea name="notes" defaultValue={values?.notes} />
         </Field>
 
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
             type="submit"
             disabled={Boolean(
@@ -96,20 +96,17 @@ export function SubmissionForm({
           >
             {showDuplicateWarning ? "Submit Anyway" : "Submit"}
           </Button>
-          <ActionLink href="/" variant="secondary">
-            Cancel
-          </ActionLink>
-        </div>
-
-        {showDuplicateFeedback ? (
-          <div className="mt-5">
+          {showDuplicateFeedback ? (
             <DuplicateFeedback
               acronym={acronym}
               exactDuplicate={exactDuplicate}
               existingEntries={existingEntries}
             />
-          </div>
-        ) : null}
+          ) : null}
+          <ActionLink href="/" variant="secondary">
+            Cancel
+          </ActionLink>
+        </div>
       </Form>
     </Card>
   );

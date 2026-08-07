@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DuplicateFeedback } from "./duplicate-feedback";
@@ -37,12 +37,22 @@ describe("duplicate feedback", () => {
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent(
+    const trigger = screen.getByRole("button", { name: "See warning" });
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(screen.getByRole("dialog", { hidden: true })).not.toHaveAttribute(
+      "open",
+    );
+
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole("dialog")).toHaveTextContent(
       exactDuplicate.definition,
     );
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(screen.getByRole("dialog")).toHaveTextContent(
       otherDefinition.definition,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(trigger).toHaveFocus();
   });
 
   it("shows only the identical definition for an exact duplicate", () => {
@@ -54,10 +64,12 @@ describe("duplicate feedback", () => {
       />,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    fireEvent.click(screen.getByRole("button", { name: "See warning" }));
+
+    expect(screen.getByRole("dialog")).toHaveTextContent(
       exactDuplicate.definition,
     );
-    expect(screen.getByRole("alert")).not.toHaveTextContent(
+    expect(screen.getByRole("dialog")).not.toHaveTextContent(
       otherDefinition.definition,
     );
   });

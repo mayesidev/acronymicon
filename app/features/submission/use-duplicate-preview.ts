@@ -17,7 +17,8 @@ export function useDuplicatePreview({
   definition: string;
   actionData?: SubmissionActionData;
 }) {
-  const fetcher = useFetcher<SubmissionDuplicatePreview>();
+  const { data: previewData, load: loadPreview } =
+    useFetcher<SubmissionDuplicatePreview>();
 
   useEffect(() => {
     const normalizedAcronym = acronym.trim();
@@ -30,18 +31,17 @@ export function useDuplicatePreview({
         acronym: normalizedAcronym,
         definition,
       });
-      void fetcher.load(`/submit?${parameters.toString()}`);
+      void loadPreview(`/submit?${parameters.toString()}`);
     }, 200);
 
     return () => window.clearTimeout(timeout);
-  }, [acronym, definition, fetcher]);
+  }, [acronym, definition, loadPreview]);
 
   const localDefinitionError = getDefinitionError(acronym, definition);
+  const acronymPreview =
+    previewData?.checkedAcronym === acronym.trim() ? previewData : null;
   const currentPreview =
-    fetcher.data?.checkedAcronym === acronym.trim() &&
-    fetcher.data.checkedDefinition === definition
-      ? fetcher.data
-      : null;
+    acronymPreview?.checkedDefinition === definition ? acronymPreview : null;
   const actionWarningMatchesCurrentInput =
     actionData?.status === "duplicate-warning" &&
     actionData.values.acronym === acronym &&
@@ -57,7 +57,7 @@ export function useDuplicatePreview({
     actionExactDuplicate ?? currentPreview?.exactDuplicate ?? null;
   const existingEntries = actionWarningMatchesCurrentInput
     ? actionData.existingEntries
-    : (currentPreview?.existingEntries ?? []);
+    : (acronymPreview?.existingEntries ?? []);
   const definitionError =
     localDefinitionError ?? currentPreview?.definitionError ?? null;
   const showDuplicateWarning = !exactDuplicate && existingEntries.length > 0;
