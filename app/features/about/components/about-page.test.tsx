@@ -13,6 +13,11 @@ describe("About page", () => {
     expect(
       screen.getByRole("heading", { name: "About Acronymicon" }),
     ).toBeVisible();
+    expect(
+      screen.getByText(/self-hosted dictionary software/),
+    ).toHaveTextContent(
+      "The application source code is open source; the contents of each hosted dictionary are not part of the public source project.",
+    );
     expect(screen.getByText("v1.2.3")).toBeVisible();
     expect(
       screen.getByRole("link", { name: "Back to dictionary" }),
