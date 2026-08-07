@@ -42,46 +42,50 @@ export function SubmissionForm({
           <input type="hidden" name="confirmDuplicate" value="true" />
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field
-            label="Acronym"
-            error={getSubmissionFieldError(actionData, "acronym")}
-            className="mt-4"
-          >
-            <Input
-              name="acronym"
-              value={acronym}
-              onChange={(event) => setAcronym(event.target.value)}
-              autoComplete="off"
-            />
-          </Field>
-
-          <Field
-            label="Definition"
-            error={
-              (definitionFieldError === exactDuplicateMessage
-                ? undefined
-                : definitionFieldError) ??
-              definitionError ??
-              undefined
-            }
-            className="mt-4"
-          >
-            <Input
-              name="definition"
-              value={definition}
-              onChange={(event) => setDefinition(event.target.value)}
-              autoComplete="off"
-            />
-          </Field>
-        </div>
+        <Field
+          label={<FieldLabel requirement="required">Acronym</FieldLabel>}
+          error={getSubmissionFieldError(actionData, "acronym")}
+          className="mt-4"
+        >
+          <Input
+            name="acronym"
+            value={acronym}
+            onChange={(event) => setAcronym(event.target.value)}
+            autoComplete="off"
+            required
+          />
+        </Field>
 
         <Field
-          label="Notes"
+          label={<FieldLabel requirement="required">Definition</FieldLabel>}
+          error={
+            (definitionFieldError === exactDuplicateMessage
+              ? undefined
+              : definitionFieldError) ??
+            definitionError ??
+            undefined
+          }
+          className="mt-4"
+        >
+          <Input
+            name="definition"
+            value={definition}
+            onChange={(event) => setDefinition(event.target.value)}
+            autoComplete="off"
+            required
+          />
+        </Field>
+
+        <Field
+          label={<FieldLabel requirement="optional">Notes</FieldLabel>}
           error={getSubmissionFieldError(actionData, "notes")}
           className="mt-4"
         >
-          <Textarea name="notes" defaultValue={values?.notes} />
+          <Textarea
+            name="notes"
+            defaultValue={values?.notes}
+            className="min-h-20"
+          />
         </Field>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -109,5 +113,22 @@ export function SubmissionForm({
         </div>
       </Form>
     </Card>
+  );
+}
+
+function FieldLabel({
+  children,
+  requirement,
+}: {
+  children: React.ReactNode;
+  requirement: "required" | "optional";
+}) {
+  return (
+    <>
+      {children}{" "}
+      <span aria-hidden="true" className="font-normal text-muted-foreground">
+        ({requirement})
+      </span>
+    </>
   );
 }

@@ -113,6 +113,15 @@ describe("submission form", () => {
       "/",
     );
     expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Acronym" })).toBeRequired();
+    expect(
+      screen.getByRole("textbox", { name: "Definition" }),
+    ).toBeRequired();
+    expect(screen.getByRole("textbox", { name: "Notes" })).not.toBeRequired();
+    expect(screen.getAllByText("(required)", { selector: "span" })).toHaveLength(
+      2,
+    );
+    expect(screen.getByText("(optional)")).toBeVisible();
 
     fireEvent.change(screen.getByRole("textbox", { name: "Acronym" }), {
       target: { value: "API" },
