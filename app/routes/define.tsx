@@ -42,7 +42,6 @@ export default function Define({ loaderData }: Route.ComponentProps) {
           Add an acronym to the <code>acr</code> query parameter to view its
           definitions.
         </p>
-        <BackLink />
       </Page>
     );
   }
@@ -137,18 +136,22 @@ export default function Define({ loaderData }: Route.ComponentProps) {
           ))}
         </ol>
       </Card>
-      <BackLink />
     </Page>
   );
 }
 
 function Page({ children }: { children: React.ReactNode }) {
-  return <PageShell>{children}</PageShell>;
+  return (
+    <PageShell>
+      <BackLink />
+      {children}
+    </PageShell>
+  );
 }
 
 function BackLink() {
   return (
-    <TextLink href="/" className="mt-6 inline-block text-sm">
+    <TextLink href="/" className="mb-4 self-start text-sm">
       Back to dictionary
     </TextLink>
   );
