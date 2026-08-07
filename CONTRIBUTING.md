@@ -40,24 +40,30 @@ Use Node.js 24.x and pnpm 11.x:
 pnpm install
 ```
 
-Before opening a pull request, run the checks that apply to the change:
+Before opening a pull request, run the smallest checks that establish the
+changed behavior. Typical focused checks include:
 
 ```bash
-pnpm run verify
-pnpm run security:check
-pnpm test:e2e
-pnpm run test:container
+pnpm run lint
+pnpm run typecheck
+pnpm test -- <test-file>
 ```
 
-`pnpm run verify` is the canonical local and CI quality check. It runs
-typechecking, linting, tests with coverage thresholds, and the production
-build so that local and CI validation do not drift apart.
+Choose checks according to the files and behavior being changed rather than
+running every suite by default. Add focused automated coverage when the
+relevant behavior does not already have it. Use `pnpm test:e2e`,
+`pnpm run security:check`, or `pnpm run test:container` locally when that suite
+is the simplest way to validate the change or when diagnosing a CI failure.
+`pnpm run verify` is available as an optional complete local quality preflight.
 
-The end-to-end suite requires Docker and a local Keycloak container. GitHub
-Actions runs the complete quality, browser, security, build, and container
-checks for application changes. Documentation-only pull requests still run
-the scope and commit metadata checks, but skip application quality, browser,
-and container checks.
+GitHub Actions is the authoritative pull-request validation environment. It
+runs the most complete applicable quality, browser, security, build, and
+container checks for application changes, and its required checks have the
+final say on whether a pull request is acceptable to merge. Local results do
+not override a pending or failing required check. Documentation-only pull
+requests still run the scope and commit metadata checks, but skip application
+quality, browser, and container checks. The end-to-end suite requires Docker
+and a local Keycloak container when it is run locally.
 
 Changes to authentication, persistence, imports, or user-facing workflows
 should include focused tests. Changes to the browser workflow should include
