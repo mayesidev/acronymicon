@@ -64,7 +64,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitest/coverage-v8": "4.1.10",
-    "conventional-changelog-conventionalcommits": "9.3.1",
+    "conventional-changelog-conventionalcommits": "10.2.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "9.39.5",
     "eslint-plugin-jest-dom": "5.10.1",
