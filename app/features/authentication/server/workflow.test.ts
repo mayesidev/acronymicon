@@ -125,6 +125,8 @@ describe("return destination policy", () => {
     [null, "/"],
     ["https://example.test", "/"],
     ["//example.test", "/"],
+    ["/_.data?q=API", "/"],
+    ["/define.data?acr=API", "/"],
     ["/submit?draft=1", "/submit?draft=1"],
   ])("maps %s to %s", (value, expected) => {
     expect(safeReturnTo(value)).toBe(expected);

@@ -130,5 +130,11 @@ export function safeReturnTo(value: string | null) {
     return "/";
   }
 
-  return value;
+  const url = new URL(value, "https://acronymicon.invalid");
+
+  if (url.pathname.endsWith(".data")) {
+    return "/";
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }

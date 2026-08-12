@@ -123,13 +123,18 @@ production mode, an explicit HTTPS `ACRONYMICON_PUBLIC_ORIGIN`, complete OIDC
 credentials, and explicit HTTPS callback and post-logout destinations on that
 same origin. It also rejects insecure session cookies and insecure OIDC
 transport, and applies no-store, transport, framing, referrer, and content-type
-response protections.
+response protections. Dictionary pages and data endpoints require an
+authenticated session in this profile.
 
 The application does not use forwarded host headers to construct security-
 sensitive redirects in this profile. Configure the reverse proxy and server
 adapter with a canonical request origin, and keep the explicit application and
 OIDC destinations aligned. The standard profile retains request-derived local
 development defaults and must not be treated as a hardened production profile.
+Set `ACRONYMICON_DICTIONARY_ACCESS=authenticated` to exercise authenticated
+dictionary access independently with non-production identity infrastructure;
+the setting requires complete OIDC credentials. The default standard profile
+uses `open` access for backward compatibility.
 
 ## Verification
 

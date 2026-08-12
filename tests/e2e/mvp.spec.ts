@@ -74,6 +74,37 @@ test("anonymous users can browse and search seeded entries", async ({
   expect(hydrationErrors).toEqual([]);
 });
 
+test("authenticated dictionary access protects pages and data requests", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3101",
+  });
+  const request = context.request;
+  const page = await context.newPage();
+
+  for (const dataUrl of ["/_.data?q=API", "/define.data?acr=API"]) {
+    const dataResponse = await request.get(dataUrl, {
+      maxRedirects: 0,
+    });
+    expect(dataResponse.status()).toBe(302);
+    expect(dataResponse.headers().location).toBe(
+      "/auth/login?returnTo=%2F",
+    );
+  }
+
+  await page.goto("/define?acr=API&sort=recent");
+  await signIn(page, "user");
+  await expect(page).toHaveURL(
+    "http://localhost:3101/define?acr=API&sort=recent",
+  );
+  await expect(
+    page.getByText("Application Programming Interface"),
+  ).toBeVisible();
+
+  await context.close();
+});
+
 test("users can open a specific definition variant and see marked ranges", async ({
   page,
 }) => {
@@ -266,7 +297,7 @@ async function signIn(
   await page.locator("#username").fill(username);
   await page.locator("#password").fill("password");
   await page.getByRole("button", { name: "Sign In" }).click();
-  await expect(page).toHaveURL(/localhost:3100/);
+  await expect(page).toHaveURL(/localhost:310[01]/);
 }
 
 async function submit(page: Page, acronym: string, definition: string) {
