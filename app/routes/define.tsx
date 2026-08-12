@@ -5,6 +5,7 @@ import {
   DefinitionText,
   formatSubmittedDate,
 } from "../features/dictionary/components/dictionary-list";
+import { authorizeDictionaryAccess } from "../features/authentication/server/access";
 import { lookupDefinition } from "../features/dictionary/server/api";
 import {
   dictionarySortOptions,
@@ -21,6 +22,12 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+  const access = await authorizeDictionaryAccess(request);
+
+  if (access instanceof Response) {
+    return access;
+  }
+
   const params = new URL(request.url).searchParams;
   const sort: DictionarySort =
     params.get("sort") === "recent" ? "recent" : "alphabetical";

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const port = "3100";
+const authenticatedPort = "3101";
 const directory = mkdtempSync(join(tmpdir(), "acronymicon-e2e-"));
 const databasePath = join(directory, "acronymicon.sqlite");
 const oidcIssuerUrl =
@@ -29,7 +30,7 @@ const environment = {
   OIDC_CLAIM_GROUPS: "groups",
 };
 
-let server;
+const servers = [];
 let shuttingDown = false;
 
 try {
@@ -58,31 +59,45 @@ try {
     stdio: "inherit",
   });
 
-  server = spawn(
-    "pnpm",
-    ["run", "start"],
-    {
-      cwd: process.cwd(),
-      env: { ...environment, HOST: "0.0.0.0", PORT: port },
-      stdio: "inherit",
-    },
-  );
-
-  server.on("exit", (code) => {
-    if (!shuttingDown) {
-      process.exit(code ?? 1);
-    }
+  startServer(port);
+  startServer(authenticatedPort, {
+    ACRONYMICON_DICTIONARY_ACCESS: "authenticated",
+    OIDC_REDIRECT_URI: `http://localhost:${authenticatedPort}/auth/callback`,
+    OIDC_POST_LOGOUT_REDIRECT_URI: `http://localhost:${authenticatedPort}/`,
   });
 
-  await waitForServer();
+  await Promise.all([waitForServer(port), waitForServer(authenticatedPort)]);
   await new Promise(() => {});
 } catch (error) {
   console.error(error);
   await shutdown(1);
 }
 
-async function waitForServer() {
-  await waitForHttp(`http://localhost:${port}/`, "E2E server");
+function startServer(serverPort, overrides = {}) {
+  const server = spawn("pnpm", ["run", "start"], {
+    cwd: process.cwd(),
+    env: {
+      ...environment,
+      ...overrides,
+      HOST: "0.0.0.0",
+      PORT: serverPort,
+    },
+    stdio: "inherit",
+  });
+
+  server.on("exit", (code) => {
+    if (!shuttingDown) {
+      process.exit(code ?? 1);
+    }
+  });
+  servers.push(server);
+}
+
+async function waitForServer(serverPort) {
+  await waitForHttp(
+    `http://localhost:${serverPort}/`,
+    `E2E server on port ${serverPort}`,
+  );
 }
 
 async function waitForHttp(url, name) {
@@ -114,7 +129,9 @@ async function shutdown(exitCode) {
   }
 
   shuttingDown = true;
-  server?.kill("SIGTERM");
+  for (const server of servers) {
+    server.kill("SIGTERM");
+  }
   rmSync(directory, { recursive: true, force: true });
   process.exit(exitCode);
 }

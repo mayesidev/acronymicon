@@ -4,7 +4,7 @@ import { Form, useLocation, useSubmit } from "react-router";
 
 import { buildAboutHref } from "../features/about/model";
 import { HeaderActions } from "../features/authentication/components/header-actions";
-import { getOptionalUser } from "../features/authentication/server/session";
+import { authorizeDictionaryAccess } from "../features/authentication/server/access";
 import { DictionaryList } from "../features/dictionary/components/dictionary-list";
 import {
   dictionarySortOptions,
@@ -34,10 +34,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   const query = url.searchParams.get("q") ?? "";
   const sort: DictionarySort =
     url.searchParams.get("sort") === "recent" ? "recent" : "alphabetical";
-  const [entries, user] = await Promise.all([
-    listPublishedAcronyms(query, sort),
-    getOptionalUser(request),
-  ]);
+  const user = await authorizeDictionaryAccess(request);
+
+  if (user instanceof Response) {
+    return user;
+  }
+
+  const entries = await listPublishedAcronyms(query, sort);
 
   return {
     entries,

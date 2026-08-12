@@ -18,6 +18,12 @@ const optionalBoolean = z.preprocess(
   z.enum(["true", "false"]).optional(),
 );
 
+const optionalDictionaryAccess = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim() === "" ? undefined : value,
+  z.enum(["open", "authenticated"]).optional(),
+);
+
 const databaseEnvironmentShape = {
   DATABASE_PATH: optionalString,
   DRIZZLE_MIGRATIONS_PATH: optionalString,
@@ -32,6 +38,7 @@ const applicationEnvironmentSchema = z
     ACRONYMICON_DEPLOYMENT_PROFILE: z
       .enum(["standard", "controlled"])
       .default("standard"),
+    ACRONYMICON_DICTIONARY_ACCESS: optionalDictionaryAccess,
     ACRONYMICON_PUBLIC_ORIGIN: optionalUrl,
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -83,6 +90,22 @@ const applicationEnvironmentSchema = z
       }
     }
 
+    if (environment.ACRONYMICON_DICTIONARY_ACCESS === "authenticated") {
+      for (const name of [
+        "OIDC_ISSUER_URL",
+        "OIDC_CLIENT_ID",
+        "OIDC_CLIENT_SECRET",
+      ] as const) {
+        if (!environment[name]) {
+          context.addIssue({
+            code: "custom",
+            message: `${name} is required for authenticated dictionary access.`,
+            path: [name],
+          });
+        }
+      }
+    }
+
     if (
       environment.ACRONYMICON_PUBLIC_ORIGIN &&
       !isUrlOrigin(environment.ACRONYMICON_PUBLIC_ORIGIN)
@@ -97,6 +120,15 @@ const applicationEnvironmentSchema = z
 
     if (environment.ACRONYMICON_DEPLOYMENT_PROFILE !== "controlled") {
       return;
+    }
+
+    if (environment.ACRONYMICON_DICTIONARY_ACCESS === "open") {
+      context.addIssue({
+        code: "custom",
+        message:
+          "ACRONYMICON_DICTIONARY_ACCESS cannot be open for the controlled deployment profile.",
+        path: ["ACRONYMICON_DICTIONARY_ACCESS"],
+      });
     }
 
     if (environment.NODE_ENV !== "production") {
@@ -211,6 +243,11 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
     environment: values.NODE_ENV,
     deployment: {
       profile: values.ACRONYMICON_DEPLOYMENT_PROFILE,
+      dictionaryAccess:
+        values.ACRONYMICON_DICTIONARY_ACCESS ??
+        (values.ACRONYMICON_DEPLOYMENT_PROFILE === "controlled"
+          ? "authenticated"
+          : "open"),
       publicOrigin: values.ACRONYMICON_PUBLIC_ORIGIN,
     },
     database: buildDatabaseConfig(values),

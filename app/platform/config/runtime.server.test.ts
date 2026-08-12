@@ -8,6 +8,7 @@ describe("application configuration", () => {
       environment: "development",
       deployment: {
         profile: "standard",
+        dictionaryAccess: "open",
         publicOrigin: undefined,
       },
       database: {
@@ -100,6 +101,7 @@ describe("application configuration", () => {
       environment: "production",
       deployment: {
         profile: "controlled",
+        dictionaryAccess: "authenticated",
         publicOrigin: "https://app.example.test",
       },
       session: { secureCookie: true },
@@ -156,6 +158,31 @@ describe("application configuration", () => {
     ).toThrow(
       "ACRONYMICON_PUBLIC_ORIGIN is required for the controlled deployment profile",
     );
+  });
+
+  it("requires complete OIDC configuration for authenticated dictionary access", () => {
+    expect(() =>
+      parseAppConfig({
+        ACRONYMICON_DICTIONARY_ACCESS: "authenticated",
+      }),
+    ).toThrow("OIDC_ISSUER_URL is required for authenticated dictionary access");
+  });
+
+  it("does not allow open dictionary access in the controlled profile", () => {
+    expect(() =>
+      parseAppConfig({
+        ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_DICTIONARY_ACCESS: "open",
+        ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+        NODE_ENV: "production",
+        SESSION_SECRET: "production-secret",
+        OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
+        OIDC_CLIENT_ID: "acronymicon",
+        OIDC_CLIENT_SECRET: "client-secret",
+        OIDC_REDIRECT_URI: "https://app.example.test/auth/callback",
+        OIDC_POST_LOGOUT_REDIRECT_URI: "https://app.example.test/",
+      }),
+    ).toThrow("ACRONYMICON_DICTIONARY_ACCESS cannot be open");
   });
 
   it("rejects a public origin with request components beyond the origin", () => {
