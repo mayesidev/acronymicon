@@ -8,12 +8,32 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { applyDeploymentSecurityHeaders } from "./platform/http/security-headers.server";
 import { Card } from "./ui/components/card";
 import { PageShell } from "./ui/components/page-shell";
 import { ThemeToggle } from "./ui/components/theme-toggle";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [];
+
+export const headers: Route.HeadersFunction = ({
+  actionHeaders,
+  errorHeaders,
+  loaderHeaders,
+  parentHeaders,
+}) => {
+  const responseHeaders = new Headers(parentHeaders);
+
+  for (const source of [loaderHeaders, actionHeaders, errorHeaders]) {
+    source?.forEach((value, name) => {
+      if (name.toLowerCase() !== "set-cookie") {
+        responseHeaders.set(name, value);
+      }
+    });
+  }
+
+  return applyDeploymentSecurityHeaders(responseHeaders);
+};
 
 const themeInitializer = `(() => {
   try {

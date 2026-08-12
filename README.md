@@ -115,6 +115,22 @@ request origin. For provider logout, set `OIDC_POST_LOGOUT_REDIRECT_URI` to a
 URI registered with the OIDC provider. Boolean settings accept only `true` or
 `false`; optional claim mapping variables are documented in `.env.example`.
 
+### Controlled deployment profile
+
+Set `ACRONYMICON_DEPLOYMENT_PROFILE=controlled` when the application must
+reject unsafe production identity and transport settings. This profile requires
+production mode, an explicit HTTPS `ACRONYMICON_PUBLIC_ORIGIN`, complete OIDC
+credentials, and explicit HTTPS callback and post-logout destinations on that
+same origin. It also rejects insecure session cookies and insecure OIDC
+transport, and applies no-store, transport, framing, referrer, and content-type
+response protections.
+
+The application does not use forwarded host headers to construct security-
+sensitive redirects in this profile. Configure the reverse proxy and server
+adapter with a canonical request origin, and keep the explicit application and
+OIDC destinations aligned. The standard profile retains request-derived local
+development defaults and must not be treated as a hardened production profile.
+
 ## Verification
 
 Run the automated checks relevant to a change:
