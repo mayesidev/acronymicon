@@ -2,5 +2,84 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "timezone": "America/Chicago",
+  "schedule": [
+    "every weekend"
+  ],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "dependencyDashboard": true,
+  "automerge": false,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "separateMajorMinor": true,
+  "vulnerabilityAlerts": {
+    "groupName": null,
+    "schedule": [],
+    "dependencyDashboardApproval": false,
+    "minimumReleaseAge": null,
+    "prCreation": "immediate",
+    "labels": [
+      "security"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Wait three days before proposing routine npm releases",
+      "matchDatasources": [
+        "npm"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Release updates to shipped application dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "dependencies",
+        "optionalDependencies"
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps-runtime"
+    },
+    {
+      "description": "Do not release development dependency updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "devDependencies",
+        "packageManager"
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "description": "Do not release GitHub Actions updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "semanticCommitType": "ci",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "description": "Release updates to the shipped container",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "semanticCommitType": "build",
+      "semanticCommitScope": "runtime"
+    },
+    {
+      "description": "Do not release local Docker Compose updates",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    }
   ]
 }
