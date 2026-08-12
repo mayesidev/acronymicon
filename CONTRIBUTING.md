@@ -5,8 +5,10 @@ changes focused and explain the behavior being changed.
 
 ## Pull Requests And Releases
 
-Open pull requests against `main`. The repository requires the quality,
-browser integration, and commit metadata checks to pass before merging.
+Open pull requests against `main`. The repository requires change-scope,
+quality and build, browser integration, ARM64 container, commit metadata, and
+CodeQL checks to complete successfully before merging. Checks that do not
+apply to a change may complete with GitHub's successful skipped-job result.
 There is no required reviewer approval because this project currently has a
 single maintainer.
 
