@@ -66,15 +66,42 @@ describe("CI scope classification", () => {
       multi_arch: true,
     });
   });
+
+  it.each([
+    "chore(deps-runtime): update better-sqlite3",
+    "build(runtime): update the runtime image",
+  ])("adds multi-architecture validation for %s", (changeTitle) => {
+    expect(classify(["package.json", "pnpm-lock.yaml"], changeTitle)).toEqual({
+      application: true,
+      browser: true,
+      container: true,
+      multi_arch: true,
+    });
+  });
+
+  it("keeps development dependency validation on the primary architecture", () => {
+    expect(
+      classify(
+        ["package.json", "pnpm-lock.yaml"],
+        "chore(deps): update semantic-release",
+      ),
+    ).toEqual({
+      application: true,
+      browser: true,
+      container: true,
+      multi_arch: false,
+    });
+  });
 });
 
-function classify(files: string[]) {
+function classify(files: string[], changeTitle = "") {
   const result = spawnSync(
     process.execPath,
     [join(process.cwd(), "scripts/classify-ci-scope.mjs")],
     {
       cwd: process.cwd(),
       encoding: "utf8",
+      env: { ...process.env, CHANGE_TITLE: changeTitle },
       input: files.join("\n"),
     },
   );
