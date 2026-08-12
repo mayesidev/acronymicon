@@ -75,7 +75,7 @@
     "eslint-plugin-testing-library": "7.16.2",
     "globals": "17.9.0",
     "jsdom": "30.0.1",
-    "semantic-release": "25.0.8",
+    "semantic-release": "25.0.9",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.5",
     "typescript": "^6.0.3",
