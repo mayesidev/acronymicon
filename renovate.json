@@ -1,11 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "enabledManagers": [
+    "docker-compose",
+    "dockerfile",
+    "github-actions",
+    "npm"
   ],
   "timezone": "America/Chicago",
   "schedule": [
-    "after 1am and before 6am"
+    "* 0-5 * * *"
   ],
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
@@ -14,7 +21,6 @@
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
   "semanticCommitScope": "deps",
-  "separateMajorMinor": true,
   "vulnerabilityAlerts": {
     "groupName": null,
     "schedule": [],
@@ -31,7 +37,8 @@
       "matchDatasources": [
         "npm"
       ],
-      "minimumReleaseAge": "3 days"
+      "minimumReleaseAge": "3 days",
+      "internalChecksFilter": "strict"
     },
     {
       "description": "Release updates to shipped application dependencies",
