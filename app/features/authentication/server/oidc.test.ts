@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   addReauthenticationPrompt,
+  getOidcPostLogoutRedirectUri,
+  getOidcRedirectUri,
   mapClaimsToUser,
 } from "./oidc";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("OIDC claim mapping", () => {
   it("maps configured identity claims and group membership", () => {
@@ -37,5 +43,32 @@ describe("OIDC claim mapping", () => {
     );
 
     expect(authorizationUrl.searchParams.get("prompt")).toBe("login");
+  });
+
+  it("does not allow the request host to influence configured redirects", () => {
+    const environment = {
+      ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+      ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+      NODE_ENV: "production",
+      SESSION_SECRET: "production-secret",
+      OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
+      OIDC_CLIENT_ID: "acronymicon",
+      OIDC_CLIENT_SECRET: "client-secret",
+      OIDC_REDIRECT_URI: "https://app.example.test/auth/callback",
+      OIDC_POST_LOGOUT_REDIRECT_URI: "https://app.example.test/",
+    };
+
+    for (const [name, value] of Object.entries(environment)) {
+      vi.stubEnv(name, value);
+    }
+
+    const untrustedRequest = new Request("https://untrusted.example.test/");
+
+    expect(getOidcRedirectUri(untrustedRequest)).toBe(
+      "https://app.example.test/auth/callback",
+    );
+    expect(getOidcPostLogoutRedirectUri(untrustedRequest)).toBe(
+      "https://app.example.test/",
+    );
   });
 });

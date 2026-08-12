@@ -18,17 +18,21 @@ export async function getOidcConfig() {
 }
 
 export function getOidcRedirectUri(request: Request) {
-  return (
-    getAppConfig().oidc?.redirectUri ??
-    new URL("/auth/callback", request.url).toString()
-  );
+  const config = getAppConfig();
+
+  return new URL(
+    config.oidc?.redirectUri ?? "/auth/callback",
+    config.deployment.publicOrigin ?? request.url,
+  ).toString();
 }
 
 export function getOidcPostLogoutRedirectUri(request: Request) {
-  return (
-    getAppConfig().oidc?.postLogoutRedirectUri ??
-    new URL("/", request.url).toString()
-  );
+  const config = getAppConfig();
+
+  return new URL(
+    config.oidc?.postLogoutRedirectUri ?? "/",
+    config.deployment.publicOrigin ?? request.url,
+  ).toString();
 }
 
 export function getOidcScopes() {

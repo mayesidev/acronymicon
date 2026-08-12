@@ -29,6 +29,10 @@ const databaseEnvironmentSchema = z.object(databaseEnvironmentShape);
 const applicationEnvironmentSchema = z
   .object({
     ...databaseEnvironmentShape,
+    ACRONYMICON_DEPLOYMENT_PROFILE: z
+      .enum(["standard", "controlled"])
+      .default("standard"),
+    ACRONYMICON_PUBLIC_ORIGIN: optionalUrl,
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -63,22 +67,116 @@ const applicationEnvironmentSchema = z
       ([name, value]) => name.startsWith("OIDC_") && value !== undefined,
     );
 
-    if (oidcValues.length === 0) {
+    if (oidcValues.length > 0) {
+      for (const name of [
+        "OIDC_ISSUER_URL",
+        "OIDC_CLIENT_ID",
+        "OIDC_CLIENT_SECRET",
+      ] as const) {
+        if (!environment[name]) {
+          context.addIssue({
+            code: "custom",
+            message: `${name} is required when OIDC is configured.`,
+            path: [name],
+          });
+        }
+      }
+    }
+
+    if (
+      environment.ACRONYMICON_PUBLIC_ORIGIN &&
+      !isUrlOrigin(environment.ACRONYMICON_PUBLIC_ORIGIN)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "ACRONYMICON_PUBLIC_ORIGIN must contain only a URL origin, without credentials, a path, query parameters, or a fragment.",
+        path: ["ACRONYMICON_PUBLIC_ORIGIN"],
+      });
+    }
+
+    if (environment.ACRONYMICON_DEPLOYMENT_PROFILE !== "controlled") {
       return;
     }
 
+    if (environment.NODE_ENV !== "production") {
+      context.addIssue({
+        code: "custom",
+        message:
+          "NODE_ENV must be production for the controlled deployment profile.",
+        path: ["NODE_ENV"],
+      });
+    }
+
     for (const name of [
+      "ACRONYMICON_PUBLIC_ORIGIN",
       "OIDC_ISSUER_URL",
       "OIDC_CLIENT_ID",
       "OIDC_CLIENT_SECRET",
+      "OIDC_REDIRECT_URI",
+      "OIDC_POST_LOGOUT_REDIRECT_URI",
     ] as const) {
       if (!environment[name]) {
         context.addIssue({
           code: "custom",
-          message: `${name} is required when OIDC is configured.`,
+          message: `${name} is required for the controlled deployment profile.`,
           path: [name],
         });
       }
+    }
+
+    for (const name of [
+      "ACRONYMICON_PUBLIC_ORIGIN",
+      "OIDC_ISSUER_URL",
+      "OIDC_REDIRECT_URI",
+      "OIDC_POST_LOGOUT_REDIRECT_URI",
+    ] as const) {
+      const value = environment[name];
+
+      if (value && new URL(value).protocol !== "https:") {
+        context.addIssue({
+          code: "custom",
+          message: `${name} must use HTTPS for the controlled deployment profile.`,
+          path: [name],
+        });
+      }
+    }
+
+    const publicOrigin = environment.ACRONYMICON_PUBLIC_ORIGIN;
+
+    if (publicOrigin && isUrlOrigin(publicOrigin)) {
+      for (const name of [
+        "OIDC_REDIRECT_URI",
+        "OIDC_POST_LOGOUT_REDIRECT_URI",
+      ] as const) {
+        const value = environment[name];
+
+        if (value && new URL(value).origin !== new URL(publicOrigin).origin) {
+          context.addIssue({
+            code: "custom",
+            message: `${name} must use ACRONYMICON_PUBLIC_ORIGIN for the controlled deployment profile.`,
+            path: [name],
+          });
+        }
+      }
+    }
+
+    if (environment.SESSION_COOKIE_SECURE === "false") {
+      context.addIssue({
+        code: "custom",
+        message:
+          "SESSION_COOKIE_SECURE cannot be false for the controlled deployment profile.",
+        path: ["SESSION_COOKIE_SECURE"],
+      });
+    }
+
+    if (environment.OIDC_ALLOW_INSECURE_HTTP === "true") {
+      context.addIssue({
+        code: "custom",
+        message:
+          "OIDC_ALLOW_INSECURE_HTTP cannot be true for the controlled deployment profile.",
+        path: ["OIDC_ALLOW_INSECURE_HTTP"],
+      });
     }
   });
 
@@ -111,6 +209,10 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
 
   return {
     environment: values.NODE_ENV,
+    deployment: {
+      profile: values.ACRONYMICON_DEPLOYMENT_PROFILE,
+      publicOrigin: values.ACRONYMICON_PUBLIC_ORIGIN,
+    },
     database: buildDatabaseConfig(values),
     session: {
       secret:
@@ -141,6 +243,18 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
         }
       : null,
   };
+}
+
+function isUrlOrigin(value: string) {
+  const url = new URL(value);
+
+  return (
+    !url.username &&
+    !url.password &&
+    url.pathname === "/" &&
+    !url.search &&
+    !url.hash
+  );
 }
 
 export function getAppConfig() {
