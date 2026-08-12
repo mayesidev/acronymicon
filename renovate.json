@@ -2,43 +2,24 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "helpers:pinGitHubActionDigests",
+    "security:minimumReleaseAgeNpm",
+    ":disableRateLimiting"
   ],
-  "enabledManagers": [
-    "docker-compose",
-    "dockerfile",
-    "github-actions",
-    "npm"
-  ],
-  "timezone": "America/Chicago",
-  "schedule": [
-    "* 0-5 * * *"
-  ],
-  "prConcurrentLimit": 5,
-  "prHourlyLimit": 2,
-  "dependencyDashboard": true,
-  "automerge": false,
   "semanticCommits": "enabled",
-  "semanticCommitType": "chore",
-  "semanticCommitScope": "deps",
   "vulnerabilityAlerts": {
-    "groupName": null,
-    "schedule": [],
-    "dependencyDashboardApproval": false,
-    "minimumReleaseAge": null,
-    "prCreation": "immediate",
     "labels": [
       "security"
     ]
   },
   "packageRules": [
     {
-      "description": "Wait three days before proposing routine npm releases",
-      "matchDatasources": [
-        "npm"
+      "description": "Keep dependency updates non-releasing by default",
+      "matchPackageNames": [
+        "*"
       ],
-      "minimumReleaseAge": "3 days",
-      "internalChecksFilter": "strict"
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
     },
     {
       "description": "Release updates to shipped application dependencies",
@@ -51,18 +32,6 @@
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "deps-runtime"
-    },
-    {
-      "description": "Do not release development dependency updates",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchDepTypes": [
-        "devDependencies",
-        "packageManager"
-      ],
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "deps"
     },
     {
       "description": "Do not release GitHub Actions updates",
@@ -79,14 +48,6 @@
       ],
       "semanticCommitType": "build",
       "semanticCommitScope": "runtime"
-    },
-    {
-      "description": "Do not release local Docker Compose updates",
-      "matchManagers": [
-        "docker-compose"
-      ],
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "deps"
     }
   ]
 }
