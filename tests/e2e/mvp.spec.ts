@@ -87,9 +87,14 @@ test("authenticated dictionary access protects pages and data requests", async (
     const dataResponse = await request.get(dataUrl, {
       maxRedirects: 0,
     });
-    expect(dataResponse.status()).toBe(302);
-    expect(dataResponse.headers().location).toBe(
-      "/auth/login?returnTo=%2F",
+    const responseBody = await dataResponse.text();
+
+    expect(dataResponse.status()).toBe(202);
+    expect(responseBody).toContain(
+      '"/auth/login?returnTo=%2F"',
+    );
+    expect(responseBody).not.toContain(
+      "Application Programming Interface",
     );
   }
 
