@@ -134,7 +134,8 @@ change-appropriate confidence gates. The delivery chain is:
    `main` commit. Application changes run typechecking, linting, coverage,
    production builds, dependency security checks, browser tests, a container
    smoke test, and the runtime-image vulnerability policy. Container-definition
-   changes also run the ARM64 container smoke path.
+   changes and changes scoped as shipped runtime updates also run the ARM64
+   container smoke path.
 3. Only a successful `main` CI run may invoke semantic-release. `feat` creates
    a minor release; `fix`, `perf`, `refactor`, `chore(deps-runtime)`, and
    `build(runtime)` create a patch release. A declared breaking change creates

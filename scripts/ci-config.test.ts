@@ -65,6 +65,12 @@ describe("release container-publish policy", () => {
 });
 
 describe("CI build metadata policy", () => {
+  it("passes the pull request or merged change title to scope classification", () => {
+    expect(ciWorkflow).toContain(
+      "CHANGE_TITLE: ${{ github.event.pull_request.title || github.event.head_commit.message }}",
+    );
+  });
+
   it("exercises a known version in container builds and smoke tests", () => {
     expect(
       ciWorkflow.match(

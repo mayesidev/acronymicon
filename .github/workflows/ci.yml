@@ -41,6 +41,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BEFORE_SHA: ${{ github.event.before }}
           CURRENT_SHA: ${{ github.sha }}
+          CHANGE_TITLE: ${{ github.event.pull_request.title || github.event.head_commit.message }}
         run: |
           if [[ "$EVENT_NAME" == "workflow_call" || ( -z "$PR_BASE_SHA" && -z "$BEFORE_SHA" ) ]]; then
             echo "browser=true" >> "$GITHUB_OUTPUT"
