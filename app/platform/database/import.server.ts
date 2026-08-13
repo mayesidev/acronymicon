@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+import type { AuditPublisher } from "../../domain/audit";
 import {
   normalizeAcronym,
   normalizeDefinition,
   parseDefinitionMarkup,
 } from "../../domain/acronym";
+import { auditPublisher } from "../audit/runtime.server";
 import type { AppDatabase } from "./client.server";
 import { insertAcronymEntryAtomic } from "./write.server";
 
@@ -36,6 +38,42 @@ export type ImportResult =
       failed: number;
       errors: Array<{ index: number; error: unknown }>;
     };
+
+export type AuditedImportDependencies = Readonly<{
+  auditPublisher: AuditPublisher;
+  randomCorrelationId: () => string;
+}>;
+
+const defaultAuditDependencies: AuditedImportDependencies = {
+  auditPublisher,
+  randomCorrelationId: () => crypto.randomUUID(),
+};
+
+export async function importAcronymEntriesWithAudit(
+  database: AppDatabase,
+  input: unknown,
+  dependencies: AuditedImportDependencies = defaultAuditDependencies,
+): Promise<ImportResult> {
+  const correlationId = dependencies.randomCorrelationId();
+  let result: ImportResult;
+
+  try {
+    result = importAcronymEntries(database, input);
+  } catch (error) {
+    await publishImportOutcome(dependencies, correlationId, "failed");
+    throw error;
+  }
+
+  await publishImportOutcome(
+    dependencies,
+    correlationId,
+    result.status === "complete" && result.failed === 0
+      ? "succeeded"
+      : "failed",
+  );
+
+  return result;
+}
 
 export function importAcronymEntries(
   database: AppDatabase,
@@ -93,6 +131,24 @@ export function importAcronymEntries(
     failed: errors.length,
     errors,
   };
+}
+
+function publishImportOutcome(
+  dependencies: AuditedImportDependencies,
+  correlationId: string,
+  outcome: "succeeded" | "failed",
+) {
+  return dependencies.auditPublisher.publish({
+    delivery: "best-effort",
+    event: {
+      correlationId,
+      actor: { type: "system" },
+      source: "maintenance",
+      action: "acronym.import",
+      target: { type: "application" },
+      outcome,
+    },
+  });
 }
 
 function normalizeOptional(value: string | undefined) {

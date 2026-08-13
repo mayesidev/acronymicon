@@ -2,9 +2,11 @@ import { readFile } from "node:fs/promises";
 
 import { getDatabaseConfig } from "../app/platform/config/runtime.server";
 import { createDatabase } from "../app/platform/database/client.server";
-import { importAcronymEntries } from "../app/platform/database/import.server";
+import { importAcronymEntriesWithAudit } from "../app/platform/database/import.server";
 
-const inputArguments = process.argv.slice(2).filter((argument) => argument !== "--");
+const inputArguments = process.argv
+  .slice(2)
+  .filter((argument) => argument !== "--");
 const inputPath = inputArguments.length === 1 ? inputArguments[0] : undefined;
 
 if (!inputPath) {
@@ -22,7 +24,10 @@ let exitCode = 0;
 
 try {
   const rawInput = await readFile(inputPath, "utf8");
-  const result = importAcronymEntries(database.db, JSON.parse(rawInput));
+  const result = await importAcronymEntriesWithAudit(
+    database.db,
+    JSON.parse(rawInput),
+  );
 
   if (result.status === "invalid") {
     console.error("Import file is invalid:");
@@ -36,7 +41,7 @@ try {
       );
     }
 
-    console.log(
+    console.error(
       `Import complete: ${result.inserted} inserted, ${result.skippedDuplicates} duplicates skipped, ${result.failed} failed.`,
     );
 
