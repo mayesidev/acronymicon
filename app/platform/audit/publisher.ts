@@ -10,11 +10,13 @@ import type {
 type AuditPublisherDependencies = Readonly<{
   clock: AuditClock;
   sink: AuditSink;
+  fallbackSink?: AuditSink;
 }>;
 
 export function createAuditPublisher({
   clock,
   sink,
+  fallbackSink,
 }: AuditPublisherDependencies): AuditPublisher {
   return {
     async publish(
@@ -26,15 +28,45 @@ export function createAuditPublisher({
         timestamp: clock.now().toISOString(),
       };
 
+      let recorded = false;
+
       try {
         const result = await sink.append(event);
-
-        return result.status === "recorded"
-          ? result
-          : { status: "unavailable", delivery: publication.delivery };
+        recorded = result.status === "recorded";
       } catch {
-        return { status: "unavailable", delivery: publication.delivery };
+        recorded = false;
       }
+
+      if (recorded) {
+        return { status: "recorded" };
+      }
+
+      await reportSinkFailure(fallbackSink, event);
+      return { status: "unavailable", delivery: publication.delivery };
     },
   };
+}
+
+async function reportSinkFailure(
+  fallbackSink: AuditSink | undefined,
+  event: AuditEvent,
+) {
+  if (!fallbackSink) {
+    return;
+  }
+
+  try {
+    await fallbackSink.append({
+      schemaVersion: event.schemaVersion,
+      timestamp: event.timestamp,
+      correlationId: event.correlationId,
+      actor: { type: "system" },
+      source: event.source,
+      action: "audit.sink.append",
+      target: { type: "application" },
+      outcome: "failed",
+    });
+  } catch {
+    // The fallback is attempted once and never reports through itself.
+  }
 }
