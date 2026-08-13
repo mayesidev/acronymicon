@@ -43,18 +43,38 @@ describe("header actions", () => {
       "href",
       "/auth/login",
     );
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveClass(
-      "border",
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveClass("border");
+  });
+
+  it("hides submission when the current user lacks submit access", () => {
+    renderActions(
+      {
+        id: "user-1",
+        username: "read-only-user",
+        groups: ["dictionary-readers"],
+      },
+      false,
     );
+
+    expect(
+      screen.queryByRole("link", { name: "Submit acronym" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("read-only-user")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sign out" }),
+    ).toBeInTheDocument();
   });
 });
 
-function renderActions(user: Parameters<typeof HeaderActions>[0]["user"]) {
+function renderActions(
+  user: Parameters<typeof HeaderActions>[0]["user"],
+  showSubmit?: boolean,
+) {
   const router = createMemoryRouter(
     [
       {
         path: "/",
-        element: <HeaderActions user={user} />,
+        element: <HeaderActions user={user} showSubmit={showSubmit} />,
       },
     ],
     { initialEntries: ["/"] },

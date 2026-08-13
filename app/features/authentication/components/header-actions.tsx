@@ -6,14 +6,18 @@ import type { AuthUser } from "../model";
 
 export function HeaderActions({
   user,
+  showSubmit = true,
 }: {
   user: AuthUser | null;
+  showSubmit?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm md:justify-end">
-      <nav aria-label="Dictionary actions" className="flex items-center">
-        <ActionLink href="/submit">Submit acronym</ActionLink>
-      </nav>
+      {showSubmit ? (
+        <nav aria-label="Dictionary actions" className="flex items-center">
+          <ActionLink href="/submit">Submit acronym</ActionLink>
+        </nav>
+      ) : null}
 
       {user ? (
         <div

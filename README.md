@@ -124,7 +124,13 @@ credentials, and explicit HTTPS callback and post-logout destinations on that
 same origin. It also rejects insecure session cookies and insecure OIDC
 transport, and applies no-store, transport, framing, referrer, and content-type
 response protections. Dictionary pages and data endpoints require an
-authenticated session in this profile.
+authenticated and authorized session in this profile. Configure exact,
+case-sensitive OIDC group names with `ACRONYMICON_READ_GROUPS` and
+`ACRONYMICON_SUBMIT_GROUPS`; comma-separate multiple groups. Submit-group
+membership also grants dictionary read access. At least one read or submit group
+is required, while omitting submit groups creates a read-only deployment. The
+claim selected by `OIDC_CLAIM_GROUPS` must be an array of exact group-name
+strings; missing or malformed claims grant no access.
 
 The application does not use forwarded host headers to construct security-
 sensitive redirects in this profile. Configure the reverse proxy and server

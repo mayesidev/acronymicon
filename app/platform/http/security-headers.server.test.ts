@@ -25,9 +25,9 @@ describe("deployment security headers", () => {
   it("does not change response headers in the standard profile", () => {
     const headers = new Headers({ "Cache-Control": "public, max-age=60" });
 
-    expect(
-      applyDeploymentSecurityHeaders(headers, parseAppConfig({})),
-    ).toBe(headers);
+    expect(applyDeploymentSecurityHeaders(headers, parseAppConfig({}))).toBe(
+      headers,
+    );
     expect(headers.get("Cache-Control")).toBe("public, max-age=60");
     expect(headers.has("Strict-Transport-Security")).toBe(false);
   });
@@ -37,6 +37,7 @@ function controlledConfig() {
   return parseAppConfig({
     ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
     ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+    ACRONYMICON_READ_GROUPS: "dictionary-readers",
     NODE_ENV: "production",
     SESSION_SECRET: "production-secret",
     OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",

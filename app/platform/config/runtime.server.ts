@@ -24,6 +24,12 @@ const optionalDictionaryAccess = z.preprocess(
   z.enum(["open", "authenticated"]).optional(),
 );
 
+const optionalGroupList = optionalString
+  .transform((value) => value?.split(",").map((group) => group.trim()) ?? [])
+  .refine((groups) => groups.every(Boolean), {
+    message: "must be a comma-separated list of non-empty group names",
+  });
+
 const databaseEnvironmentShape = {
   DATABASE_PATH: optionalString,
   DRIZZLE_MIGRATIONS_PATH: optionalString,
@@ -40,6 +46,8 @@ const applicationEnvironmentSchema = z
       .default("standard"),
     ACRONYMICON_DICTIONARY_ACCESS: optionalDictionaryAccess,
     ACRONYMICON_PUBLIC_ORIGIN: optionalUrl,
+    ACRONYMICON_READ_GROUPS: optionalGroupList,
+    ACRONYMICON_SUBMIT_GROUPS: optionalGroupList,
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -59,10 +67,7 @@ const applicationEnvironmentSchema = z
     OIDC_CLAIM_GROUPS: optionalString,
   })
   .superRefine((environment, context) => {
-    if (
-      environment.NODE_ENV === "production" &&
-      !environment.SESSION_SECRET
-    ) {
+    if (environment.NODE_ENV === "production" && !environment.SESSION_SECRET) {
       context.addIssue({
         code: "custom",
         message: "SESSION_SECRET is required in production.",
@@ -128,6 +133,18 @@ const applicationEnvironmentSchema = z
         message:
           "ACRONYMICON_DICTIONARY_ACCESS cannot be open for the controlled deployment profile.",
         path: ["ACRONYMICON_DICTIONARY_ACCESS"],
+      });
+    }
+
+    if (
+      environment.ACRONYMICON_READ_GROUPS.length === 0 &&
+      environment.ACRONYMICON_SUBMIT_GROUPS.length === 0
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "At least one ACRONYMICON_READ_GROUPS or ACRONYMICON_SUBMIT_GROUPS value is required for the controlled deployment profile.",
+        path: ["ACRONYMICON_READ_GROUPS"],
       });
     }
 
@@ -235,8 +252,8 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
   const values = result.data;
   const oidcConfigured = Boolean(
     values.OIDC_ISSUER_URL &&
-      values.OIDC_CLIENT_ID &&
-      values.OIDC_CLIENT_SECRET,
+    values.OIDC_CLIENT_ID &&
+    values.OIDC_CLIENT_SECRET,
   );
 
   return {
@@ -249,6 +266,10 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
           ? "authenticated"
           : "open"),
       publicOrigin: values.ACRONYMICON_PUBLIC_ORIGIN,
+    },
+    authorization: {
+      readGroups: [...new Set(values.ACRONYMICON_READ_GROUPS)],
+      submitGroups: [...new Set(values.ACRONYMICON_SUBMIT_GROUPS)],
     },
     database: buildDatabaseConfig(values),
     session: {
@@ -316,7 +337,9 @@ function buildDatabaseConfig(values: {
 
 function throwConfigurationError(scope: string, error: z.ZodError): never {
   const details = error.issues
-    .map((issue) => `${issue.path.join(".") || "environment"}: ${issue.message}`)
+    .map(
+      (issue) => `${issue.path.join(".") || "environment"}: ${issue.message}`,
+    )
     .join("\n");
 
   throw new Error(`Invalid ${scope} configuration:\n${details}`, {

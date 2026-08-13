@@ -11,6 +11,10 @@ describe("application configuration", () => {
         dictionaryAccess: "open",
         publicOrigin: undefined,
       },
+      authorization: {
+        readGroups: [],
+        submitGroups: [],
+      },
       database: {
         path: "./data/acronymicon.sqlite",
         migrationsFolder: "./drizzle",
@@ -73,15 +77,15 @@ describe("application configuration", () => {
   });
 
   it("rejects partial OIDC credentials", () => {
-    expect(() =>
-      parseAppConfig({ OIDC_CLIENT_ID: "acronymicon" }),
-    ).toThrow("OIDC_ISSUER_URL is required when OIDC is configured");
+    expect(() => parseAppConfig({ OIDC_CLIENT_ID: "acronymicon" })).toThrow(
+      "OIDC_ISSUER_URL is required when OIDC is configured",
+    );
   });
 
   it("rejects ambiguous boolean values", () => {
-    expect(() =>
-      parseAppConfig({ RUN_MIGRATIONS_ON_STARTUP: "yes" }),
-    ).toThrow("RUN_MIGRATIONS_ON_STARTUP");
+    expect(() => parseAppConfig({ RUN_MIGRATIONS_ON_STARTUP: "yes" })).toThrow(
+      "RUN_MIGRATIONS_ON_STARTUP",
+    );
   });
 
   it("accepts a complete controlled deployment configuration", () => {
@@ -89,6 +93,8 @@ describe("application configuration", () => {
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+        ACRONYMICON_READ_GROUPS: "dictionary-readers, shared-users",
+        ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters,shared-users",
         NODE_ENV: "production",
         SESSION_SECRET: "production-secret",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
@@ -103,6 +109,10 @@ describe("application configuration", () => {
         profile: "controlled",
         dictionaryAccess: "authenticated",
         publicOrigin: "https://app.example.test",
+      },
+      authorization: {
+        readGroups: ["dictionary-readers", "shared-users"],
+        submitGroups: ["dictionary-submitters", "shared-users"],
       },
       session: { secureCookie: true },
       oidc: { allowInsecureHttp: false },
@@ -136,6 +146,7 @@ describe("application configuration", () => {
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+        ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-secret",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
@@ -152,6 +163,7 @@ describe("application configuration", () => {
     expect(() =>
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-secret",
       }),
@@ -165,7 +177,9 @@ describe("application configuration", () => {
       parseAppConfig({
         ACRONYMICON_DICTIONARY_ACCESS: "authenticated",
       }),
-    ).toThrow("OIDC_ISSUER_URL is required for authenticated dictionary access");
+    ).toThrow(
+      "OIDC_ISSUER_URL is required for authenticated dictionary access",
+    );
   });
 
   it("does not allow open dictionary access in the controlled profile", () => {
@@ -174,6 +188,7 @@ describe("application configuration", () => {
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
         ACRONYMICON_DICTIONARY_ACCESS: "open",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+        ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-secret",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
@@ -191,6 +206,28 @@ describe("application configuration", () => {
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test/application",
       }),
     ).toThrow("must contain only a URL origin");
+  });
+
+  it("requires an authorization mapping in the controlled profile", () => {
+    expect(() =>
+      parseAppConfig({
+        ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+        NODE_ENV: "production",
+        SESSION_SECRET: "production-secret",
+        OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
+        OIDC_CLIENT_ID: "acronymicon",
+        OIDC_CLIENT_SECRET: "client-secret",
+        OIDC_REDIRECT_URI: "https://app.example.test/auth/callback",
+        OIDC_POST_LOGOUT_REDIRECT_URI: "https://app.example.test/",
+      }),
+    ).toThrow("At least one ACRONYMICON_READ_GROUPS");
+  });
+
+  it("rejects malformed group lists", () => {
+    expect(() =>
+      parseAppConfig({ ACRONYMICON_READ_GROUPS: "readers,,operators" }),
+    ).toThrow("comma-separated list of non-empty group names");
   });
 });
 
