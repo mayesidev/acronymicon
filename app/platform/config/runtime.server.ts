@@ -30,6 +30,12 @@ const optionalGroupList = optionalString
     message: "must be a comma-separated list of non-empty group names",
   });
 
+const optionalSecretList = optionalString
+  .transform((value) => value?.split(",").map((secret) => secret.trim()) ?? [])
+  .refine((secrets) => secrets.every(Boolean), {
+    message: "must be a comma-separated list of non-empty secrets",
+  });
+
 const databaseEnvironmentShape = {
   DATABASE_PATH: optionalString,
   DRIZZLE_MIGRATIONS_PATH: optionalString,
@@ -52,6 +58,7 @@ const applicationEnvironmentSchema = z
       .enum(["development", "test", "production"])
       .default("development"),
     SESSION_SECRET: optionalString,
+    SESSION_PREVIOUS_SECRETS: optionalSecretList,
     SESSION_COOKIE_SECURE: optionalBoolean,
     OIDC_ISSUER_URL: optionalUrl,
     OIDC_CLIENT_ID: optionalString,
@@ -72,6 +79,21 @@ const applicationEnvironmentSchema = z
         code: "custom",
         message: "SESSION_SECRET is required in production.",
         path: ["SESSION_SECRET"],
+      });
+    }
+
+    const configuredSessionSecrets = [
+      environment.SESSION_SECRET,
+      ...environment.SESSION_PREVIOUS_SECRETS,
+    ].filter((secret): secret is string => Boolean(secret));
+
+    if (
+      new Set(configuredSessionSecrets).size !== configuredSessionSecrets.length
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "SESSION_SECRET and SESSION_PREVIOUS_SECRETS must be unique.",
+        path: ["SESSION_PREVIOUS_SECRETS"],
       });
     }
 
@@ -125,6 +147,26 @@ const applicationEnvironmentSchema = z
 
     if (environment.ACRONYMICON_DEPLOYMENT_PROFILE !== "controlled") {
       return;
+    }
+
+    if ((environment.SESSION_SECRET?.length ?? 0) < 32) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "SESSION_SECRET must be at least 32 characters for the controlled deployment profile.",
+        path: ["SESSION_SECRET"],
+      });
+    }
+
+    if (
+      environment.SESSION_PREVIOUS_SECRETS.some((secret) => secret.length < 32)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Every SESSION_PREVIOUS_SECRETS value must be at least 32 characters for the controlled deployment profile.",
+        path: ["SESSION_PREVIOUS_SECRETS"],
+      });
     }
 
     if (environment.ACRONYMICON_DICTIONARY_ACCESS === "open") {
@@ -277,6 +319,7 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
         values.SESSION_SECRET ??
         /* c8 ignore next -- production absence is rejected above. */
         "dev-session-secret-change-me",
+      previousSecrets: values.SESSION_PREVIOUS_SECRETS,
       secureCookie:
         values.SESSION_COOKIE_SECURE === undefined
           ? values.NODE_ENV === "production"
