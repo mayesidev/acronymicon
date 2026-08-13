@@ -40,6 +40,89 @@ describe("submit route authorization", () => {
       expect(response.status).toBe(403);
     },
   );
+
+  it("does not carry legacy preview query content into the login redirect", async () => {
+    const request = new Request(
+      "https://app.example.test/submit?acronym=Sensitive&definition=Internal",
+    );
+
+    const response = await loader({ request } as never);
+
+    expect(response).toBeInstanceOf(Response);
+    expect((response as Response).headers.get("Location")).toBe(
+      "/auth/login?returnTo=%2Fsubmit",
+    );
+  });
+});
+
+describe("submit route duplicate preview", () => {
+  it("ignores legacy loader query content", async () => {
+    const { cookie, user } = await authenticatedSession();
+    const request = new Request(
+      "https://app.example.test/submit?acronym=Sensitive&definition=Internal",
+      { headers: { Cookie: cookie } },
+    );
+
+    await expect(loader({ request } as never)).resolves.toEqual({ user });
+  });
+
+  it("previews duplicate feedback by POST without creating an entry", async () => {
+    const { cookie } = await authenticatedSession();
+    const acronym = `PREVIEW-${crypto.randomUUID()}`;
+    const definition = "Preview-only internal definition";
+
+    const firstPreview = await action({
+      request: previewRequest({ cookie, acronym, definition }),
+    } as never);
+    const secondPreview = await action({
+      request: previewRequest({ cookie, acronym, definition }),
+    } as never);
+
+    expect(firstPreview).toMatchObject({
+      status: "preview",
+      checkedAcronym: acronym,
+      checkedDefinition: definition,
+      existingEntries: [],
+      exactDuplicate: null,
+    });
+    expect(secondPreview).toMatchObject({
+      status: "preview",
+      existingEntries: [],
+      exactDuplicate: null,
+    });
+  });
+
+  it("preserves exact-duplicate feedback after a final submission", async () => {
+    const { cookie } = await authenticatedSession();
+    const acronym = `EXACT-${crypto.randomUUID()}`;
+    const definition = "Exact duplicate definition";
+    const submission = new URLSearchParams({
+      intent: "submit",
+      acronym,
+      definition,
+    });
+
+    const response = await action({
+      request: new Request("https://app.example.test/submit", {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: submission,
+      }),
+    } as never);
+    const preview = await action({
+      request: previewRequest({ cookie, acronym, definition }),
+    } as never);
+
+    expect(response).toBeInstanceOf(Response);
+    expect((response as Response).status).toBe(302);
+    expect(preview).toMatchObject({
+      status: "preview",
+      exactDuplicate: { definition },
+    });
+  });
 });
 
 function configureControlledProfile() {
@@ -75,4 +158,43 @@ async function rejectedResponse(promise: Promise<unknown>) {
   }
 
   throw new Error("Expected route access to be denied.");
+}
+
+async function authenticatedSession() {
+  const user = {
+    id: crypto.randomUUID(),
+    username: "submitter",
+    displayName: "Local Submitter",
+    groups: [],
+  };
+  const session = await getSession();
+  session.set("user", user);
+
+  return {
+    cookie: await commitSession(session),
+    user,
+  };
+}
+
+function previewRequest({
+  cookie,
+  acronym,
+  definition,
+}: {
+  cookie: string;
+  acronym: string;
+  definition: string;
+}) {
+  return new Request("https://app.example.test/submit", {
+    method: "POST",
+    headers: {
+      Cookie: cookie,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      intent: "preview",
+      acronym,
+      definition,
+    }),
+  });
 }

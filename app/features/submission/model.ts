@@ -29,6 +29,10 @@ export type SubmissionDuplicatePreview = {
   definitionError: string | null;
 };
 
+export type SubmissionPreviewActionData = SubmissionDuplicatePreview & {
+  status: "preview";
+};
+
 export type SubmissionActionData =
   | {
       status: "error";

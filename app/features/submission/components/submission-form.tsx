@@ -38,6 +38,7 @@ export function SubmissionForm({
   return (
     <Card>
       <Form method="post" aria-label="New dictionary entry" className="p-5">
+        <input type="hidden" name="intent" value="submit" />
         {showDuplicateWarning ? (
           <input type="hidden" name="confirmDuplicate" value="true" />
         ) : null}

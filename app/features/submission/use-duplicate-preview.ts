@@ -3,8 +3,8 @@ import { useFetcher } from "react-router";
 
 import type {
   SubmissionActionData,
-  SubmissionDuplicatePreview,
   SubmissionFieldName,
+  SubmissionPreviewActionData,
 } from "./model";
 import { exactDuplicateMessage, getDefinitionError } from "./policy";
 
@@ -17,8 +17,8 @@ export function useDuplicatePreview({
   definition: string;
   actionData?: SubmissionActionData;
 }) {
-  const { data: previewData, load: loadPreview } =
-    useFetcher<SubmissionDuplicatePreview>();
+  const { data: previewData, submit: submitPreview } =
+    useFetcher<SubmissionPreviewActionData>();
 
   useEffect(() => {
     const normalizedAcronym = acronym.trim();
@@ -27,15 +27,18 @@ export function useDuplicatePreview({
     }
 
     const timeout = window.setTimeout(() => {
-      const parameters = new URLSearchParams({
-        acronym: normalizedAcronym,
-        definition,
-      });
-      void loadPreview(`/submit?${parameters.toString()}`);
+      void submitPreview(
+        {
+          intent: "preview",
+          acronym: normalizedAcronym,
+          definition,
+        },
+        { method: "post", action: "/submit" },
+      );
     }, 200);
 
     return () => window.clearTimeout(timeout);
-  }, [acronym, definition, loadPreview]);
+  }, [acronym, definition, submitPreview]);
 
   const localDefinitionError = getDefinitionError(acronym, definition);
   const acronymPreview =
