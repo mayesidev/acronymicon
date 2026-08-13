@@ -23,6 +23,8 @@ describe("application configuration", () => {
       session: {
         secret: "dev-session-secret-change-me",
         previousSecrets: [],
+        absoluteTimeoutMinutes: 480,
+        inactivityTimeoutMinutes: 480,
         secureCookie: false,
       },
       oidc: null,
@@ -37,6 +39,8 @@ describe("application configuration", () => {
         DRIZZLE_MIGRATIONS_PATH: "/app/drizzle",
         RUN_MIGRATIONS_ON_STARTUP: "false",
         SESSION_SECRET: "production-secret",
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "720",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
         SESSION_COOKIE_SECURE: "false",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
@@ -56,6 +60,8 @@ describe("application configuration", () => {
       session: {
         secret: "production-secret",
         previousSecrets: [],
+        absoluteTimeoutMinutes: 720,
+        inactivityTimeoutMinutes: 30,
         secureCookie: false,
       },
       oidc: {
@@ -121,6 +127,30 @@ describe("application configuration", () => {
     );
   });
 
+  it.each([
+    [
+      { SESSION_ABSOLUTE_TIMEOUT_MINUTES: "0" },
+      "SESSION_ABSOLUTE_TIMEOUT_MINUTES",
+    ],
+    [
+      { SESSION_ABSOLUTE_TIMEOUT_MINUTES: "10081" },
+      "SESSION_ABSOLUTE_TIMEOUT_MINUTES",
+    ],
+    [
+      { SESSION_INACTIVITY_TIMEOUT_MINUTES: "12.5" },
+      "SESSION_INACTIVITY_TIMEOUT_MINUTES",
+    ],
+    [
+      {
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "30",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "60",
+      },
+      "SESSION_INACTIVITY_TIMEOUT_MINUTES cannot exceed SESSION_ABSOLUTE_TIMEOUT_MINUTES",
+    ],
+  ])("rejects an invalid session lifetime", (environment, message) => {
+    expect(() => parseAppConfig(environment)).toThrow(message);
+  });
+
   it("accepts a complete controlled deployment configuration", () => {
     expect(
       parseAppConfig({
@@ -130,6 +160,8 @@ describe("application configuration", () => {
         ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters,shared-users",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -147,7 +179,11 @@ describe("application configuration", () => {
         readGroups: ["dictionary-readers", "shared-users"],
         submitGroups: ["dictionary-submitters", "shared-users"],
       },
-      session: { secureCookie: true },
+      session: {
+        absoluteTimeoutMinutes: 480,
+        inactivityTimeoutMinutes: 30,
+        secureCookie: true,
+      },
       oidc: { allowInsecureHttp: false },
     });
   });
@@ -171,6 +207,14 @@ describe("application configuration", () => {
       "Every SESSION_PREVIOUS_SECRETS value must be at least 32 characters",
     ],
     [
+      { SESSION_ABSOLUTE_TIMEOUT_MINUTES: undefined },
+      "SESSION_ABSOLUTE_TIMEOUT_MINUTES is required",
+    ],
+    [
+      { SESSION_INACTIVITY_TIMEOUT_MINUTES: undefined },
+      "SESSION_INACTIVITY_TIMEOUT_MINUTES is required",
+    ],
+    [
       { OIDC_ALLOW_INSECURE_HTTP: "true" },
       "OIDC_ALLOW_INSECURE_HTTP cannot be true",
     ],
@@ -190,6 +234,8 @@ describe("application configuration", () => {
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -207,6 +253,8 @@ describe("application configuration", () => {
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
       }),
     ).toThrow(
       "ACRONYMICON_PUBLIC_ORIGIN is required for the controlled deployment profile",
@@ -232,6 +280,8 @@ describe("application configuration", () => {
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -256,6 +306,8 @@ describe("application configuration", () => {
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
+        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",

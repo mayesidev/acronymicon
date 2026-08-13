@@ -18,6 +18,24 @@ const optionalBoolean = z.preprocess(
   z.enum(["true", "false"]).optional(),
 );
 
+const optionalSessionLifetime = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim() === "" ? undefined : value,
+  z
+    .string()
+    .trim()
+    .regex(/^\d+$/, "must be a whole number of minutes")
+    .transform(Number)
+    .pipe(
+      z
+        .number()
+        .int()
+        .min(1)
+        .max(60 * 24 * 7),
+    )
+    .optional(),
+);
+
 const optionalDictionaryAccess = z.preprocess(
   (value) =>
     typeof value === "string" && value.trim() === "" ? undefined : value,
@@ -60,6 +78,8 @@ const applicationEnvironmentSchema = z
     SESSION_SECRET: optionalString,
     SESSION_PREVIOUS_SECRETS: optionalSecretList,
     SESSION_COOKIE_SECURE: optionalBoolean,
+    SESSION_ABSOLUTE_TIMEOUT_MINUTES: optionalSessionLifetime,
+    SESSION_INACTIVITY_TIMEOUT_MINUTES: optionalSessionLifetime,
     OIDC_ISSUER_URL: optionalUrl,
     OIDC_CLIENT_ID: optionalString,
     OIDC_CLIENT_SECRET: optionalString,
@@ -94,6 +114,20 @@ const applicationEnvironmentSchema = z
         code: "custom",
         message: "SESSION_SECRET and SESSION_PREVIOUS_SECRETS must be unique.",
         path: ["SESSION_PREVIOUS_SECRETS"],
+      });
+    }
+
+    const absoluteTimeoutMinutes =
+      environment.SESSION_ABSOLUTE_TIMEOUT_MINUTES ?? 60 * 8;
+    const inactivityTimeoutMinutes =
+      environment.SESSION_INACTIVITY_TIMEOUT_MINUTES ?? 60 * 8;
+
+    if (inactivityTimeoutMinutes > absoluteTimeoutMinutes) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "SESSION_INACTIVITY_TIMEOUT_MINUTES cannot exceed SESSION_ABSOLUTE_TIMEOUT_MINUTES.",
+        path: ["SESSION_INACTIVITY_TIMEOUT_MINUTES"],
       });
     }
 
@@ -147,6 +181,19 @@ const applicationEnvironmentSchema = z
 
     if (environment.ACRONYMICON_DEPLOYMENT_PROFILE !== "controlled") {
       return;
+    }
+
+    for (const name of [
+      "SESSION_ABSOLUTE_TIMEOUT_MINUTES",
+      "SESSION_INACTIVITY_TIMEOUT_MINUTES",
+    ] as const) {
+      if (environment[name] === undefined) {
+        context.addIssue({
+          code: "custom",
+          message: `${name} is required for the controlled deployment profile.`,
+          path: [name],
+        });
+      }
     }
 
     if ((environment.SESSION_SECRET?.length ?? 0) < 32) {
@@ -320,6 +367,9 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
         /* c8 ignore next -- production absence is rejected above. */
         "dev-session-secret-change-me",
       previousSecrets: values.SESSION_PREVIOUS_SECRETS,
+      absoluteTimeoutMinutes: values.SESSION_ABSOLUTE_TIMEOUT_MINUTES ?? 60 * 8,
+      inactivityTimeoutMinutes:
+        values.SESSION_INACTIVITY_TIMEOUT_MINUTES ?? 60 * 8,
       secureCookie:
         values.SESSION_COOKIE_SECURE === undefined
           ? values.NODE_ENV === "production"
