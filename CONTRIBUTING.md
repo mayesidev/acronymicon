@@ -75,5 +75,12 @@ Do not commit credentials, local database files, generated build output, or
 private operational configuration. Use `.env.example` for configuration
 documentation and clearly fake values for local fixtures.
 
+Treat dictionary content as deployment data. It may appear in an authorized
+response body, but do not copy it into URLs, redirects, response headers,
+status text, generic errors, audit events, correlation identifiers, metric
+labels, or trace attributes. Use opaque entry identifiers in navigation and
+random identifiers for request correlation. Changes that touch these
+boundaries should extend the automated content-boundary coverage.
+
 Schema changes must include a Drizzle migration. Keep seed data and imported
 fixtures redistributable under the project license.
