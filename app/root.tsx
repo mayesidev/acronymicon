@@ -1,5 +1,4 @@
 import {
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
@@ -8,6 +7,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { getErrorPresentation } from "./platform/http/error-presentation";
 import { applyDeploymentSecurityHeaders } from "./platform/http/security-headers.server";
 import { Card } from "./ui/components/card";
 import { PageShell } from "./ui/components/page-shell";
@@ -69,20 +69,10 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
-
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
-  }
+  const { message, details, stack } = getErrorPresentation(
+    error,
+    import.meta.env.DEV,
+  );
 
   return (
     <PageShell contentClassName="pt-16">
