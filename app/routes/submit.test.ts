@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../platform/audit/runtime.server", () => ({
+  auditPublisher: {
+    publish: () => Promise.resolve({ status: "recorded" }),
+  },
+}));
+
 import {
   commitSession,
   getSession,

@@ -1,5 +1,7 @@
 import { redirect } from "react-router";
 
+import type { AuditPublisher } from "../../../domain/audit";
+import { auditPublisher } from "../../../platform/audit/runtime.server";
 import {
   getAppConfig,
   type AppConfig,
@@ -10,9 +12,20 @@ import { safeReturnTo } from "./workflow";
 
 export type Capability = "dictionary:read" | "acronym:submit";
 
+export type AuthorizationDependencies = Readonly<{
+  auditPublisher: AuditPublisher;
+  randomCorrelationId: () => string;
+}>;
+
+const defaultDependencies: AuthorizationDependencies = {
+  auditPublisher,
+  randomCorrelationId: () => crypto.randomUUID(),
+};
+
 export async function authorizeDictionaryAccess(
   request: Request,
   config: AppConfig = getAppConfig(),
+  dependencies: AuthorizationDependencies = defaultDependencies,
 ) {
   const user = await getOptionalUser(request);
 
@@ -20,12 +33,13 @@ export async function authorizeDictionaryAccess(
     return user;
   }
 
-  return accessDeniedResponse(request, user);
+  return accessDeniedResponse(request, user, dependencies);
 }
 
 export async function authorizeSubmissionAccess(
   request: Request,
   config: AppConfig = getAppConfig(),
+  dependencies: AuthorizationDependencies = defaultDependencies,
 ) {
   const user = await getOptionalUser(request);
 
@@ -33,7 +47,7 @@ export async function authorizeSubmissionAccess(
     return user;
   }
 
-  return accessDeniedResponse(request, user);
+  return accessDeniedResponse(request, user, dependencies);
 }
 
 export function hasCapability(
@@ -72,15 +86,52 @@ export function shouldShowSubmissionAction(
   );
 }
 
-function accessDeniedResponse(request: Request, user: AuthUser | null) {
+async function accessDeniedResponse(
+  request: Request,
+  user: AuthUser | null,
+  dependencies: AuthorizationDependencies,
+) {
+  const result = await dependencies.auditPublisher.publish({
+    delivery: "required",
+    event: {
+      correlationId: dependencies.randomCorrelationId(),
+      actor: user ? { type: "user", id: user.id } : { type: "anonymous" },
+      source: "http",
+      action: "authorization.check",
+      target: { type: "application" },
+      outcome: "denied",
+    },
+  });
+
+  if (result.status === "unavailable") {
+    return denyAccess(
+      user,
+      new Response(null, {
+        status: 503,
+        statusText: "Service Unavailable",
+      }),
+    );
+  }
+
   if (user) {
-    // React Router uses thrown Responses to preserve route-level HTTP status.
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
-    throw new Response(null, { status: 403, statusText: "Forbidden" });
+    return denyAccess(
+      user,
+      new Response(null, { status: 403, statusText: "Forbidden" }),
+    );
   }
 
   const requestUrl = new URL(request.url);
   const returnTo = safeReturnTo(`${requestUrl.pathname}${requestUrl.search}`);
 
   return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
+function denyAccess(user: AuthUser | null, response: Response) {
+  if (user) {
+    // React Router uses thrown Responses to preserve route-level HTTP status.
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    throw response;
+  }
+
+  return response;
 }
