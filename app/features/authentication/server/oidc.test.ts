@@ -36,6 +36,14 @@ describe("OIDC claim mapping", () => {
     );
   });
 
+  it.each([
+    { groups: "dictionary-readers" },
+    { groups: ["dictionary-readers", 42] },
+    { groups: ["dictionary-readers", ""] },
+  ])("does not accept a malformed groups claim", (claims) => {
+    expect(mapClaimsToUser({ sub: "user-123", ...claims }).groups).toEqual([]);
+  });
+
   it("requests provider reauthentication after an explicit logout", () => {
     const authorizationUrl = addReauthenticationPrompt(
       new URL("https://issuer.example.test/authorize?client_id=acronymicon"),
@@ -49,6 +57,7 @@ describe("OIDC claim mapping", () => {
     const environment = {
       ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
       ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+      ACRONYMICON_READ_GROUPS: "dictionary-readers",
       NODE_ENV: "production",
       SESSION_SECRET: "production-secret",
       OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",

@@ -1,7 +1,7 @@
 import { data, redirect } from "react-router";
 
 import type { Route } from "./+types/submit";
-import { getOptionalUser } from "../features/authentication/server/session";
+import { authorizeSubmissionAccess } from "../features/authentication/server/access";
 import { SubmissionForm } from "../features/submission/components/submission-form";
 import {
   loadDuplicatePreview,
@@ -16,11 +16,10 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getOptionalUser(request);
+  const user = await authorizeSubmissionAccess(request);
 
-  if (!user) {
-    const returnTo = new URL(request.url).pathname;
-    return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+  if (user instanceof Response) {
+    return user;
   }
 
   const searchParameters = new URL(request.url).searchParams;
@@ -36,10 +35,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const user = await getOptionalUser(request);
+  const user = await authorizeSubmissionAccess(request);
 
-  if (!user) {
-    return redirect("/auth/login?returnTo=/submit");
+  if (user instanceof Response) {
+    return user;
   }
 
   const formData = await request.formData();

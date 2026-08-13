@@ -220,5 +220,13 @@ function getClaimStringArray(
     return [];
   }
 
-  return value.filter((item): item is string => typeof item === "string");
+  const groups: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string" || !item.trim()) {
+      return [];
+    }
+    groups.push(item);
+  }
+
+  return groups;
 }

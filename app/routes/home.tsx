@@ -4,7 +4,10 @@ import { Form, useLocation, useSubmit } from "react-router";
 
 import { buildAboutHref } from "../features/about/model";
 import { HeaderActions } from "../features/authentication/components/header-actions";
-import { authorizeDictionaryAccess } from "../features/authentication/server/access";
+import {
+  authorizeDictionaryAccess,
+  shouldShowSubmissionAction,
+} from "../features/authentication/server/access";
 import { DictionaryList } from "../features/dictionary/components/dictionary-list";
 import {
   dictionarySortOptions,
@@ -47,6 +50,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     query,
     sort,
     user,
+    showSubmit: shouldShowSubmissionAction(user),
   };
 }
 
@@ -101,7 +105,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </p>
         </div>
 
-        <HeaderActions user={user} />
+        <HeaderActions user={user} showSubmit={loaderData.showSubmit} />
       </header>
 
       <section aria-label="Search dictionary">
