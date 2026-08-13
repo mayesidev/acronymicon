@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  commitSession,
-  getSession,
-  hasForceReauthentication,
-} from "./session";
+  AuditRecorder,
+  expectAuditAttempts,
+} from "../../../../test/support/audit-recorder";
+import { commitSession, getSession, hasForceReauthentication } from "./session";
 import {
   type AuthenticationDependencies,
   createAuthenticationWorkflow,
@@ -51,7 +51,8 @@ describe("authentication workflow", () => {
   });
 
   it("completes the callback and replaces transient state with the user", async () => {
-    const dependencies = createDependencies();
+    const audit = new AuditRecorder();
+    const dependencies = createDependencies({ auditPublisher: audit });
     const workflow = createAuthenticationWorkflow(dependencies);
     const session = await getSession(null);
     session.set("oidcState", "expected-state");
@@ -64,6 +65,7 @@ describe("authentication workflow", () => {
     const outcome = await workflow.completeSignIn(request);
 
     expect(outcome.location).toBe("/submit");
+    expect(outcome.status).toBe("authenticated");
     expect(dependencies.completeAuthorizationCodeGrant).toHaveBeenCalledWith({
       request,
       expectedState: "expected-state",
@@ -78,34 +80,141 @@ describe("authentication workflow", () => {
     expect(restored.get("oidcState")).toBeUndefined();
     expect(restored.get("returnTo")).toBeUndefined();
     expect(outcome.cookies[1]).toContain("Max-Age=0");
+    expectAuditAttempts(audit, [
+      {
+        delivery: "required",
+        event: {
+          correlationId: "correlation-123",
+          actor: { type: "user", id: "user-123" },
+          source: "http",
+          action: "authentication.login",
+          target: { type: "identity", id: "user-123" },
+          outcome: "succeeded",
+        },
+      },
+    ]);
   });
 
   it("returns an expired callback to the dictionary with a flash message", async () => {
-    const workflow = createAuthenticationWorkflow(createDependencies());
+    const audit = new AuditRecorder();
+    const workflow = createAuthenticationWorkflow(
+      createDependencies({ auditPublisher: audit }),
+    );
 
     const outcome = await workflow.completeSignIn(
       new Request("http://localhost/auth/callback"),
     );
 
     expect(outcome.location).toBe("/");
+    expect(outcome.status).toBe("failed");
     expect(outcome.cookies).toHaveLength(1);
     const session = await getSession(outcome.cookies[0]);
     expect(session.get("authError")).toBe(
       "Sign-in session expired. Please try again.",
     );
+    expectAuditAttempts(audit, [
+      {
+        delivery: "best-effort",
+        event: {
+          correlationId: "correlation-123",
+          actor: { type: "anonymous" },
+          source: "http",
+          action: "authentication.login",
+          target: { type: "application" },
+          outcome: "failed",
+        },
+      },
+    ]);
+  });
+
+  it("does not establish a session when required login audit is unavailable", async () => {
+    const audit = new AuditRecorder({ available: false });
+    const workflow = createAuthenticationWorkflow(
+      createDependencies({ auditPublisher: audit }),
+    );
+    const session = await getSession(null);
+    session.set("oidcState", "expected-state");
+    session.set("oidcCodeVerifier", "expected-verifier");
+    session.set("returnTo", "/submit");
+    const request = new Request("http://localhost/auth/callback?code=code", {
+      headers: { Cookie: await commitSession(session) },
+    });
+
+    const outcome = await workflow.completeSignIn(request);
+
+    expect(outcome.status).toBe("audit-unavailable");
+    expect(outcome.location).toBe("/");
+    expect(outcome.cookies).toHaveLength(1);
+    const restored = await getSession(outcome.cookies[0]);
+    expect(restored.get("user")).toBeUndefined();
+    expect(restored.get("oidcState")).toBeUndefined();
+    expect(restored.get("oidcCodeVerifier")).toBeUndefined();
+    expect(restored.get("returnTo")).toBeUndefined();
+    expect(restored.get("authError")).toBe(
+      "Sign-in is temporarily unavailable. Please try again.",
+    );
+  });
+
+  it("audits a rejected identity-provider callback without sensitive details", async () => {
+    const audit = new AuditRecorder();
+    const providerError = new Error("token endpoint included a secret");
+    const workflow = createAuthenticationWorkflow(
+      createDependencies({
+        auditPublisher: audit,
+        completeAuthorizationCodeGrant: vi
+          .fn()
+          .mockRejectedValue(providerError),
+      }),
+    );
+    const session = await getSession(null);
+    session.set("oidcState", "expected-state");
+    session.set("oidcCodeVerifier", "expected-verifier");
+    const request = new Request(
+      "http://localhost/auth/callback?code=sensitive-code",
+      { headers: { Cookie: await commitSession(session) } },
+    );
+
+    await expect(workflow.completeSignIn(request)).rejects.toBe(providerError);
+    expectAuditAttempts(audit, [
+      {
+        delivery: "best-effort",
+        event: {
+          correlationId: "correlation-123",
+          actor: { type: "anonymous" },
+          source: "http",
+          action: "authentication.login",
+          target: { type: "application" },
+          outcome: "failed",
+        },
+      },
+    ]);
+    expect(JSON.stringify(audit.attempts)).not.toContain("sensitive");
+    expect(JSON.stringify(audit.attempts)).not.toContain("secret");
   });
 
   it.each([
     ["provider", new URL("https://identity.example.test/logout")],
     ["local", null],
   ])("destroys the session for %s logout", async (_, providerLogoutUrl) => {
+    const audit = new AuditRecorder({ available: false });
     const workflow = createAuthenticationWorkflow(
       createDependencies({
+        auditPublisher: audit,
         buildOidcLogoutUrl: vi.fn().mockResolvedValue(providerLogoutUrl),
       }),
     );
+    const session = await getSession(null);
+    session.set("user", {
+      id: "user-123",
+      username: "private-username",
+      displayName: "Private Name",
+      email: "private@example.test",
+      groups: ["private-group"],
+    });
     const outcome = await workflow.signOut(
-      new Request("http://localhost/auth/logout"),
+      new Request("http://localhost/auth/logout", {
+        headers: { Cookie: await commitSession(session) },
+      }),
     );
 
     expect(outcome.location).toBe(providerLogoutUrl?.toString() ?? "/");
@@ -117,6 +226,49 @@ describe("authentication workflow", () => {
         }),
       ),
     ).toBe(true);
+    expectAuditAttempts(audit, [
+      {
+        delivery: "best-effort",
+        event: {
+          correlationId: "correlation-123",
+          actor: { type: "user", id: "user-123" },
+          source: "http",
+          action: "authentication.logout",
+          target: { type: "identity", id: "user-123" },
+          outcome: "succeeded",
+        },
+      },
+    ]);
+    expect(JSON.stringify(audit.attempts)).not.toContain("private");
+  });
+
+  it("records a failed logout when provider logout cannot be prepared", async () => {
+    const audit = new AuditRecorder();
+    const providerError = new Error("provider response included a secret");
+    const workflow = createAuthenticationWorkflow(
+      createDependencies({
+        auditPublisher: audit,
+        buildOidcLogoutUrl: vi.fn().mockRejectedValue(providerError),
+      }),
+    );
+
+    await expect(
+      workflow.signOut(new Request("http://localhost/auth/logout")),
+    ).rejects.toBe(providerError);
+    expectAuditAttempts(audit, [
+      {
+        delivery: "best-effort",
+        event: {
+          correlationId: "correlation-123",
+          actor: { type: "anonymous" },
+          source: "http",
+          action: "authentication.logout",
+          target: { type: "application" },
+          outcome: "failed",
+        },
+      },
+    ]);
+    expect(JSON.stringify(audit.attempts)).not.toContain("secret");
   });
 });
 
@@ -150,6 +302,8 @@ function createDependencies(
       groups: [],
     }),
     buildOidcLogoutUrl: vi.fn().mockResolvedValue(null),
+    auditPublisher: new AuditRecorder(),
+    randomCorrelationId: () => "correlation-123",
     ...overrides,
   };
 }
