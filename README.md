@@ -144,16 +144,19 @@ uses `open` access for backward compatibility.
 
 ### Structured audit output
 
-The supported audit transport is newline-delimited JSON written to the
-application process's standard output. Each line is one versioned record with
-bounded actor, source, action, target, outcome, timestamp, and correlation
-fields. Records do not include acronym or definition text, notes, credentials,
-tokens, raw request URLs or queries, or free-form exception details.
+The supported audit transport is newline-delimited JSON. Application audit
+records are written to standard output. If that primary stream is unavailable,
+one bounded sink-health record is attempted on standard error. Each line is one
+versioned record with bounded actor, source, action, target, outcome, timestamp,
+and correlation fields. Records do not include acronym or definition text,
+notes, credentials, tokens, raw request URLs or queries, or free-form exception
+details.
 
-Deployment operators are responsible for routing standard output to their
+Deployment operators are responsible for routing both streams to their
 protected log collector and configuring transport protection, access control,
-retention, monitoring, and analysis there. Keep audit output separate from
-interactive terminal use, and do not enrich it with protected dictionary data.
+retention, monitoring, and analysis there. Monitor standard error health records
+as a degraded primary audit stream. Keep audit output separate from interactive
+terminal use, and do not enrich it with protected dictionary data.
 
 ## Verification
 
