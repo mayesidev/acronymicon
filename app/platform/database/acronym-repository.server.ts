@@ -70,6 +70,29 @@ export function createAcronymRepository(
       .orderBy(asc(acronymEntries.variant));
   }
 
+  async function findPublishedById(id: string) {
+    const [entry] = await database
+      .select({
+        id: acronymEntries.id,
+        acronym: acronymEntries.acronym,
+        variant: acronymEntries.variant,
+        definition: acronymEntries.definition,
+        definitionRanges: acronymEntries.definitionRanges,
+        notes: acronymEntries.notes,
+        aliases: acronymEntries.aliases,
+        submittedByUsername: acronymEntries.submittedByUsername,
+        submittedByDisplayName: acronymEntries.submittedByDisplayName,
+        createdAt: acronymEntries.createdAt,
+      })
+      .from(acronymEntries)
+      .where(
+        and(eq(acronymEntries.status, "published"), eq(acronymEntries.id, id)),
+      )
+      .limit(1);
+
+    return entry ?? null;
+  }
+
   async function findPublishedByVariant(acronym: string, variant: number) {
     const [entry] = await database
       .select({
@@ -129,6 +152,7 @@ export function createAcronymRepository(
 
   return {
     listPublishedEntries,
+    findPublishedById,
     findPublishedByAcronym,
     findPublishedByVariant,
     findExactDuplicate,

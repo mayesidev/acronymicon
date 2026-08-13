@@ -100,8 +100,11 @@ test("authenticated dictionary access protects pages and data requests", async (
 
   await page.goto("/define?acr=API&sort=recent");
   await signIn(page, "user");
-  await expect(page).toHaveURL(
-    "http://localhost:3101/define?acr=API&sort=recent",
+  await expect(page).toHaveURL((url) =>
+    url.pathname.startsWith("/define/") &&
+    url.searchParams.get("view") === "all" &&
+    url.searchParams.get("sort") === "recent" &&
+    !url.searchParams.has("acr"),
   );
   await expect(
     page.getByText("Application Programming Interface"),
@@ -114,6 +117,11 @@ test("users can open a specific definition variant and see marked ranges", async
   page,
 }) => {
   await page.goto("/define?acr=api");
+  await expect(page).toHaveURL((url) =>
+    url.pathname.startsWith("/define/") &&
+    url.searchParams.get("view") === "all" &&
+    !url.searchParams.has("acr"),
+  );
   await expect(page.getByLabel("Sort definitions")).toHaveValue(
     "alphabetical",
   );
@@ -125,6 +133,9 @@ test("users can open a specific definition variant and see marked ranges", async
   await expect(page).toHaveURL(/sort=recent/);
 
   await page.goto("/define?acr=radar&var=1");
+  await expect(page).toHaveURL((url) =>
+    url.pathname.startsWith("/define/") && !url.searchParams.has("acr"),
+  );
 
   const definitionHeading = page.getByRole("heading", { name: "RADAR" });
   const backLink = page.getByRole("link", { name: "Back to dictionary" });
@@ -138,18 +149,15 @@ test("users can open a specific definition variant and see marked ranges", async
   await expect(page.getByText("Radio Detection And Ranging")).toBeVisible();
   await expect(page.locator("u")).toHaveCount(4);
 
-  await page.goto("/define?acr=radar&var=2");
+  await page.goto("/define/not-a-published-entry");
   await expect(
     page.getByRole("heading", { name: "Definition not found" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "View all definitions for radar" }),
-  ).toHaveAttribute("href", "/define?acr=radar");
   await expect(backLink).toBeVisible();
 
   await page.goto("/define");
   await expect(
-    page.getByRole("heading", { name: "Choose an acronym" }),
+    page.getByRole("heading", { name: "Choose a definition" }),
   ).toBeVisible();
   await expect(backLink).toBeVisible();
 });
@@ -219,7 +227,9 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   const keyboardResponse = waitForSubmitResponse(page);
   await definition.press("Enter");
   await keyboardResponse;
-  await expect(page).toHaveURL(/q=E2E/);
+  await expect(page).toHaveURL((url) =>
+    url.pathname.startsWith("/define/") && !url.searchParams.has("q"),
+  );
   await expect(page.getByText("End To End Verification")).toBeVisible();
 
   await page.goto("/submit");
@@ -235,7 +245,9 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   const confirmedResponse = waitForSubmitResponse(page);
   await page.getByRole("button", { name: "Submit Anyway" }).click();
   await confirmedResponse;
-  await expect(page).toHaveURL(/q=E2E/);
+  await expect(page).toHaveURL((url) =>
+    url.pathname.startsWith("/define/") && !url.searchParams.has("q"),
+  );
   await expect(
     page.getByText("Browser Integration Verification"),
   ).toBeVisible();

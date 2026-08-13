@@ -20,6 +20,7 @@ export type SubmissionOutcome =
   | {
       status: "created";
       acronym: string;
+      entryId: string;
     }
   | {
       status: "exact-duplicate";
@@ -155,7 +156,11 @@ export function createSubmissionWorkflow(
       outcome: "succeeded",
     });
 
-    return { status: "created", acronym: result.entry.acronym };
+    return {
+      status: "created",
+      acronym: result.entry.acronym,
+      entryId: result.entry.id,
+    };
   }
 
   return { loadDuplicatePreview, submit };

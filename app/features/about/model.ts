@@ -22,7 +22,9 @@ export function resolveAboutReturnTo(value: string | null) {
 
     if (
       url.origin !== applicationOrigin ||
-      url.pathname.endsWith(".data")
+      url.pathname.endsWith(".data") ||
+      (url.pathname === "/define" &&
+        (url.searchParams.has("acr") || url.searchParams.has("var")))
     ) {
       return "/";
     }

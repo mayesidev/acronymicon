@@ -1,15 +1,23 @@
 import type { Route } from "./+types/define";
-import { Form, useSubmit } from "react-router";
+import { Form, redirect, useSubmit } from "react-router";
 
 import {
   DefinitionText,
   formatSubmittedDate,
 } from "../features/dictionary/components/dictionary-list";
-import { authorizeDictionaryAccess } from "../features/authentication/server/access";
-import { lookupDefinition } from "../features/dictionary/server/api";
 import {
+  authorizeDictionaryAccess,
+  withoutSearchParameters,
+} from "../features/authentication/server/access";
+import {
+  lookupDefinition,
+  lookupDefinitionById,
+  usesControlledDictionarySearch,
+} from "../features/dictionary/server/api";
+import {
+  buildDefinitionHref,
   dictionarySortOptions,
-  type DictionarySort,
+  parseDictionarySort,
 } from "../features/dictionary/model";
 import { Card } from "../ui/components/card";
 import { Field } from "../ui/components/field";
@@ -21,22 +29,73 @@ export function meta() {
   return [{ title: "Definition | Acronymicon" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const access = await authorizeDictionaryAccess(request);
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const hasLegacyContent =
+    url.searchParams.has("acr") || url.searchParams.has("var");
+  const controlled = usesControlledDictionarySearch();
+  const access = await authorizeDictionaryAccess(
+    controlled && hasLegacyContent
+      ? withoutSearchParameters(request)
+      : request,
+  );
 
   if (access instanceof Response) {
     return access;
   }
 
-  const params = new URL(request.url).searchParams;
-  const sort: DictionarySort =
-    params.get("sort") === "recent" ? "recent" : "alphabetical";
-  const result = await lookupDefinition({
-    acronym: params.get("acr") ?? "",
-    variant: params.get("var"),
+  if (controlled && hasLegacyContent) {
+    return redirect("/");
+  }
+
+  const sort = parseDictionarySort(url.searchParams.get("sort"));
+
+  if (params.entryId) {
+    const result = await lookupDefinitionById({
+      entryId: params.entryId,
+      related: url.searchParams.get("view") === "all",
+      sort,
+    });
+    return { ...result, sort };
+  }
+
+  const legacyResult = await lookupDefinition({
+    acronym: url.searchParams.get("acr") ?? "",
+    variant: url.searchParams.get("var"),
     sort,
   });
-  return { ...result, sort };
+
+  if (legacyResult.status === "entry") {
+    return redirect(buildDefinitionHref(legacyResult.entry.id));
+  }
+
+  if (legacyResult.status === "list" && legacyResult.entries[0]) {
+    return redirect(
+      buildDefinitionHref(legacyResult.entries[0].id, {
+        related: true,
+        sort,
+      }),
+    );
+  }
+
+  if (
+    legacyResult.status === "not-found" &&
+    legacyResult.acronym.trim()
+  ) {
+    const related = await lookupDefinition({
+      acronym: legacyResult.acronym,
+      variant: null,
+      sort,
+    });
+
+    if (related.status === "list" && related.entries[0]) {
+      return redirect(
+        buildDefinitionHref(related.entries[0].id, { related: true, sort }),
+      );
+    }
+  }
+
+  return { ...legacyResult, sort };
 }
 
 export default function Define({ loaderData }: Route.ComponentProps) {
@@ -44,10 +103,9 @@ export default function Define({ loaderData }: Route.ComponentProps) {
   if (loaderData.status === "missing-acronym") {
     return (
       <Page>
-        <h1 className="text-2xl font-semibold">Choose an acronym</h1>
+        <h1 className="text-2xl font-semibold">Choose a definition</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Add an acronym to the <code>acr</code> query parameter to view its
-          definitions.
+          Select an acronym or definition from the dictionary to view it here.
         </p>
       </Page>
     );
@@ -58,15 +116,8 @@ export default function Define({ loaderData }: Route.ComponentProps) {
       <Page>
         <h1 className="text-2xl font-semibold">Definition not found</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Variant {loaderData.variant} is not available for {loaderData.acronym}
-          .
+          The requested definition is not available.
         </p>
-        <TextLink
-          href={`/define?acr=${encodeURIComponent(loaderData.acronym)}`}
-          className="mt-4 inline-block text-sm"
-        >
-          View all definitions for {loaderData.acronym}
-        </TextLink>
       </Page>
     );
   }
@@ -87,7 +138,7 @@ export default function Define({ loaderData }: Route.ComponentProps) {
 
       {loaderData.status === "list" ? (
         <Form method="get" className="mt-4 flex justify-end">
-          <input type="hidden" name="acr" value={loaderData.acronym} />
+          <input type="hidden" name="view" value="all" />
           <Field
             label="Sort definitions"
             className="flex items-center gap-2"

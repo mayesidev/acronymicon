@@ -12,6 +12,11 @@ export type DictionaryDefinitionResult =
       variant: string | number;
     };
 
+export type EntryDefinitionResult =
+  | { status: "entry"; acronym: string; entry: DictionaryEntry }
+  | { status: "list"; acronym: string; entries: DictionaryEntry[] }
+  | { status: "not-found"; entryId: string };
+
 export function createDictionaryDefinitionService(
   repository: DictionaryDefinitionRepository,
 ) {
@@ -52,5 +57,33 @@ export function createDictionaryDefinitionService(
       : { status: "not-found", acronym, variant };
   }
 
-  return { lookupDefinition };
+  async function lookupDefinitionById(input: {
+    entryId: string;
+    related: boolean;
+    sort?: DictionarySort;
+  }): Promise<EntryDefinitionResult> {
+    const entryId = input.entryId.trim();
+    const entry = entryId
+      ? await repository.findPublishedById(entryId)
+      : null;
+
+    if (!entry) {
+      return { status: "not-found", entryId };
+    }
+
+    if (!input.related) {
+      return { status: "entry", acronym: entry.acronym, entry };
+    }
+
+    return {
+      status: "list",
+      acronym: entry.acronym,
+      entries: sortDictionaryEntries(
+        await repository.findPublishedByAcronym(entry.acronym),
+        input.sort ?? "alphabetical",
+      ),
+    };
+  }
+
+  return { lookupDefinition, lookupDefinitionById };
 }

@@ -34,13 +34,17 @@ it("serves atomic submissions and duplicate previews through the feature API", a
     definition: "Application Programming Interface",
   };
 
-  await expect(
-    submitAcronym(values, {
-      id: "user-id",
-      username: "user",
-      displayName: "Local User",
-    }),
-  ).resolves.toEqual({ status: "created", acronym: "API" });
+  const outcome = await submitAcronym(values, {
+    id: "user-id",
+    username: "user",
+    displayName: "Local User",
+  });
+  expect(outcome.status).toBe("created");
+  if (outcome.status !== "created") {
+    throw new Error("Expected the test submission to be created.");
+  }
+  expect(outcome).toMatchObject({ status: "created", acronym: "API" });
+  expect(outcome.entryId).toEqual(expect.any(String));
   await expect(loadDuplicatePreview(values)).resolves.toMatchObject({
     existingEntries: [{ definition: values.definition }],
     exactDuplicate: { definition: values.definition },

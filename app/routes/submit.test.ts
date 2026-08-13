@@ -126,7 +126,7 @@ describe("submit route duplicate preview", () => {
 });
 
 describe("submit route completion navigation", () => {
-  it("keeps the standard profile's focused search redirect", async () => {
+  it("redirects a standard submission to its opaque definition URL", async () => {
     const { cookie } = await authenticatedSession();
     const acronym = `STANDARD-${crypto.randomUUID()}`;
 
@@ -135,24 +135,27 @@ describe("submit route completion navigation", () => {
     } as never);
 
     expect(response).toBeInstanceOf(Response);
-    expect((response as Response).headers.get("Location")).toBe(
-      `/?q=${encodeURIComponent(acronym)}`,
-    );
+    const location = (response as Response).headers.get("Location");
+    expect(location).toMatch(/^\/define\/[0-9a-f-]+$/);
+    expect(location).not.toContain(acronym);
   });
 
-  it("does not put a controlled-profile acronym in the redirect URL", async () => {
+  it("redirects a controlled submission without exposing its acronym", async () => {
     configureControlledProfile();
     const { cookie } = await authenticatedSession(["dictionary-submitters"]);
 
+    const acronym = `CONTROLLED-${crypto.randomUUID()}`;
     const response = await action({
       request: submissionRequest({
         cookie,
-        acronym: `CONTROLLED-${crypto.randomUUID()}`,
+        acronym,
       }),
     } as never);
 
     expect(response).toBeInstanceOf(Response);
-    expect((response as Response).headers.get("Location")).toBe("/");
+    const location = (response as Response).headers.get("Location");
+    expect(location).toMatch(/^\/define\/[0-9a-f-]+$/);
+    expect(location).not.toContain(acronym);
   });
 });
 

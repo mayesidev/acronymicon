@@ -67,7 +67,7 @@ describe("acronym repository", () => {
     databases.push(database);
     const repository = createAcronymRepository(database.db);
 
-    repository.createAcronymEntry({
+    const created = repository.createAcronymEntry({
       acronym: "ZULU",
       definition: "Zulu Definition",
       submittedByUserId: "user-id",
@@ -84,6 +84,12 @@ describe("acronym repository", () => {
       { acronym: "ALPHA", variant: 1 },
       { acronym: "ZULU", variant: 1 },
     ]);
+    if (created.status !== "created") {
+      throw new Error("Expected the test entry to be created.");
+    }
+    await expect(
+      repository.findPublishedById(created.entry.id),
+    ).resolves.toMatchObject({ acronym: "ZULU" });
   });
 
   it("assigns stable variants per acronym for shareable links", async () => {

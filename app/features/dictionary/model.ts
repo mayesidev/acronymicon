@@ -32,3 +32,21 @@ export const dictionarySortOptions = [
 export function parseDictionarySort(value: string | null): DictionarySort {
   return value === "recent" ? "recent" : "alphabetical";
 }
+
+export function buildDefinitionHref(
+  entryId: string,
+  options: { related?: boolean; sort?: DictionarySort } = {},
+) {
+  const path = `/define/${encodeURIComponent(entryId)}`;
+
+  if (!options.related) {
+    return path;
+  }
+
+  const parameters = new URLSearchParams({ view: "all" });
+  if (options.sort === "recent") {
+    parameters.set("sort", "recent");
+  }
+
+  return `${path}?${parameters.toString()}`;
+}

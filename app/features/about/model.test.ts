@@ -7,8 +7,8 @@ describe("About navigation", () => {
     expect(buildAboutHref("/?q=API&sort=recent")).toBe(
       "/about?returnTo=%2F%3Fq%3DAPI%26sort%3Drecent",
     );
-    expect(resolveAboutReturnTo("/define?acr=api&var=1#definition")).toBe(
-      "/define?acr=api&var=1#definition",
+    expect(resolveAboutReturnTo("/define/opaque-id?view=all#definition")).toBe(
+      "/define/opaque-id?view=all#definition",
     );
   });
 
@@ -19,6 +19,7 @@ describe("About navigation", () => {
     "//example.test",
     "/\\example.test",
     "/_.data?q=API&sort=alphabetical",
+    "/define?acr=api&var=1#definition",
   ])(
     "falls back to the dictionary for an unsafe return location (%s)",
     (value) => {

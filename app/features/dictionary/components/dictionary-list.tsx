@@ -1,6 +1,6 @@
 import { Card } from "../../../ui/components/card";
 import { TextLink } from "../../../ui/components/link";
-import type { DictionaryEntry } from "../model";
+import { buildDefinitionHref, type DictionaryEntry } from "../model";
 
 export function DictionaryList({
   entries,
@@ -48,7 +48,7 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
     <li className="grid gap-4 p-4 md:grid-cols-[8rem_1fr]">
       <div>
         <TextLink
-          href={`/define?acr=${encodeURIComponent(entry.acronym)}`}
+          href={buildDefinitionHref(entry.id, { related: true })}
           className="text-2xl font-semibold tracking-normal no-underline"
         >
           {entry.acronym}
@@ -58,7 +58,7 @@ function DictionaryEntryItem({ entry }: { entry: DictionaryEntry }) {
       <div className="min-w-0">
         <h2 className="text-lg font-semibold tracking-normal text-foreground">
           <TextLink
-            href={`/define?acr=${encodeURIComponent(entry.acronym)}&var=${entry.variant}`}
+            href={buildDefinitionHref(entry.id)}
             className="no-underline"
           >
             <DefinitionText
