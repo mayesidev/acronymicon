@@ -25,7 +25,7 @@ type AuthenticationFlowFlashData = {
 
 const sessionConfig = getAppConfig().session;
 const sessionSecrets = getSessionSecrets(sessionConfig);
-const authenticatedSessionMaxAge = 60 * 60 * 8;
+const authenticatedSessionMaxAge = getAuthenticatedSessionMaxAge(sessionConfig);
 
 const authenticationFlowStorage = createCookieSessionStorage<
   AuthenticationFlowData,
@@ -124,8 +124,19 @@ export function getSessionSecrets(config: {
   return [config.secret, ...config.previousSecrets];
 }
 
+export function getAuthenticatedSessionMaxAge(config: {
+  absoluteTimeoutMinutes: number;
+}) {
+  return config.absoluteTimeoutMinutes * 60;
+}
+
 function getSessionRepository() {
-  return createDatabaseSessionRepository(getAppDatabase());
+  return createDatabaseSessionRepository(getAppDatabase(), {
+    absoluteTimeoutMilliseconds:
+      sessionConfig.absoluteTimeoutMinutes * 60 * 1_000,
+    inactivityTimeoutMilliseconds:
+      sessionConfig.inactivityTimeoutMinutes * 60 * 1_000,
+  });
 }
 
 function requireExpiration(expires: Date | undefined) {

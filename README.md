@@ -117,6 +117,15 @@ remain server-side. Deleting a session record revokes that session immediately.
 Deployments upgrading from versions that stored session data in the cookie will
 require currently signed-in users to authenticate once after the upgrade.
 
+`SESSION_ABSOLUTE_TIMEOUT_MINUTES` limits total authenticated-session age;
+activity never extends that deadline. `SESSION_INACTIVITY_TIMEOUT_MINUTES`
+limits time between authenticated application requests. Both accept whole
+minutes from 1 through 10080 (seven days), and inactivity cannot exceed the
+absolute lifetime. Standard deployments default both values to 480 minutes,
+which preserves the original eight-hour behavior. Controlled deployments must
+set both explicitly so operators can apply their deployment policy and align
+the application values with their identity-provider session policy.
+
 To enable OIDC, configure all three provider credentials:
 
 ```txt
@@ -137,10 +146,11 @@ Set `ACRONYMICON_DEPLOYMENT_PROFILE=controlled` when the application must
 reject unsafe production identity and transport settings. This profile requires
 production mode, an explicit HTTPS `ACRONYMICON_PUBLIC_ORIGIN`, complete OIDC
 credentials, and explicit HTTPS callback and post-logout destinations on that
-same origin. It also rejects insecure session cookies and insecure OIDC
-transport, and applies no-store, transport, framing, referrer, and content-type
-response protections. Dictionary pages and data endpoints require an
-authenticated and authorized session in this profile. Configure exact,
+same origin. It also requires explicit absolute and inactivity session
+lifetimes, rejects insecure session cookies and insecure OIDC transport, and
+applies no-store, transport, framing, referrer, and content-type response
+protections. Dictionary pages and data endpoints require an authenticated and
+authorized session in this profile. Configure exact,
 case-sensitive OIDC group names with `ACRONYMICON_READ_GROUPS` and
 `ACRONYMICON_SUBMIT_GROUPS`; comma-separate multiple groups. Submit-group
 membership also grants dictionary read access. At least one read or submit group

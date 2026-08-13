@@ -6,6 +6,7 @@ import {
   commitSession,
   createForceReauthenticationCookie,
   destroySession,
+  getAuthenticatedSessionMaxAge,
   getSession,
   getSessionSecrets,
   hasForceReauthentication,
@@ -43,6 +44,7 @@ describe("session lifecycle", () => {
     ) as unknown;
 
     expect(cookie).not.toContain("local-user");
+    expect(cookie).toContain("Max-Age=28800");
     expect(browserPayload).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     );
@@ -131,5 +133,11 @@ describe("session lifecycle", () => {
         previousSecrets: ["previous", "oldest"],
       }),
     ).toEqual(["active", "previous", "oldest"]);
+  });
+
+  it("converts the configured absolute lifetime to cookie seconds", () => {
+    expect(getAuthenticatedSessionMaxAge({ absoluteTimeoutMinutes: 30 })).toBe(
+      1_800,
+    );
   });
 });
