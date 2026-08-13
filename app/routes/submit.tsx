@@ -1,9 +1,13 @@
 import { data, redirect } from "react-router";
 
 import type { Route } from "./+types/submit";
-import { authorizeSubmissionAccess } from "../features/authentication/server/access";
+import {
+  authorizeSubmissionAccess,
+  withoutSearchParameters,
+} from "../features/authentication/server/access";
 import { SubmissionForm } from "../features/submission/components/submission-form";
 import {
+  getSuccessfulSubmissionLocation,
   loadDuplicatePreview,
   submitAcronym,
 } from "../features/submission/server/api";
@@ -90,7 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  return redirect(`/?q=${encodeURIComponent(outcome.acronym)}`);
+  return redirect(getSuccessfulSubmissionLocation(outcome.acronym));
 }
 
 export default function SubmitAcronym({
@@ -122,18 +126,4 @@ export default function SubmitAcronym({
 function getFormDataString(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
-}
-
-function withoutSearchParameters(request: Request) {
-  const url = new URL(request.url);
-
-  if (!url.search) {
-    return request;
-  }
-
-  url.search = "";
-  return new Request(url, {
-    method: request.method,
-    headers: request.headers,
-  });
 }

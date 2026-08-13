@@ -1,6 +1,7 @@
 import type { SubmissionValues } from "../model";
 import { createAcronymRepository } from "../../../platform/database/acronym-repository.server";
 import { getAppDatabase } from "../../../platform/database/lifecycle.server";
+import { getAppConfig } from "../../../platform/config/runtime.server";
 import type { SubmissionSubmitter } from "./repository";
 import { createSubmissionWorkflow } from "./workflow";
 
@@ -16,6 +17,12 @@ export function submitAcronym(
   submitter: SubmissionSubmitter,
 ) {
   return createSubmissionWorkflow(getRepository()).submit(values, submitter);
+}
+
+export function getSuccessfulSubmissionLocation(acronym: string) {
+  return getAppConfig().deployment.profile === "controlled"
+    ? "/"
+    : `/?q=${encodeURIComponent(acronym)}`;
 }
 
 function getRepository() {
