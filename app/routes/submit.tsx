@@ -94,7 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  return redirect(getSuccessfulSubmissionLocation(outcome.acronym));
+  return redirect(getSuccessfulSubmissionLocation(outcome.entryId));
 }
 
 export default function SubmitAcronym({

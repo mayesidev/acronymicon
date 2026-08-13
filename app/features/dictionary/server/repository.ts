@@ -5,6 +5,7 @@ export type DictionaryListRepository = {
 };
 
 export type DictionaryDefinitionRepository = {
+  findPublishedById: (id: string) => Promise<DictionaryEntry | null>;
   findPublishedByAcronym: (acronym: string) => Promise<DictionaryEntry[]>;
   findPublishedByVariant: (
     acronym: string,

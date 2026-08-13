@@ -40,6 +40,16 @@ export function lookupDefinition(input: {
   );
 }
 
+export function lookupDefinitionById(input: {
+  entryId: string;
+  related: boolean;
+  sort?: DictionarySort;
+}) {
+  return createDictionaryDefinitionService(getRepository()).lookupDefinitionById(
+    input,
+  );
+}
+
 function getRepository() {
   return createAcronymRepository(getAppDatabase());
 }

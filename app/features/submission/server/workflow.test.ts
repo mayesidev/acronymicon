@@ -147,6 +147,7 @@ describe("authenticated submission workflow", () => {
     await expect(workflow.submit(values, submitter)).resolves.toEqual({
       status: "created",
       acronym: "API",
+      entryId: "created-id",
     });
     expect(repository.createAcronymEntry).toHaveBeenCalledWith({
       acronym: "API",

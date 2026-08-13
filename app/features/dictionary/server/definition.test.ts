@@ -64,6 +64,49 @@ describe("dictionary definition service", () => {
     expect(repository.findPublishedByAcronym).not.toHaveBeenCalled();
   });
 
+  it("returns a published entry by opaque identifier", async () => {
+    const { repository, service } = setup({ entryById: entry });
+
+    await expect(
+      service.lookupDefinitionById({
+        entryId: "entry-id",
+        related: false,
+      }),
+    ).resolves.toEqual({ status: "entry", acronym: "API", entry });
+    expect(repository.findPublishedById).toHaveBeenCalledWith("entry-id");
+    expect(repository.findPublishedByAcronym).not.toHaveBeenCalled();
+  });
+
+  it("uses an opaque entry as the anchor for related definitions", async () => {
+    const annual = dictionaryEntry({ id: "annual", definition: "Annual" });
+    const { repository, service } = setup({
+      entryById: entry,
+      entries: [entry, annual],
+    });
+
+    await expect(
+      service.lookupDefinitionById({
+        entryId: "entry-id",
+        related: true,
+        sort: "alphabetical",
+      }),
+    ).resolves.toMatchObject({
+      status: "list",
+      acronym: "API",
+      entries: [{ id: "annual" }, { id: entry.id }],
+    });
+    expect(repository.findPublishedByAcronym).toHaveBeenCalledWith("API");
+  });
+
+  it("returns not found for an unknown opaque identifier", async () => {
+    const { repository, service } = setup();
+
+    await expect(
+      service.lookupDefinitionById({ entryId: "unknown", related: false }),
+    ).resolves.toEqual({ status: "not-found", entryId: "unknown" });
+    expect(repository.findPublishedByAcronym).not.toHaveBeenCalled();
+  });
+
   it.each(["", "0", "-1", "1.5", "not-a-number"])(
     "rejects invalid variant %j without querying the repository",
     async (variant) => {
@@ -88,9 +131,16 @@ describe("dictionary definition service", () => {
 });
 
 function setup(
-  options: { entries?: DictionaryEntry[]; entry?: DictionaryEntry } = {},
+  options: {
+    entries?: DictionaryEntry[];
+    entry?: DictionaryEntry;
+    entryById?: DictionaryEntry;
+  } = {},
 ) {
   const repository = {
+    findPublishedById: vi.fn(() =>
+      Promise.resolve(options.entryById ?? null),
+    ),
     findPublishedByAcronym: vi.fn(() => Promise.resolve(options.entries ?? [])),
     findPublishedByVariant: vi.fn(() => Promise.resolve(options.entry ?? null)),
   };

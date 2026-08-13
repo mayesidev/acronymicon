@@ -35,11 +35,20 @@ describe("dictionary list", () => {
     expect(screen.getByRole("link", { name: "API" })).toHaveClass(
       "no-underline",
     );
+    expect(screen.getByRole("link", { name: "API" })).toHaveAttribute(
+      "href",
+      "/define/entry-1?view=all",
+    );
     expect(
       screen.getByRole("link", {
         name: "Application Programming Interface",
       }),
     ).toHaveClass("no-underline");
+    expect(
+      screen.getByRole("link", {
+        name: "Application Programming Interface",
+      }),
+    ).toHaveAttribute("href", "/define/entry-1");
     expect(screen.getByText("Submitted Jan 1, 2026")).toBeInTheDocument();
   });
 
