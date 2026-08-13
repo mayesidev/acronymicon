@@ -3,13 +3,13 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { SubmissionDuplicatePreview } from "./model";
+import type { SubmissionPreviewActionData } from "./model";
 import { exactDuplicateMessage } from "./policy";
 import { useDuplicatePreview } from "./use-duplicate-preview";
 
 const fetcher = vi.hoisted(() => ({
-  data: undefined as SubmissionDuplicatePreview | undefined,
-  load: vi.fn(),
+  data: undefined as SubmissionPreviewActionData | undefined,
+  submit: vi.fn(),
 }));
 
 vi.mock("react-router", () => ({
@@ -25,14 +25,14 @@ describe("submission duplicate preview state", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     fetcher.data = undefined;
-    fetcher.load.mockReset();
+    fetcher.submit.mockReset();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("debounces preview loading and encodes the current input", () => {
+  it("debounces preview loading and sends the current input in a POST body", () => {
     renderHook(() =>
       useDuplicatePreview({
         acronym: " API ",
@@ -43,15 +43,20 @@ describe("submission duplicate preview state", () => {
     act(() => {
       vi.advanceTimersByTime(199);
     });
-    expect(fetcher.load).not.toHaveBeenCalled();
+    expect(fetcher.submit).not.toHaveBeenCalled();
 
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(fetcher.load).toHaveBeenCalledWith(
-      "/submit?acronym=API&definition=Application+Programming+Interface",
+    expect(fetcher.submit).toHaveBeenCalledWith(
+      {
+        intent: "preview",
+        acronym: "API",
+        definition: "Application Programming Interface",
+      },
+      { method: "post", action: "/submit" },
     );
-    expect(fetcher.load).toHaveBeenCalledTimes(1);
+    expect(fetcher.submit).toHaveBeenCalledTimes(1);
   });
 
   it("does not load a preview without an acronym", () => {
@@ -62,7 +67,7 @@ describe("submission duplicate preview state", () => {
     act(() => {
       vi.runAllTimers();
     });
-    expect(fetcher.load).not.toHaveBeenCalled();
+    expect(fetcher.submit).not.toHaveBeenCalled();
   });
 
   it("retains acronym-level warnings while a definition preview refreshes", () => {
@@ -147,9 +152,10 @@ describe("submission duplicate preview state", () => {
 });
 
 function preview(
-  overrides: Partial<SubmissionDuplicatePreview>,
-): SubmissionDuplicatePreview {
+  overrides: Partial<SubmissionPreviewActionData>,
+): SubmissionPreviewActionData {
   return {
+    status: "preview",
     checkedAcronym: "API",
     checkedDefinition: "Application Programming Interface",
     existingEntries: [existingEntry],

@@ -16,32 +16,40 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await authorizeSubmissionAccess(request);
+  const user = await authorizeSubmissionAccess(
+    withoutSearchParameters(request),
+  );
 
   if (user instanceof Response) {
     return user;
   }
 
-  const searchParameters = new URL(request.url).searchParams;
-  const duplicatePreview = await loadDuplicatePreview({
-    acronym: searchParameters.get("acronym") ?? "",
-    definition: searchParameters.get("definition") ?? "",
-  });
-
-  return {
-    user,
-    ...duplicatePreview,
-  };
+  return { user };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const user = await authorizeSubmissionAccess(request);
+  const user = await authorizeSubmissionAccess(
+    withoutSearchParameters(request),
+  );
 
   if (user instanceof Response) {
     return user;
   }
 
   const formData = await request.formData();
+
+  if (formData.get("intent") === "preview") {
+    const duplicatePreview = await loadDuplicatePreview({
+      acronym: getFormDataString(formData, "acronym"),
+      definition: getFormDataString(formData, "definition"),
+    });
+
+    return {
+      status: "preview" as const,
+      ...duplicatePreview,
+    };
+  }
+
   const validation = validateSubmissionInput(Object.fromEntries(formData));
 
   if (validation.status === "invalid") {
@@ -89,6 +97,9 @@ export default function SubmitAcronym({
   actionData,
   loaderData,
 }: Route.ComponentProps) {
+  const submissionActionData =
+    actionData?.status === "preview" ? undefined : actionData;
+
   return (
     <PageShell contentClassName="gap-6">
       <header className="border-b border-border pb-5">
@@ -103,7 +114,26 @@ export default function SubmitAcronym({
         </p>
       </header>
 
-      <SubmissionForm actionData={actionData} />
+      <SubmissionForm actionData={submissionActionData} />
     </PageShell>
   );
+}
+
+function getFormDataString(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+function withoutSearchParameters(request: Request) {
+  const url = new URL(request.url);
+
+  if (!url.search) {
+    return request;
+  }
+
+  url.search = "";
+  return new Request(url, {
+    method: request.method,
+    headers: request.headers,
+  });
 }
