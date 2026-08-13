@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  AuditRecorder,
+  expectAuditAttempts,
+} from "../../../../test/support/audit-recorder";
 import { parseAppConfig } from "../../../platform/config/runtime.server";
 import { commitSession, getSession } from "./session";
 import {
@@ -20,9 +24,11 @@ describe("dictionary access", () => {
   });
 
   it("redirects anonymous document requests to sign in", async () => {
+    const audit = new AuditRecorder();
     const response = await authorizeDictionaryAccess(
       new Request("http://localhost/define?acr=API&sort=recent"),
       authenticatedConfig(),
+      authorizationDependencies(audit),
     );
 
     expect(response).toBeInstanceOf(Response);
@@ -33,12 +39,15 @@ describe("dictionary access", () => {
     expect(response.headers.get("Location")).toBe(
       "/auth/login?returnTo=%2Fdefine%3Facr%3DAPI%26sort%3Drecent",
     );
+    expectDeniedAttempt(audit, { type: "anonymous" });
   });
 
   it("does not use an internal data endpoint as a return destination", async () => {
+    const audit = new AuditRecorder();
     const response = await authorizeDictionaryAccess(
       new Request("http://localhost/define.data?acr=API"),
       authenticatedConfig(),
+      authorizationDependencies(audit),
     );
 
     expect(response).toBeInstanceOf(Response);
@@ -57,15 +66,20 @@ describe("dictionary access", () => {
   });
 
   it("denies an authenticated user without a configured controlled-profile group", async () => {
+    const audit = new AuditRecorder();
     const response = await rejectedResponse(
       authorizeDictionaryAccess(
         await authenticatedRequest("https://app.example.test/", ["other"]),
         controlledConfig(),
+        authorizationDependencies(audit),
       ),
     );
 
     expect(response.status).toBe(403);
     expect(await response.text()).toBe("");
+    expectDeniedAttempt(audit, { type: "user", id: "user-123" });
+    expect(JSON.stringify(audit.attempts)).not.toContain("local-user");
+    expect(JSON.stringify(audit.attempts)).not.toContain("other");
   });
 
   it.each([["dictionary-readers"], ["dictionary-submitters"]])(
@@ -103,9 +117,11 @@ describe("dictionary access", () => {
 
 describe("submission access", () => {
   it("redirects an anonymous request to sign in", async () => {
+    const audit = new AuditRecorder();
     const response = await authorizeSubmissionAccess(
       new Request("http://localhost/submit"),
       parseAppConfig({}),
+      authorizationDependencies(audit),
     );
 
     expect(response).toBeInstanceOf(Response);
@@ -116,6 +132,7 @@ describe("submission access", () => {
     expect(response.headers.get("Location")).toBe(
       "/auth/login?returnTo=%2Fsubmit",
     );
+    expectDeniedAttempt(audit, { type: "anonymous" });
   });
 
   it("preserves submission access for any authenticated standard-profile user", async () => {
@@ -128,29 +145,93 @@ describe("submission access", () => {
   });
 
   it("denies a controlled-profile read-only user", async () => {
+    const audit = new AuditRecorder();
     const response = await rejectedResponse(
       authorizeSubmissionAccess(
         await authenticatedRequest("https://app.example.test/submit", [
           "dictionary-readers",
         ]),
         controlledConfig(),
+        authorizationDependencies(audit),
       ),
     );
 
     expect(response.status).toBe(403);
+    expectDeniedAttempt(audit, { type: "user", id: "user-123" });
   });
 
   it("allows a controlled-profile submitter", async () => {
+    const audit = new AuditRecorder();
     await expect(
       authorizeSubmissionAccess(
         await authenticatedRequest("https://app.example.test/submit", [
           "dictionary-submitters",
         ]),
         controlledConfig(),
+        authorizationDependencies(audit),
       ),
     ).resolves.toMatchObject({ id: "user-123" });
+    expect(audit.attempts).toEqual([]);
+  });
+
+  it("fails closed when anonymous denial audit is unavailable", async () => {
+    const audit = new AuditRecorder({ available: false });
+    const response = await authorizeSubmissionAccess(
+      new Request("http://localhost/submit"),
+      parseAppConfig({}),
+      authorizationDependencies(audit),
+    );
+
+    expect(response).toBeInstanceOf(Response);
+    if (!(response instanceof Response)) {
+      throw new Error("Expected unavailable audit to deny access.");
+    }
+    expect(response.status).toBe(503);
+    expectDeniedAttempt(audit, { type: "anonymous" });
+  });
+
+  it("fails closed when authenticated denial audit is unavailable", async () => {
+    const audit = new AuditRecorder({ available: false });
+    const response = await rejectedResponse(
+      authorizeSubmissionAccess(
+        await authenticatedRequest("https://app.example.test/submit", [
+          "dictionary-readers",
+        ]),
+        controlledConfig(),
+        authorizationDependencies(audit),
+      ),
+    );
+
+    expect(response.status).toBe(503);
+    expectDeniedAttempt(audit, { type: "user", id: "user-123" });
   });
 });
+
+function authorizationDependencies(auditPublisher: AuditRecorder) {
+  return {
+    auditPublisher,
+    randomCorrelationId: () => "correlation-123",
+  };
+}
+
+function expectDeniedAttempt(
+  audit: AuditRecorder,
+  actor: { type: "anonymous" } | { type: "user"; id: string },
+) {
+  expectAuditAttempts(audit, [
+    {
+      delivery: "required",
+      event: {
+        correlationId: "correlation-123",
+        actor,
+        source: "http",
+        action: "authorization.check",
+        target: { type: "application" },
+        outcome: "denied",
+      },
+    },
+  ]);
+}
 
 function authenticatedConfig() {
   return parseAppConfig({
