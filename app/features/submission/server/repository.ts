@@ -1,6 +1,7 @@
 import type { SubmissionDuplicateEntry, SubmissionValues } from "../model";
 
 export type SubmissionCreatedEntry = {
+  id: string;
   acronym: string;
 };
 

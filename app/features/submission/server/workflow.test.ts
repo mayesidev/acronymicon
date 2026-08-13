@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  AuditRecorder,
+  expectAuditAttempts,
+} from "../../../../test/support/audit-recorder";
 import { exactDuplicateMessage } from "../policy";
 import type { SubmissionRepository } from "./repository";
 import { createSubmissionWorkflow } from "./workflow";
@@ -93,10 +97,14 @@ describe("submission duplicate preview", () => {
 
 describe("authenticated submission workflow", () => {
   it("rejects an exact duplicate before loading similar entries", async () => {
+    const audit = new AuditRecorder();
     const repository = createRepository({
       findExactDuplicate: vi.fn(() => Promise.resolve(existingEntry)),
     });
-    const workflow = createSubmissionWorkflow(repository);
+    const workflow = createSubmissionWorkflow(
+      repository,
+      submissionDependencies(audit),
+    );
 
     await expect(workflow.submit(submissionValues, submitter)).resolves.toEqual(
       {
@@ -107,6 +115,7 @@ describe("authenticated submission workflow", () => {
     );
     expect(repository.findPublishedByAcronym).not.toHaveBeenCalled();
     expect(repository.createAcronymEntry).not.toHaveBeenCalled();
+    expect(audit.attempts).toEqual([]);
   });
 
   it("requires confirmation before creating another meaning", async () => {
@@ -125,10 +134,14 @@ describe("authenticated submission workflow", () => {
   });
 
   it("creates a confirmed meaning with submitter attribution", async () => {
+    const audit = new AuditRecorder({ available: false });
     const repository = createRepository({
       findPublishedByAcronym: vi.fn(() => Promise.resolve([existingEntry])),
     });
-    const workflow = createSubmissionWorkflow(repository);
+    const workflow = createSubmissionWorkflow(
+      repository,
+      submissionDependencies(audit),
+    );
     const values = { ...submissionValues, confirmDuplicate: "true" as const };
 
     await expect(workflow.submit(values, submitter)).resolves.toEqual({
@@ -143,9 +156,17 @@ describe("authenticated submission workflow", () => {
       submittedByUsername: "user",
       submittedByDisplayName: "Local User",
     });
+    expectCreationAttempt(audit, {
+      target: { type: "acronym-entry", id: "created-id" },
+      outcome: "succeeded",
+    });
+    expect(JSON.stringify(audit.attempts)).not.toContain("API");
+    expect(JSON.stringify(audit.attempts)).not.toContain("Annual");
+    expect(JSON.stringify(audit.attempts)).not.toContain("Local User");
   });
 
   it("maps an atomic concurrent duplicate result to an exact duplicate", async () => {
+    const audit = new AuditRecorder();
     const repository = createRepository({
       createAcronymEntry: vi.fn<SubmissionRepository["createAcronymEntry"]>(
         () => ({
@@ -154,7 +175,10 @@ describe("authenticated submission workflow", () => {
         }),
       ),
     });
-    const workflow = createSubmissionWorkflow(repository);
+    const workflow = createSubmissionWorkflow(
+      repository,
+      submissionDependencies(audit),
+    );
 
     await expect(workflow.submit(submissionValues, submitter)).resolves.toEqual(
       {
@@ -163,6 +187,33 @@ describe("authenticated submission workflow", () => {
         errors: { definition: [exactDuplicateMessage] },
       },
     );
+    expectCreationAttempt(audit, {
+      target: { type: "acronym-entry", id: "existing-id" },
+      outcome: "denied",
+    });
+  });
+
+  it("records repository failure without copying the exception", async () => {
+    const audit = new AuditRecorder();
+    const repositoryError = new Error("database exposed a secret");
+    const repository = createRepository({
+      createAcronymEntry: vi
+        .fn<SubmissionRepository["createAcronymEntry"]>()
+        .mockRejectedValue(repositoryError),
+    });
+    const workflow = createSubmissionWorkflow(
+      repository,
+      submissionDependencies(audit),
+    );
+
+    await expect(workflow.submit(submissionValues, submitter)).rejects.toBe(
+      repositoryError,
+    );
+    expectCreationAttempt(audit, {
+      target: { type: "application" },
+      outcome: "failed",
+    });
+    expect(JSON.stringify(audit.attempts)).not.toContain("secret");
   });
 });
 
@@ -187,9 +238,38 @@ function createRepository(
     createAcronymEntry: vi.fn<SubmissionRepository["createAcronymEntry"]>(
       (input) => ({
         status: "created",
-        entry: { acronym: input.acronym },
+        entry: { id: "created-id", acronym: input.acronym },
       }),
     ),
     ...overrides,
   };
+}
+
+function submissionDependencies(auditPublisher: AuditRecorder) {
+  return {
+    auditPublisher,
+    randomCorrelationId: () => "correlation-123",
+  };
+}
+
+function expectCreationAttempt(
+  audit: AuditRecorder,
+  expected: {
+    target: { type: "application" } | { type: "acronym-entry"; id: string };
+    outcome: "succeeded" | "denied" | "failed";
+  },
+) {
+  expectAuditAttempts(audit, [
+    {
+      delivery: "best-effort",
+      event: {
+        correlationId: "correlation-123",
+        actor: { type: "user", id: "user-id" },
+        source: "http",
+        action: "acronym.submit",
+        target: expected.target,
+        outcome: expected.outcome,
+      },
+    },
+  ]);
 }

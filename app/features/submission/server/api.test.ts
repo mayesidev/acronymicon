@@ -2,7 +2,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+
+vi.mock("../../../platform/audit/runtime.server", () => ({
+  auditPublisher: {
+    publish: () => Promise.resolve({ status: "recorded" }),
+  },
+}));
 
 import { parseAppConfig } from "../../../platform/config/runtime.server";
 import {

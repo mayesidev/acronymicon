@@ -3,8 +3,18 @@ import type {
   SubmissionDuplicatePreview,
   SubmissionValues,
 } from "../model";
+import type {
+  AuditOutcome,
+  AuditPublisher,
+  AuditTarget,
+} from "../../../domain/audit";
+import { auditPublisher } from "../../../platform/audit/runtime.server";
 import { evaluateDuplicatePolicy, getDefinitionError } from "../policy";
-import type { SubmissionRepository, SubmissionSubmitter } from "./repository";
+import type {
+  SubmissionCreateResult,
+  SubmissionRepository,
+  SubmissionSubmitter,
+} from "./repository";
 
 export type SubmissionOutcome =
   | {
@@ -21,7 +31,20 @@ export type SubmissionOutcome =
       existingEntries: SubmissionDuplicateEntry[];
     };
 
-export function createSubmissionWorkflow(repository: SubmissionRepository) {
+export type SubmissionDependencies = Readonly<{
+  auditPublisher: AuditPublisher;
+  randomCorrelationId: () => string;
+}>;
+
+const defaultDependencies: SubmissionDependencies = {
+  auditPublisher,
+  randomCorrelationId: () => crypto.randomUUID(),
+};
+
+export function createSubmissionWorkflow(
+  repository: SubmissionRepository,
+  dependencies: SubmissionDependencies = defaultDependencies,
+) {
   async function loadDuplicatePreview(input: {
     acronym: string;
     definition: string;
@@ -86,26 +109,82 @@ export function createSubmissionWorkflow(repository: SubmissionRepository) {
       return duplicateOutcome;
     }
 
-    const result = await repository.createAcronymEntry({
-      acronym: values.acronym,
-      definition: values.definition,
-      notes: values.notes,
-      submittedByUserId: submitter.id,
-      submittedByUsername: submitter.username,
-      submittedByDisplayName: submitter.displayName,
-    });
+    const correlationId = dependencies.randomCorrelationId();
+    let result: SubmissionCreateResult;
+
+    try {
+      result = await repository.createAcronymEntry({
+        acronym: values.acronym,
+        definition: values.definition,
+        notes: values.notes,
+        submittedByUserId: submitter.id,
+        submittedByUsername: submitter.username,
+        submittedByDisplayName: submitter.displayName,
+      });
+    } catch (error) {
+      await publishCreationOutcome({
+        dependencies,
+        correlationId,
+        actorId: submitter.id,
+        target: { type: "application" },
+        outcome: "failed",
+      });
+      throw error;
+    }
 
     if (result.status === "duplicate") {
+      await publishCreationOutcome({
+        dependencies,
+        correlationId,
+        actorId: submitter.id,
+        target: { type: "acronym-entry", id: result.duplicate.id },
+        outcome: "denied",
+      });
+
       return evaluateDuplicatePolicy(values, {
         exactDuplicate: result.duplicate,
         existingEntries: [],
       });
     }
 
+    await publishCreationOutcome({
+      dependencies,
+      correlationId,
+      actorId: submitter.id,
+      target: { type: "acronym-entry", id: result.entry.id },
+      outcome: "succeeded",
+    });
+
     return { status: "created", acronym: result.entry.acronym };
   }
 
   return { loadDuplicatePreview, submit };
+}
+
+function publishCreationOutcome({
+  dependencies,
+  correlationId,
+  actorId,
+  target,
+  outcome,
+}: Readonly<{
+  dependencies: SubmissionDependencies;
+  correlationId: string;
+  actorId: string;
+  target: AuditTarget;
+  outcome: AuditOutcome;
+}>) {
+  return dependencies.auditPublisher.publish({
+    delivery: "best-effort",
+    event: {
+      correlationId,
+      actor: { type: "user", id: actorId },
+      source: "http",
+      action: "acronym.submit",
+      target,
+      outcome,
+    },
+  });
 }
 
 const emptyDuplicatePreview: SubmissionDuplicatePreview = {
