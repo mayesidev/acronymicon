@@ -6,6 +6,13 @@ import {
   randomOidcCodeVerifier,
   randomOidcState,
 } from "./oidc";
+import type {
+  AuditActor,
+  AuditOutcome,
+  AuditPublisher,
+  AuditTarget,
+} from "../../../domain/audit";
+import { auditPublisher } from "../../../platform/audit/runtime.server";
 import {
   clearForceReauthenticationCookie,
   commitSession,
@@ -23,6 +30,8 @@ export type AuthenticationDependencies = {
   buildAuthorizationUrl: typeof buildAuthorizationUrl;
   completeAuthorizationCodeGrant: typeof completeAuthorizationCodeGrant;
   buildOidcLogoutUrl: typeof buildOidcLogoutUrl;
+  auditPublisher: AuditPublisher;
+  randomCorrelationId: () => string;
 };
 
 const defaultDependencies: AuthenticationDependencies = {
@@ -33,6 +42,8 @@ const defaultDependencies: AuthenticationDependencies = {
   buildAuthorizationUrl,
   completeAuthorizationCodeGrant,
   buildOidcLogoutUrl,
+  auditPublisher,
+  randomCorrelationId: () => crypto.randomUUID(),
 };
 
 export function createAuthenticationWorkflow(
@@ -70,28 +81,79 @@ export function createAuthenticationWorkflow(
     },
 
     async completeSignIn(request: Request) {
+      const correlationId = dependencies.randomCorrelationId();
       const session = await getSession(request.headers.get("Cookie"));
       const expectedState = session.get("oidcState");
       const codeVerifier = session.get("oidcCodeVerifier");
       const returnTo = session.get("returnTo") ?? "/";
 
       if (!expectedState || !codeVerifier) {
+        await publishAuthenticationOutcome({
+          publisher: dependencies.auditPublisher,
+          correlationId,
+          action: "authentication.login",
+          actor: { type: "anonymous" },
+          target: { type: "application" },
+          outcome: "failed",
+          delivery: "best-effort",
+        });
         session.flash(
           "authError",
           "Sign-in session expired. Please try again.",
         );
 
         return {
+          status: "failed" as const,
           location: "/",
           cookies: [await commitSession(session)],
         };
       }
 
-      const user = await dependencies.completeAuthorizationCodeGrant({
-        request,
-        expectedState,
-        codeVerifier,
+      let user;
+      try {
+        user = await dependencies.completeAuthorizationCodeGrant({
+          request,
+          expectedState,
+          codeVerifier,
+        });
+      } catch (error) {
+        await publishAuthenticationOutcome({
+          publisher: dependencies.auditPublisher,
+          correlationId,
+          action: "authentication.login",
+          actor: { type: "anonymous" },
+          target: { type: "application" },
+          outcome: "failed",
+          delivery: "best-effort",
+        });
+        throw error;
+      }
+
+      const auditResult = await publishAuthenticationOutcome({
+        publisher: dependencies.auditPublisher,
+        correlationId,
+        action: "authentication.login",
+        actor: { type: "user", id: user.id },
+        target: { type: "identity", id: user.id },
+        outcome: "succeeded",
+        delivery: "required",
       });
+
+      if (auditResult.status === "unavailable") {
+        session.unset("oidcState");
+        session.unset("oidcCodeVerifier");
+        session.unset("returnTo");
+        session.flash(
+          "authError",
+          "Sign-in is temporarily unavailable. Please try again.",
+        );
+
+        return {
+          status: "audit-unavailable" as const,
+          location: "/",
+          cookies: [await commitSession(session)],
+        };
+      }
 
       session.set("user", user);
       session.unset("oidcState");
@@ -99,6 +161,7 @@ export function createAuthenticationWorkflow(
       session.unset("returnTo");
 
       return {
+        status: "authenticated" as const,
         location: returnTo,
         cookies: [
           await commitSession(session),
@@ -108,9 +171,41 @@ export function createAuthenticationWorkflow(
     },
 
     async signOut(request: Request) {
+      const correlationId = dependencies.randomCorrelationId();
       const session = await getSession(request.headers.get("Cookie"));
-      const providerLogoutUrl =
-        await dependencies.buildOidcLogoutUrl({ request });
+      const user = session.get("user");
+      const actor = user
+        ? ({ type: "user", id: user.id } as const)
+        : ({ type: "anonymous" } as const);
+      const target = user
+        ? ({ type: "identity", id: user.id } as const)
+        : ({ type: "application" } as const);
+      let providerLogoutUrl;
+
+      try {
+        providerLogoutUrl = await dependencies.buildOidcLogoutUrl({ request });
+      } catch (error) {
+        await publishAuthenticationOutcome({
+          publisher: dependencies.auditPublisher,
+          correlationId,
+          action: "authentication.logout",
+          actor,
+          target,
+          outcome: "failed",
+          delivery: "best-effort",
+        });
+        throw error;
+      }
+
+      await publishAuthenticationOutcome({
+        publisher: dependencies.auditPublisher,
+        correlationId,
+        action: "authentication.logout",
+        actor,
+        target,
+        outcome: "succeeded",
+        delivery: "best-effort",
+      });
 
       return {
         location: providerLogoutUrl?.toString() ?? "/",
@@ -121,6 +216,38 @@ export function createAuthenticationWorkflow(
       };
     },
   };
+}
+
+type AuthenticationAuditInput = Readonly<{
+  publisher: AuditPublisher;
+  correlationId: string;
+  action: "authentication.login" | "authentication.logout";
+  actor: AuditActor;
+  target: AuditTarget;
+  outcome: AuditOutcome;
+  delivery: "required" | "best-effort";
+}>;
+
+function publishAuthenticationOutcome({
+  publisher,
+  correlationId,
+  action,
+  actor,
+  target,
+  outcome,
+  delivery,
+}: AuthenticationAuditInput) {
+  return publisher.publish({
+    delivery,
+    event: {
+      correlationId,
+      actor,
+      source: "http",
+      action,
+      target,
+      outcome,
+    },
+  });
 }
 
 export const authenticationWorkflow = createAuthenticationWorkflow();
