@@ -35,6 +35,18 @@ describe("session lifecycle", () => {
     const cookie = await commitSession(session);
     const restored = await getSession(cookie);
 
+    const encodedIdentifier = decodeURIComponent(
+      cookie.match(/__acronymicon_session=([^;]+)/)?.[1] ?? "",
+    ).split(".")[0];
+    const browserPayload = JSON.parse(
+      Buffer.from(encodedIdentifier, "base64").toString("utf8"),
+    ) as unknown;
+
+    expect(cookie).not.toContain("local-user");
+    expect(browserPayload).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+
     expect(restored.get("user")).toMatchObject({
       id: "user-123",
       username: "local-user",
@@ -42,6 +54,9 @@ describe("session lifecycle", () => {
     expect(await destroySession(restored)).toContain(
       "Expires=Thu, 01 Jan 1970",
     );
+
+    const revoked = await getSession(cookie);
+    expect(revoked.get("user")).toBeUndefined();
   });
 
   it("round-trips the short-lived reauthentication marker", async () => {
@@ -52,6 +67,33 @@ describe("session lifecycle", () => {
 
     expect(await hasForceReauthentication(request)).toBe(true);
     expect(await clearForceReauthenticationCookie()).toContain("Max-Age=0");
+  });
+
+  it("safely ignores the legacy browser-owned session format", async () => {
+    const legacyStorage = createCookieSessionStorage<{
+      user: { id: string; username: string; groups: string[] };
+    }>({
+      cookie: {
+        name: "__acronymicon_session",
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax",
+        secrets: ["vitest-session-secret"],
+      },
+    });
+    const legacySession = await legacyStorage.getSession();
+    legacySession.set("user", {
+      id: "legacy-user",
+      username: "legacy-user",
+      groups: [],
+    });
+    const legacyCookie = await legacyStorage.commitSession(legacySession);
+
+    const ignored = await getSession(legacyCookie);
+    expect(ignored.get("user")).toBeUndefined();
+    await expect(destroySession(ignored)).resolves.toContain(
+      "Expires=Thu, 01 Jan 1970",
+    );
   });
 
   it("accepts an old cookie during rotation and signs new cookies with the active secret", async () => {

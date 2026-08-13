@@ -1,21 +1,52 @@
-import { createCookie, createCookieSessionStorage } from "react-router";
+import {
+  createCookie,
+  createCookieSessionStorage,
+  createSessionStorage,
+} from "react-router";
 
 import { getAppConfig } from "../../../platform/config/runtime.server";
+import { getAppDatabase } from "../../../platform/database/lifecycle.server";
+import { createDatabaseSessionRepository } from "../../../platform/database/session-repository.server";
 import type { AuthUser } from "../model";
 
-type SessionData = {
+type AuthenticatedSessionData = {
   user: AuthUser;
+};
+
+type AuthenticationFlowData = {
   oidcState: string;
   oidcCodeVerifier: string;
   returnTo: string;
 };
 
-type SessionFlashData = {
+type AuthenticationFlowFlashData = {
   authError: string;
 };
 
 const sessionConfig = getAppConfig().session;
 const sessionSecrets = getSessionSecrets(sessionConfig);
+const authenticatedSessionMaxAge = 60 * 60 * 8;
+
+const authenticationFlowStorage = createCookieSessionStorage<
+  AuthenticationFlowData,
+  AuthenticationFlowFlashData
+>({
+  cookie: {
+    name: "__acronymicon_authentication_flow",
+    httpOnly: true,
+    maxAge: 60 * 5,
+    path: "/",
+    sameSite: "lax",
+    secrets: sessionSecrets,
+    secure: sessionConfig.secureCookie,
+  },
+});
+
+export const {
+  getSession: getAuthenticationFlowSession,
+  commitSession: commitAuthenticationFlowSession,
+  destroySession: destroyAuthenticationFlowSession,
+} = authenticationFlowStorage;
 
 const forceReauthenticationCookie = createCookie(
   "__acronymicon_force_reauthentication",
@@ -30,15 +61,39 @@ const forceReauthenticationCookie = createCookie(
 );
 
 export const { getSession, commitSession, destroySession } =
-  createCookieSessionStorage<SessionData, SessionFlashData>({
+  createSessionStorage<AuthenticatedSessionData>({
     cookie: {
       name: "__acronymicon_session",
       httpOnly: true,
-      maxAge: 60 * 60 * 8,
+      maxAge: authenticatedSessionMaxAge,
       path: "/",
       sameSite: "lax",
       secrets: sessionSecrets,
       secure: sessionConfig.secureCookie,
+    },
+    async createData(data, expires) {
+      return getSessionRepository().create(data, requireExpiration(expires));
+    },
+    async readData(id) {
+      if (typeof id !== "string") {
+        return null;
+      }
+
+      return getSessionRepository().read(id);
+    },
+    async updateData(id, data, expires) {
+      if (typeof id !== "string") {
+        return;
+      }
+
+      await getSessionRepository().update(id, data, requireExpiration(expires));
+    },
+    async deleteData(id) {
+      if (typeof id !== "string") {
+        return;
+      }
+
+      await getSessionRepository().delete(id);
     },
   });
 
@@ -67,4 +122,16 @@ export function getSessionSecrets(config: {
   previousSecrets: string[];
 }) {
   return [config.secret, ...config.previousSecrets];
+}
+
+function getSessionRepository() {
+  return createDatabaseSessionRepository(getAppDatabase());
+}
+
+function requireExpiration(expires: Date | undefined) {
+  if (!expires) {
+    throw new Error("Authenticated sessions require an expiration time.");
+  }
+
+  return expires;
 }
