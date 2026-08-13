@@ -168,7 +168,7 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   });
   expect(anonymousActionResponse.status()).toBe(302);
   expect(anonymousActionResponse.headers().location).toBe(
-    "/auth/login?returnTo=/submit",
+    "/auth/login?returnTo=%2Fsubmit",
   );
 
   await page.goto("/submit");
