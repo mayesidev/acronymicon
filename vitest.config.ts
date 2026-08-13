@@ -43,7 +43,7 @@ export default defineConfig({
         "app/features/**/{hooks/**,use-*.{ts,tsx}}":
           presentationCoverageThresholds,
         "app/ui/**": presentationCoverageThresholds,
-        "app/platform/database/{acronym-repository.server,client.server,import.server,schema,write.server}.ts":
+        "app/platform/database/{acronym-repository.server,client.server,import.server,schema,session-repository.server,write.server}.ts":
           databaseCoverageThresholds,
       },
     },

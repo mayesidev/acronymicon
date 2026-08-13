@@ -4,7 +4,13 @@ import {
   AuditRecorder,
   expectAuditAttempts,
 } from "../../../../test/support/audit-recorder";
-import { commitSession, getSession, hasForceReauthentication } from "./session";
+import {
+  commitAuthenticationFlowSession,
+  commitSession,
+  getAuthenticationFlowSession,
+  getSession,
+  hasForceReauthentication,
+} from "./session";
 import {
   type AuthenticationDependencies,
   createAuthenticationWorkflow,
@@ -44,7 +50,7 @@ describe("authentication workflow", () => {
         forceReauthentication: false,
       }),
     );
-    const session = await getSession(outcome.cookies[0]);
+    const session = await getAuthenticationFlowSession(outcome.cookies[0]);
     expect(session.get("oidcState")).toBe("generated-state");
     expect(session.get("oidcCodeVerifier")).toBe("generated-verifier");
     expect(session.get("returnTo")).toBe("/submit");
@@ -54,12 +60,14 @@ describe("authentication workflow", () => {
     const audit = new AuditRecorder();
     const dependencies = createDependencies({ auditPublisher: audit });
     const workflow = createAuthenticationWorkflow(dependencies);
-    const session = await getSession(null);
+    const session = await getAuthenticationFlowSession(null);
     session.set("oidcState", "expected-state");
     session.set("oidcCodeVerifier", "expected-verifier");
     session.set("returnTo", "/submit");
+    const authenticationFlowCookie =
+      await commitAuthenticationFlowSession(session);
     const request = new Request("http://localhost/auth/callback?code=code", {
-      headers: { Cookie: await commitSession(session) },
+      headers: { Cookie: authenticationFlowCookie },
     });
 
     const outcome = await workflow.completeSignIn(request);
@@ -77,9 +85,11 @@ describe("authentication workflow", () => {
       username: "local-user",
       groups: [],
     });
-    expect(restored.get("oidcState")).toBeUndefined();
-    expect(restored.get("returnTo")).toBeUndefined();
-    expect(outcome.cookies[1]).toContain("Max-Age=0");
+    expect(
+      (await getSession(authenticationFlowCookie)).get("user"),
+    ).toBeUndefined();
+    expect(outcome.cookies[1]).toContain("Expires=Thu, 01 Jan 1970");
+    expect(outcome.cookies[2]).toContain("Max-Age=0");
     expectAuditAttempts(audit, [
       {
         delivery: "required",
@@ -108,7 +118,7 @@ describe("authentication workflow", () => {
     expect(outcome.location).toBe("/");
     expect(outcome.status).toBe("failed");
     expect(outcome.cookies).toHaveLength(1);
-    const session = await getSession(outcome.cookies[0]);
+    const session = await getAuthenticationFlowSession(outcome.cookies[0]);
     expect(session.get("authError")).toBe(
       "Sign-in session expired. Please try again.",
     );
@@ -132,12 +142,12 @@ describe("authentication workflow", () => {
     const workflow = createAuthenticationWorkflow(
       createDependencies({ auditPublisher: audit }),
     );
-    const session = await getSession(null);
+    const session = await getAuthenticationFlowSession(null);
     session.set("oidcState", "expected-state");
     session.set("oidcCodeVerifier", "expected-verifier");
     session.set("returnTo", "/submit");
     const request = new Request("http://localhost/auth/callback?code=code", {
-      headers: { Cookie: await commitSession(session) },
+      headers: { Cookie: await commitAuthenticationFlowSession(session) },
     });
 
     const outcome = await workflow.completeSignIn(request);
@@ -145,8 +155,7 @@ describe("authentication workflow", () => {
     expect(outcome.status).toBe("audit-unavailable");
     expect(outcome.location).toBe("/");
     expect(outcome.cookies).toHaveLength(1);
-    const restored = await getSession(outcome.cookies[0]);
-    expect(restored.get("user")).toBeUndefined();
+    const restored = await getAuthenticationFlowSession(outcome.cookies[0]);
     expect(restored.get("oidcState")).toBeUndefined();
     expect(restored.get("oidcCodeVerifier")).toBeUndefined();
     expect(restored.get("returnTo")).toBeUndefined();
@@ -166,12 +175,12 @@ describe("authentication workflow", () => {
           .mockRejectedValue(providerError),
       }),
     );
-    const session = await getSession(null);
+    const session = await getAuthenticationFlowSession(null);
     session.set("oidcState", "expected-state");
     session.set("oidcCodeVerifier", "expected-verifier");
     const request = new Request(
       "http://localhost/auth/callback?code=sensitive-code",
-      { headers: { Cookie: await commitSession(session) } },
+      { headers: { Cookie: await commitAuthenticationFlowSession(session) } },
     );
 
     await expect(workflow.completeSignIn(request)).rejects.toBe(providerError);

@@ -15,9 +15,12 @@ import type {
 import { auditPublisher } from "../../../platform/audit/runtime.server";
 import {
   clearForceReauthenticationCookie,
+  commitAuthenticationFlowSession,
   commitSession,
   createForceReauthenticationCookie,
+  destroyAuthenticationFlowSession,
   destroySession,
+  getAuthenticationFlowSession,
   getSession,
   hasForceReauthentication,
 } from "./session";
@@ -55,7 +58,9 @@ export function createAuthenticationWorkflow(
         return { status: "not-configured" as const };
       }
 
-      const session = await getSession(request.headers.get("Cookie"));
+      const session = await getAuthenticationFlowSession(
+        request.headers.get("Cookie"),
+      );
       const returnTo = safeReturnTo(
         new URL(request.url).searchParams.get("returnTo"),
       );
@@ -76,13 +81,15 @@ export function createAuthenticationWorkflow(
       return {
         status: "redirect" as const,
         location: redirectTo.href,
-        cookies: [await commitSession(session)],
+        cookies: [await commitAuthenticationFlowSession(session)],
       };
     },
 
     async completeSignIn(request: Request) {
       const correlationId = dependencies.randomCorrelationId();
-      const session = await getSession(request.headers.get("Cookie"));
+      const session = await getAuthenticationFlowSession(
+        request.headers.get("Cookie"),
+      );
       const expectedState = session.get("oidcState");
       const codeVerifier = session.get("oidcCodeVerifier");
       const returnTo = session.get("returnTo") ?? "/";
@@ -105,7 +112,7 @@ export function createAuthenticationWorkflow(
         return {
           status: "failed" as const,
           location: "/",
-          cookies: [await commitSession(session)],
+          cookies: [await commitAuthenticationFlowSession(session)],
         };
       }
 
@@ -151,20 +158,19 @@ export function createAuthenticationWorkflow(
         return {
           status: "audit-unavailable" as const,
           location: "/",
-          cookies: [await commitSession(session)],
+          cookies: [await commitAuthenticationFlowSession(session)],
         };
       }
 
-      session.set("user", user);
-      session.unset("oidcState");
-      session.unset("oidcCodeVerifier");
-      session.unset("returnTo");
+      const authenticatedSession = await getSession();
+      authenticatedSession.set("user", user);
 
       return {
         status: "authenticated" as const,
         location: returnTo,
         cookies: [
-          await commitSession(session),
+          await commitSession(authenticatedSession),
+          await destroyAuthenticationFlowSession(session),
           await clearForceReauthenticationCookie(),
         ],
       };

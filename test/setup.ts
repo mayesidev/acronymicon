@@ -6,6 +6,8 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
+import { initializeApplication } from "../app/platform/database/lifecycle.server";
+
 afterEach(cleanup);
 
 const testDirectory = mkdtempSync(join(tmpdir(), "acronymicon-vitest-"));
@@ -13,3 +15,5 @@ const testDirectory = mkdtempSync(join(tmpdir(), "acronymicon-vitest-"));
 process.env.DATABASE_PATH = join(testDirectory, "acronymicon.sqlite");
 process.env.DRIZZLE_MIGRATIONS_PATH = join(process.cwd(), "drizzle");
 process.env.SESSION_SECRET = "vitest-session-secret";
+
+initializeApplication(undefined, { registerShutdownHandlers: false });

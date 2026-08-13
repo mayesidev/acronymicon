@@ -111,6 +111,12 @@ existing session has expired, remove the predecessor. Secret values must be
 unique, and all application replicas must use the same ordered set throughout
 the overlap.
 
+Authenticated session records are stored in the application database. The
+browser receives only a signed opaque identifier; user profile and group data
+remain server-side. Deleting a session record revokes that session immediately.
+Deployments upgrading from versions that stored session data in the cookie will
+require currently signed-in users to authenticate once after the upgrade.
+
 To enable OIDC, configure all three provider credentials:
 
 ```txt

@@ -58,3 +58,26 @@ export const acronymEntries = sqliteTable(
 
 export type AcronymEntry = typeof acronymEntries.$inferSelect;
 export type NewAcronymEntry = typeof acronymEntries.$inferInsert;
+
+export const authenticatedSessions = sqliteTable(
+  "authenticated_sessions",
+  {
+    id: text("id").primaryKey(),
+    data: text("data", { mode: "json" })
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("authenticated_sessions_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+export type AuthenticatedSession = typeof authenticatedSessions.$inferSelect;
+export type NewAuthenticatedSession = typeof authenticatedSessions.$inferInsert;

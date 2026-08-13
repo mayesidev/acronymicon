@@ -38,7 +38,7 @@ it.each([
   {
     source: "app/platform/database/acronym-repository.server.ts",
     threshold:
-      '"app/platform/database/{acronym-repository.server,client.server,import.server,schema,write.server}.ts" threshold (90%)',
+      '"app/platform/database/{acronym-repository.server,client.server,import.server,schema,session-repository.server,write.server}.ts" threshold (90%)',
   },
 ])(
   "rejects $source below its configured threshold",
