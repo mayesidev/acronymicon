@@ -86,6 +86,20 @@ export function shouldShowSubmissionAction(
   );
 }
 
+export function withoutSearchParameters(request: Request) {
+  const url = new URL(request.url);
+
+  if (!url.search) {
+    return request;
+  }
+
+  url.search = "";
+  return new Request(url, {
+    method: request.method,
+    headers: request.headers,
+  });
+}
+
 async function accessDeniedResponse(
   request: Request,
   user: AuthUser | null,

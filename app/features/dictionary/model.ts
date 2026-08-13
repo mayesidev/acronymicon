@@ -15,6 +15,12 @@ export type DictionaryEntry = {
 
 export type DictionarySort = "alphabetical" | "recent";
 
+export type DictionarySearchResult = {
+  entries: DictionaryEntry[];
+  query: string;
+  sort: DictionarySort;
+};
+
 export const dictionarySortOptions = [
   { label: "Alphabetical", value: "alphabetical" },
   { label: "Most recent", value: "recent" },
@@ -22,3 +28,7 @@ export const dictionarySortOptions = [
   label: string;
   value: DictionarySort;
 }>;
+
+export function parseDictionarySort(value: string | null): DictionarySort {
+  return value === "recent" ? "recent" : "alphabetical";
+}

@@ -11,7 +11,7 @@ import {
   getAppDatabase,
   initializeApplication,
 } from "../../../platform/database/lifecycle.server";
-import { listPublishedAcronyms, lookupDefinition } from "./api";
+import { loadDictionarySearch, lookupDefinition } from "./api";
 
 const applicationDirectories: string[] = [];
 
@@ -40,8 +40,12 @@ it("serves dictionary reads through the feature API", async () => {
   });
 
   await expect(
-    listPublishedAcronyms("annual", "alphabetical"),
-  ).resolves.toMatchObject([{ acronym: "API", variant: 2 }]);
+    loadDictionarySearch("annual", "alphabetical"),
+  ).resolves.toMatchObject({
+    entries: [{ acronym: "API", variant: 2 }],
+    query: "annual",
+    sort: "alphabetical",
+  });
   await expect(
     lookupDefinition({ acronym: "api", variant: "2" }),
   ).resolves.toMatchObject({

@@ -125,6 +125,37 @@ describe("submit route duplicate preview", () => {
   });
 });
 
+describe("submit route completion navigation", () => {
+  it("keeps the standard profile's focused search redirect", async () => {
+    const { cookie } = await authenticatedSession();
+    const acronym = `STANDARD-${crypto.randomUUID()}`;
+
+    const response = await action({
+      request: submissionRequest({ cookie, acronym }),
+    } as never);
+
+    expect(response).toBeInstanceOf(Response);
+    expect((response as Response).headers.get("Location")).toBe(
+      `/?q=${encodeURIComponent(acronym)}`,
+    );
+  });
+
+  it("does not put a controlled-profile acronym in the redirect URL", async () => {
+    configureControlledProfile();
+    const { cookie } = await authenticatedSession(["dictionary-submitters"]);
+
+    const response = await action({
+      request: submissionRequest({
+        cookie,
+        acronym: `CONTROLLED-${crypto.randomUUID()}`,
+      }),
+    } as never);
+
+    expect(response).toBeInstanceOf(Response);
+    expect((response as Response).headers.get("Location")).toBe("/");
+  });
+});
+
 function configureControlledProfile() {
   const environment = {
     ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
@@ -160,12 +191,12 @@ async function rejectedResponse(promise: Promise<unknown>) {
   throw new Error("Expected route access to be denied.");
 }
 
-async function authenticatedSession() {
+async function authenticatedSession(groups: string[] = []) {
   const user = {
     id: crypto.randomUUID(),
     username: "submitter",
     displayName: "Local Submitter",
-    groups: [],
+    groups,
   };
   const session = await getSession();
   session.set("user", user);
@@ -174,6 +205,27 @@ async function authenticatedSession() {
     cookie: await commitSession(session),
     user,
   };
+}
+
+function submissionRequest({
+  cookie,
+  acronym,
+}: {
+  cookie: string;
+  acronym: string;
+}) {
+  return new Request("https://app.example.test/submit", {
+    method: "POST",
+    headers: {
+      Cookie: cookie,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      intent: "submit",
+      acronym,
+      definition: "A unique submitted definition",
+    }),
+  });
 }
 
 function previewRequest({

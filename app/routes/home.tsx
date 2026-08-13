@@ -1,19 +1,30 @@
-import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
-import { Form, useLocation, useSubmit } from "react-router";
+import {
+  Form,
+  redirect,
+  useFetcher,
+  useLocation,
+  useSubmit,
+} from "react-router";
 
 import { buildAboutHref } from "../features/about/model";
 import { HeaderActions } from "../features/authentication/components/header-actions";
 import {
   authorizeDictionaryAccess,
   shouldShowSubmissionAction,
+  withoutSearchParameters,
 } from "../features/authentication/server/access";
 import { DictionaryList } from "../features/dictionary/components/dictionary-list";
 import {
   dictionarySortOptions,
+  parseDictionarySort,
   type DictionarySort,
 } from "../features/dictionary/model";
-import { listPublishedAcronyms } from "../features/dictionary/server/api";
+import {
+  loadDictionarySearch,
+  usesControlledDictionarySearch,
+} from "../features/dictionary/server/api";
+import { useDictionarySearch } from "../features/dictionary/use-dictionary-search";
 import { Button } from "../ui/components/button";
 import { Card } from "../ui/components/card";
 import { Field } from "../ui/components/field";
@@ -33,54 +44,88 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+  const controlledSearch = usesControlledDictionarySearch();
   const url = new URL(request.url);
-  const query = url.searchParams.get("q") ?? "";
-  const sort: DictionarySort =
-    url.searchParams.get("sort") === "recent" ? "recent" : "alphabetical";
-  const user = await authorizeDictionaryAccess(request);
+  const user = await authorizeDictionaryAccess(
+    controlledSearch ? withoutSearchParameters(request) : request,
+  );
 
   if (user instanceof Response) {
     return user;
   }
 
-  const entries = await listPublishedAcronyms(query, sort);
+  if (controlledSearch && url.search) {
+    return redirect("/");
+  }
+
+  const query = controlledSearch ? "" : (url.searchParams.get("q") ?? "");
+  const sort = controlledSearch
+    ? "alphabetical"
+    : parseDictionarySort(url.searchParams.get("sort"));
+  const searchResult = await loadDictionarySearch(query, sort);
 
   return {
-    entries,
-    query,
-    sort,
+    ...searchResult,
+    controlledSearch,
     user,
     showSubmit: shouldShowSubmissionAction(user),
   };
 }
 
-export default function Home({ loaderData }: Route.ComponentProps) {
-  const { entries, query, user } = loaderData;
-  const location = useLocation();
-  const submit = useSubmit();
-  const [searchValue, setSearchValue] = useState(query);
-  const [sortValue, setSortValue] = useState(loaderData.sort);
-  const hasEntries = entries.length > 0;
-  const isFiltered = query.trim().length > 0;
+export async function action({ request }: Route.ActionArgs) {
+  const controlledSearch = usesControlledDictionarySearch();
+  const user = await authorizeDictionaryAccess(
+    controlledSearch ? withoutSearchParameters(request) : request,
+  );
 
-  function clearSearch() {
-    setSearchValue("");
+  if (user instanceof Response) {
+    return user;
   }
 
-  useEffect(() => {
-    if (searchValue === query && sortValue === loaderData.sort) {
-      return;
-    }
+  if (!controlledSearch) {
+    return new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+  }
 
-    const timeout = window.setTimeout(() => {
-      void submit(
-        { q: searchValue, sort: sortValue },
-        { method: "get", replace: true },
-      );
-    }, 150);
+  const formData = await request.formData();
+  return loadDictionarySearch(
+    getFormDataString(formData, "q"),
+    parseDictionarySort(getFormDataString(formData, "sort")),
+  );
+}
 
-    return () => window.clearTimeout(timeout);
-  }, [loaderData.sort, query, searchValue, sortValue, submit]);
+export default function Home({ loaderData }: Route.ComponentProps) {
+  const { user } = loaderData;
+  const location = useLocation();
+  const submit = useSubmit();
+  const {
+    data: controlledSearchResult,
+    Form: ControlledSearchForm,
+    submit: submitControlledSearch,
+  } = useFetcher<typeof action>();
+  const {
+    clearSearch,
+    searchResult,
+    searchValue,
+    setSearchValue,
+    setSortValue,
+    sortValue,
+  } = useDictionarySearch({
+    initialResult: loaderData,
+    controlledResult: controlledSearchResult,
+    controlledSearch: loaderData.controlledSearch,
+    submitControlledSearch,
+    submitStandardSearch: submit,
+  });
+  const SearchForm = loaderData.controlledSearch ? ControlledSearchForm : Form;
+  const entryCount = searchResult.entries.length;
+  const hasEntries = entryCount > 0;
+  const isFiltered = searchResult.query.trim().length > 0;
+  const resultSummary = isFiltered
+    ? `${entryCount} result${entryCount === 1 ? "" : "s"} for "${searchResult.query}"`
+    : `${entryCount} published entr${entryCount === 1 ? "y" : "ies"}`;
 
   return (
     <PageShell width="wide" contentClassName="gap-6">
@@ -109,7 +154,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </header>
 
       <section aria-label="Search dictionary">
-        <Form method="get" className="flex w-full items-start gap-2">
+        <SearchForm
+          method={loaderData.controlledSearch ? "post" : "get"}
+          action="/"
+          className="flex w-full items-start gap-2"
+        >
           <Field
             id="search"
             label="Search acronyms"
@@ -136,14 +185,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </Button>
           ) : null}
           <Button type="submit">Search</Button>
-        </Form>
+        </SearchForm>
       </section>
 
       <section className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          {isFiltered
-            ? `${entries.length} result${entries.length === 1 ? "" : "s"} for "${query}"`
-            : `${entries.length} published entr${entries.length === 1 ? "y" : "ies"}`}
+          {resultSummary}
         </p>
         <Field
           label="Sort results"
@@ -168,14 +215,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       {hasEntries ? (
         <DictionaryList
-          entries={entries}
-          groupByLetter={!isFiltered && loaderData.sort === "alphabetical"}
+          entries={searchResult.entries}
+          groupByLetter={!isFiltered && searchResult.sort === "alphabetical"}
         />
       ) : (
         <EmptyState isFiltered={isFiltered} />
       )}
     </PageShell>
   );
+}
+
+function getFormDataString(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
 }
 
 function EmptyState({ isFiltered }: { isFiltered: boolean }) {
