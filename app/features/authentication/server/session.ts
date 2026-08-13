@@ -15,6 +15,7 @@ type SessionFlashData = {
 };
 
 const sessionConfig = getAppConfig().session;
+const sessionSecrets = getSessionSecrets(sessionConfig);
 
 const forceReauthenticationCookie = createCookie(
   "__acronymicon_force_reauthentication",
@@ -23,7 +24,7 @@ const forceReauthenticationCookie = createCookie(
     maxAge: 60 * 5,
     path: "/",
     sameSite: "lax",
-    secrets: [sessionConfig.secret],
+    secrets: sessionSecrets,
     secure: sessionConfig.secureCookie,
   },
 );
@@ -36,7 +37,7 @@ export const { getSession, commitSession, destroySession } =
       maxAge: 60 * 60 * 8,
       path: "/",
       sameSite: "lax",
-      secrets: [sessionConfig.secret],
+      secrets: sessionSecrets,
       secure: sessionConfig.secureCookie,
     },
   });
@@ -59,4 +60,11 @@ export async function hasForceReauthentication(request: Request) {
 
 export async function clearForceReauthenticationCookie() {
   return forceReauthenticationCookie.serialize("", { maxAge: 0 });
+}
+
+export function getSessionSecrets(config: {
+  secret: string;
+  previousSecrets: string[];
+}) {
+  return [config.secret, ...config.previousSecrets];
 }

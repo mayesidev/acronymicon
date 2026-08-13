@@ -249,7 +249,7 @@ function controlledConfig() {
     ACRONYMICON_READ_GROUPS: "dictionary-readers",
     ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters",
     NODE_ENV: "production",
-    SESSION_SECRET: "production-secret",
+    SESSION_SECRET: "production-session-secret-at-least-32-characters",
     OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
     OIDC_CLIENT_ID: "acronymicon",
     OIDC_CLIENT_SECRET: "client-secret",

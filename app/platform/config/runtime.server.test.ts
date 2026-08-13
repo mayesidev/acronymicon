@@ -22,6 +22,7 @@ describe("application configuration", () => {
       },
       session: {
         secret: "dev-session-secret-change-me",
+        previousSecrets: [],
         secureCookie: false,
       },
       oidc: null,
@@ -52,7 +53,11 @@ describe("application configuration", () => {
         migrationsFolder: "/app/drizzle",
         runMigrations: false,
       },
-      session: { secret: "production-secret", secureCookie: false },
+      session: {
+        secret: "production-secret",
+        previousSecrets: [],
+        secureCookie: false,
+      },
       oidc: {
         issuerUrl: "https://issuer.example.test/realms/acronymicon",
         clientId: "acronymicon",
@@ -76,6 +81,34 @@ describe("application configuration", () => {
     );
   });
 
+  it("parses ordered previous session secrets", () => {
+    expect(
+      parseAppConfig({
+        SESSION_SECRET: "current-secret",
+        SESSION_PREVIOUS_SECRETS: " previous-one ,previous-two ",
+      }).session,
+    ).toMatchObject({
+      secret: "current-secret",
+      previousSecrets: ["previous-one", "previous-two"],
+    });
+  });
+
+  it.each([
+    ["current-secret", "current-secret", "must be unique"],
+    ["current-secret", "previous,,older", "non-empty secrets"],
+    ["current-secret", "previous,previous", "must be unique"],
+  ])(
+    "rejects invalid previous secret lists",
+    (secret, previousSecrets, message) => {
+      expect(() =>
+        parseAppConfig({
+          SESSION_SECRET: secret,
+          SESSION_PREVIOUS_SECRETS: previousSecrets,
+        }),
+      ).toThrow(message);
+    },
+  );
+
   it("rejects partial OIDC credentials", () => {
     expect(() => parseAppConfig({ OIDC_CLIENT_ID: "acronymicon" })).toThrow(
       "OIDC_ISSUER_URL is required when OIDC is configured",
@@ -96,7 +129,7 @@ describe("application configuration", () => {
         ACRONYMICON_READ_GROUPS: "dictionary-readers, shared-users",
         ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters,shared-users",
         NODE_ENV: "production",
-        SESSION_SECRET: "production-secret",
+        SESSION_SECRET: "production-session-secret-at-least-32-characters",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -130,6 +163,14 @@ describe("application configuration", () => {
       "SESSION_COOKIE_SECURE cannot be false",
     ],
     [
+      { SESSION_SECRET: "too-short" },
+      "SESSION_SECRET must be at least 32 characters",
+    ],
+    [
+      { SESSION_PREVIOUS_SECRETS: "also-too-short" },
+      "Every SESSION_PREVIOUS_SECRETS value must be at least 32 characters",
+    ],
+    [
       { OIDC_ALLOW_INSECURE_HTTP: "true" },
       "OIDC_ALLOW_INSECURE_HTTP cannot be true",
     ],
@@ -148,7 +189,7 @@ describe("application configuration", () => {
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
-        SESSION_SECRET: "production-secret",
+        SESSION_SECRET: "production-session-secret-at-least-32-characters",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -165,7 +206,7 @@ describe("application configuration", () => {
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
-        SESSION_SECRET: "production-secret",
+        SESSION_SECRET: "production-session-secret-at-least-32-characters",
       }),
     ).toThrow(
       "ACRONYMICON_PUBLIC_ORIGIN is required for the controlled deployment profile",
@@ -190,7 +231,7 @@ describe("application configuration", () => {
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
-        SESSION_SECRET: "production-secret",
+        SESSION_SECRET: "production-session-secret-at-least-32-characters",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -214,7 +255,7 @@ describe("application configuration", () => {
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         NODE_ENV: "production",
-        SESSION_SECRET: "production-secret",
+        SESSION_SECRET: "production-session-secret-at-least-32-characters",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",

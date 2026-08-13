@@ -99,7 +99,17 @@ Browsing does not require login. Submitting acronyms requires a signed-in user.
 
 OIDC configuration is provider-neutral. Keycloak can be used for local
 development, but production can use any compatible provider. `SESSION_SECRET`
-is required in production.
+is required in production. In the controlled profile it and any rotation
+predecessors must contain at least 32 characters. Generate an unpredictable
+secret with a cryptographic password generator; do not use the example values.
+
+To rotate without immediately invalidating every session, set the new value as
+`SESSION_SECRET` and place the former value in the comma-separated
+`SESSION_PREVIOUS_SECRETS` list. New cookies use only the active secret, while
+listed predecessors remain valid for verification. After the longest possible
+existing session has expired, remove the predecessor. Secret values must be
+unique, and all application replicas must use the same ordered set throughout
+the overlap.
 
 To enable OIDC, configure all three provider credentials:
 
