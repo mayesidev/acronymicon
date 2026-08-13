@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { asc } from "drizzle-orm";
 
+import {
+  AuditRecorder,
+  expectAuditAttempts,
+} from "../../../test/support/audit-recorder";
 import { createTestDatabase } from "../../../test/helpers/database";
 import { acronymEntries } from "./schema";
-import { importAcronymEntries } from "./import.server";
+import {
+  importAcronymEntries,
+  importAcronymEntriesWithAudit,
+} from "./import.server";
 
 describe("acronym import", () => {
   const databases: Array<ReturnType<typeof createTestDatabase>> = [];
@@ -99,3 +106,99 @@ describe("acronym import", () => {
     });
   });
 });
+
+describe("audited acronym import", () => {
+  const databases: Array<ReturnType<typeof createTestDatabase>> = [];
+
+  afterEach(() => {
+    for (const database of databases.splice(0)) {
+      database.remove();
+    }
+  });
+
+  it("records a successful idempotent import without changing the result when the sink is unavailable", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const entries = [
+      { acronym: "API", definition: "Application Programming Interface" },
+    ];
+    importAcronymEntries(database.db, entries);
+    const audit = new AuditRecorder({ available: false });
+
+    await expect(
+      importAcronymEntriesWithAudit(
+        database.db,
+        entries,
+        auditDependencies(audit),
+      ),
+    ).resolves.toMatchObject({
+      status: "complete",
+      inserted: 0,
+      skippedDuplicates: 1,
+      failed: 0,
+    });
+    expectImportAttempt(audit, "succeeded");
+    expect(JSON.stringify(audit.attempts)).not.toContain("API");
+    expect(JSON.stringify(audit.attempts)).not.toContain("Application");
+  });
+
+  it("records invalid input as failed", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const audit = new AuditRecorder();
+
+    await expect(
+      importAcronymEntriesWithAudit(
+        database.db,
+        [{ acronym: "", definition: "private definition" }],
+        auditDependencies(audit),
+      ),
+    ).resolves.toMatchObject({ status: "invalid" });
+    expectImportAttempt(audit, "failed");
+    expect(JSON.stringify(audit.attempts)).not.toContain("private");
+  });
+
+  it("records a partially failed import as failed", async () => {
+    const database = createTestDatabase();
+    databases.push(database);
+    const audit = new AuditRecorder();
+
+    await expect(
+      importAcronymEntriesWithAudit(
+        database.db,
+        [
+          { acronym: "RADAR", definition: "[Ra]dio [D]etection [" },
+          { acronym: "API", definition: "Application Programming Interface" },
+        ],
+        auditDependencies(audit),
+      ),
+    ).resolves.toMatchObject({ status: "complete", inserted: 1, failed: 1 });
+    expectImportAttempt(audit, "failed");
+  });
+});
+
+function auditDependencies(auditPublisher: AuditRecorder) {
+  return {
+    auditPublisher,
+    randomCorrelationId: () => "correlation-123",
+  };
+}
+
+function expectImportAttempt(
+  audit: AuditRecorder,
+  outcome: "succeeded" | "failed",
+) {
+  expectAuditAttempts(audit, [
+    {
+      delivery: "best-effort",
+      event: {
+        correlationId: "correlation-123",
+        actor: { type: "system" },
+        source: "maintenance",
+        action: "acronym.import",
+        target: { type: "application" },
+        outcome,
+      },
+    },
+  ]);
+}

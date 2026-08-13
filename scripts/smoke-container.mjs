@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { setTimeout } from "node:timers/promises";
 
 const image = process.env.CONTAINER_IMAGE ?? "acronymicon:ci";
@@ -148,42 +148,43 @@ function verifyFreshContainerImporter() {
   const firstImport = runContainerImporter();
   const secondImport = runContainerImporter();
 
-  if (!firstImport.includes("9 inserted, 0 duplicates skipped, 0 failed")) {
+  if (
+    !firstImport.stderr.includes("9 inserted, 0 duplicates skipped, 0 failed")
+  ) {
     throw new Error(
-      `Container importer did not insert the seed data: ${firstImport}`,
+      `Container importer did not insert the seed data: ${firstImport.stderr}`,
     );
   }
 
-  if (!secondImport.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
-    throw new Error(`Container importer is not idempotent: ${secondImport}`);
+  if (
+    !secondImport.stderr.includes("0 inserted, 9 duplicates skipped, 0 failed")
+  ) {
+    throw new Error(
+      `Container importer is not idempotent: ${secondImport.stderr}`,
+    );
   }
 }
 
 function verifyStandaloneContainerImporter() {
-  const importResult = execFileSync(
-    "docker",
-    [
-      "run",
-      "--rm",
-      "--entrypoint",
-      runtimeNode,
-      "--env",
-      "DATABASE_PATH=/data/standalone.sqlite",
-      "--volume",
-      `${volumeName}:/data`,
-      image,
-      "build/scripts/import-acronyms.mjs",
-      "seeds/acronyms.seed.json",
-    ],
-    {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
+  const importResult = runCapturedDocker([
+    "run",
+    "--rm",
+    "--entrypoint",
+    runtimeNode,
+    "--env",
+    "DATABASE_PATH=/data/standalone.sqlite",
+    "--volume",
+    `${volumeName}:/data`,
+    image,
+    "build/scripts/import-acronyms.mjs",
+    "seeds/acronyms.seed.json",
+  ]);
 
-  if (!importResult.includes("9 inserted, 0 duplicates skipped, 0 failed")) {
+  if (
+    !importResult.stderr.includes("9 inserted, 0 duplicates skipped, 0 failed")
+  ) {
     throw new Error(
-      `Standalone container importer required unrelated application configuration: ${importResult}`,
+      `Standalone container importer required unrelated application configuration: ${importResult.stderr}`,
     );
   }
 }
@@ -191,26 +192,61 @@ function verifyStandaloneContainerImporter() {
 function verifyPersistedContainerImporter() {
   const importResult = runContainerImporter();
 
-  if (!importResult.includes("0 inserted, 9 duplicates skipped, 0 failed")) {
+  if (
+    !importResult.stderr.includes("0 inserted, 9 duplicates skipped, 0 failed")
+  ) {
     throw new Error(
-      `Container importer did not preserve named-volume data: ${importResult}`,
+      `Container importer did not preserve named-volume data: ${importResult.stderr}`,
     );
   }
 }
 
 function runContainerImporter() {
-  const importerArguments = [
+  return runCapturedDocker([
     "exec",
     containerName,
     runtimeNode,
     "build/scripts/import-acronyms.mjs",
     "seeds/acronyms.seed.json",
-  ];
+  ]);
+}
 
-  return execFileSync("docker", importerArguments, {
+function runCapturedDocker(arguments_) {
+  const result = spawnSync("docker", arguments_, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });
+
+  if (result.status !== 0) {
+    throw new Error(
+      `Container importer exited with status ${result.status}: ${result.stderr}`,
+      { cause: result.error },
+    );
+  }
+
+  verifyImportAudit(result.stdout);
+  return { stdout: result.stdout, stderr: result.stderr };
+}
+
+function verifyImportAudit(output) {
+  const lines = output.trim().split("\n");
+  let record;
+
+  try {
+    record = lines.length === 1 ? JSON.parse(lines[0]) : null;
+  } catch {
+    record = null;
+  }
+
+  if (
+    record?.schemaVersion !== 1 ||
+    record?.action !== "acronym.import" ||
+    record?.outcome !== "succeeded"
+  ) {
+    throw new Error(
+      `Container importer did not emit one audit record: ${output}`,
+    );
+  }
 }
 
 async function waitForApplication() {
