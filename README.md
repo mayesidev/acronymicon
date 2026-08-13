@@ -142,6 +142,19 @@ dictionary access independently with non-production identity infrastructure;
 the setting requires complete OIDC credentials. The default standard profile
 uses `open` access for backward compatibility.
 
+### Structured audit output
+
+The supported audit transport is newline-delimited JSON written to the
+application process's standard output. Each line is one versioned record with
+bounded actor, source, action, target, outcome, timestamp, and correlation
+fields. Records do not include acronym or definition text, notes, credentials,
+tokens, raw request URLs or queries, or free-form exception details.
+
+Deployment operators are responsible for routing standard output to their
+protected log collector and configuring transport protection, access control,
+retention, monitoring, and analysis there. Keep audit output separate from
+interactive terminal use, and do not enrich it with protected dictionary data.
+
 ## Verification
 
 Run the automated checks relevant to a change:
