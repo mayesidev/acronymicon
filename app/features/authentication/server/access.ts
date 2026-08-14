@@ -7,7 +7,10 @@ import {
   type AppConfig,
 } from "../../../platform/config/runtime.server";
 import type { AuthUser } from "../model";
-import { getOptionalUser } from "./session";
+import {
+  getAuthenticatedSession,
+  isReauthenticationDue,
+} from "./session";
 import { safeReturnTo } from "./workflow";
 
 export type Capability = "dictionary:read" | "acronym:submit";
@@ -15,11 +18,13 @@ export type Capability = "dictionary:read" | "acronym:submit";
 export type AuthorizationDependencies = Readonly<{
   auditPublisher: AuditPublisher;
   randomCorrelationId: () => string;
+  nowSeconds: () => number;
 }>;
 
 const defaultDependencies: AuthorizationDependencies = {
   auditPublisher,
   randomCorrelationId: () => crypto.randomUUID(),
+  nowSeconds: () => Math.floor(Date.now() / 1_000),
 };
 
 export async function authorizeDictionaryAccess(
@@ -27,7 +32,19 @@ export async function authorizeDictionaryAccess(
   config: AppConfig = getAppConfig(),
   dependencies: AuthorizationDependencies = defaultDependencies,
 ) {
-  const user = await getOptionalUser(request);
+  const authentication = await getAuthenticatedSession(request);
+  const user = authentication.user;
+
+  if (
+    user &&
+    isReauthenticationDue(
+      authentication,
+      config.session.reauthenticationIntervalMinutes,
+      dependencies.nowSeconds(),
+    )
+  ) {
+    return reauthenticationRequiredResponse(request, user, dependencies);
+  }
 
   if (hasCapability(user, "dictionary:read", config)) {
     return user;
@@ -41,7 +58,19 @@ export async function authorizeSubmissionAccess(
   config: AppConfig = getAppConfig(),
   dependencies: AuthorizationDependencies = defaultDependencies,
 ) {
-  const user = await getOptionalUser(request);
+  const authentication = await getAuthenticatedSession(request);
+  const user = authentication.user;
+
+  if (
+    user &&
+    isReauthenticationDue(
+      authentication,
+      config.session.reauthenticationIntervalMinutes,
+      dependencies.nowSeconds(),
+    )
+  ) {
+    return reauthenticationRequiredResponse(request, user, dependencies);
+  }
 
   if (user && hasCapability(user, "acronym:submit", config)) {
     return user;
@@ -138,6 +167,52 @@ async function accessDeniedResponse(
   const returnTo = safeReturnTo(`${requestUrl.pathname}${requestUrl.search}`);
 
   return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
+async function reauthenticationRequiredResponse(
+  request: Request,
+  user: AuthUser,
+  dependencies: AuthorizationDependencies,
+) {
+  const result = await dependencies.auditPublisher.publish({
+    delivery: "required",
+    event: {
+      correlationId: dependencies.randomCorrelationId(),
+      actor: { type: "user", id: user.id },
+      source: "http",
+      action: "authorization.check",
+      target: { type: "application" },
+      outcome: "denied",
+    },
+  });
+
+  if (result.status === "unavailable") {
+    return denyAccess(
+      user,
+      new Response(null, {
+        status: 503,
+        statusText: "Service Unavailable",
+      }),
+    );
+  }
+
+  if (!isDocumentRequest(request)) {
+    return denyAccess(
+      user,
+      new Response(null, { status: 401, statusText: "Unauthorized" }),
+    );
+  }
+
+  const requestUrl = new URL(request.url);
+  const returnTo = safeReturnTo(`${requestUrl.pathname}${requestUrl.search}`);
+  return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
+function isDocumentRequest(request: Request) {
+  return (
+    request.method === "GET" &&
+    !new URL(request.url).pathname.endsWith(".data")
+  );
 }
 
 function denyAccess(user: AuthUser | null, response: Response) {

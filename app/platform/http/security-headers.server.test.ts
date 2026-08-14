@@ -42,6 +42,7 @@ function controlledConfig() {
     SESSION_SECRET: "production-session-secret-at-least-32-characters",
     SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
     SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+    SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
     OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
     OIDC_CLIENT_ID: "acronymicon",
     OIDC_CLIENT_SECRET: "client-secret",

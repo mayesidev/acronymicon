@@ -30,6 +30,7 @@ describe("submit route authorization", () => {
         username: "reader",
         groups: ["dictionary-readers"],
       });
+      session.set("authenticatedAt", Math.floor(Date.now() / 1_000));
       const request = new Request("https://app.example.test/submit", {
         method,
         headers: { Cookie: await commitSession(session) },
@@ -169,6 +170,7 @@ function configureControlledProfile() {
     SESSION_SECRET: "production-session-secret-at-least-32-characters",
     SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
     SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+    SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
     OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
     OIDC_CLIENT_ID: "acronymicon",
     OIDC_CLIENT_SECRET: "client-secret",
@@ -203,6 +205,7 @@ async function authenticatedSession(groups: string[] = []) {
   };
   const session = await getSession();
   session.set("user", user);
+  session.set("authenticatedAt", Math.floor(Date.now() / 1_000));
 
   return {
     cookie: await commitSession(session),

@@ -2,6 +2,7 @@ import {
   buildAuthorizationUrl,
   buildOidcLogoutUrl,
   completeAuthorizationCodeGrant,
+  getOidcMaximumAuthenticationAgeSeconds,
   isOidcConfigured,
   randomOidcCodeVerifier,
   randomOidcState,
@@ -20,9 +21,11 @@ import {
   createForceReauthenticationCookie,
   destroyAuthenticationFlowSession,
   destroySession,
+  getAuthenticatedSession,
   getAuthenticationFlowSession,
   getSession,
   hasForceReauthentication,
+  isReauthenticationDue,
 } from "./session";
 
 export type AuthenticationDependencies = {
@@ -30,6 +33,8 @@ export type AuthenticationDependencies = {
   randomOidcState: typeof randomOidcState;
   randomOidcCodeVerifier: typeof randomOidcCodeVerifier;
   hasForceReauthentication: typeof hasForceReauthentication;
+  getOidcMaximumAuthenticationAgeSeconds: typeof getOidcMaximumAuthenticationAgeSeconds;
+  getAuthenticatedSession: typeof getAuthenticatedSession;
   buildAuthorizationUrl: typeof buildAuthorizationUrl;
   completeAuthorizationCodeGrant: typeof completeAuthorizationCodeGrant;
   buildOidcLogoutUrl: typeof buildOidcLogoutUrl;
@@ -42,6 +47,8 @@ const defaultDependencies: AuthenticationDependencies = {
   randomOidcState,
   randomOidcCodeVerifier,
   hasForceReauthentication,
+  getOidcMaximumAuthenticationAgeSeconds,
+  getAuthenticatedSession,
   buildAuthorizationUrl,
   completeAuthorizationCodeGrant,
   buildOidcLogoutUrl,
@@ -64,18 +71,50 @@ export function createAuthenticationWorkflow(
       const returnTo = safeReturnTo(
         new URL(request.url).searchParams.get("returnTo"),
       );
+      const authenticatedSession =
+        await dependencies.getAuthenticatedSession(request);
+      const maxAgeSeconds =
+        dependencies.getOidcMaximumAuthenticationAgeSeconds();
+      const authenticationPurpose = isReauthenticationDue(
+        authenticatedSession,
+        maxAgeSeconds === undefined ? undefined : maxAgeSeconds / 60,
+      )
+        ? ("reauthenticate" as const)
+        : ("login" as const);
       const state = dependencies.randomOidcState();
       const codeVerifier = dependencies.randomOidcCodeVerifier();
-      const redirectTo = await dependencies.buildAuthorizationUrl({
-        request,
-        state,
-        codeVerifier,
-        forceReauthentication:
-          await dependencies.hasForceReauthentication(request),
-      });
+      let redirectTo;
+
+      try {
+        redirectTo = await dependencies.buildAuthorizationUrl({
+          request,
+          state,
+          codeVerifier,
+          forceReauthentication:
+            await dependencies.hasForceReauthentication(request),
+          maxAgeSeconds,
+        });
+      } catch (error) {
+        await publishAuthenticationOutcome({
+          publisher: dependencies.auditPublisher,
+          correlationId: dependencies.randomCorrelationId(),
+          action: authenticationAction(authenticationPurpose),
+          actor: authenticatedSession.user
+            ? { type: "user", id: authenticatedSession.user.id }
+            : { type: "anonymous" },
+          target: { type: "application" },
+          outcome: "failed",
+          delivery: "best-effort",
+        });
+        throw error;
+      }
 
       session.set("oidcState", state);
       session.set("oidcCodeVerifier", codeVerifier);
+      session.set("authenticationPurpose", authenticationPurpose);
+      if (maxAgeSeconds !== undefined) {
+        session.set("oidcMaxAgeSeconds", maxAgeSeconds);
+      }
       session.set("returnTo", returnTo);
 
       return {
@@ -92,14 +131,22 @@ export function createAuthenticationWorkflow(
       );
       const expectedState = session.get("oidcState");
       const codeVerifier = session.get("oidcCodeVerifier");
+      const maxAgeSeconds = session.get("oidcMaxAgeSeconds");
+      const authenticationPurpose =
+        session.get("authenticationPurpose") ?? "login";
       const returnTo = session.get("returnTo") ?? "/";
+      const existingAuthentication =
+        await dependencies.getAuthenticatedSession(request);
+      const action = authenticationAction(authenticationPurpose);
 
       if (!expectedState || !codeVerifier) {
         await publishAuthenticationOutcome({
           publisher: dependencies.auditPublisher,
           correlationId,
-          action: "authentication.login",
-          actor: { type: "anonymous" },
+          action,
+          actor: existingAuthentication.user
+            ? { type: "user", id: existingAuthentication.user.id }
+            : { type: "anonymous" },
           target: { type: "application" },
           outcome: "failed",
           delivery: "best-effort",
@@ -116,19 +163,22 @@ export function createAuthenticationWorkflow(
         };
       }
 
-      let user;
+      let identity;
       try {
-        user = await dependencies.completeAuthorizationCodeGrant({
+        identity = await dependencies.completeAuthorizationCodeGrant({
           request,
           expectedState,
           codeVerifier,
+          maxAgeSeconds,
         });
       } catch (error) {
         await publishAuthenticationOutcome({
           publisher: dependencies.auditPublisher,
           correlationId,
-          action: "authentication.login",
-          actor: { type: "anonymous" },
+          action,
+          actor: existingAuthentication.user
+            ? { type: "user", id: existingAuthentication.user.id }
+            : { type: "anonymous" },
           target: { type: "application" },
           outcome: "failed",
           delivery: "best-effort",
@@ -139,9 +189,9 @@ export function createAuthenticationWorkflow(
       const auditResult = await publishAuthenticationOutcome({
         publisher: dependencies.auditPublisher,
         correlationId,
-        action: "authentication.login",
-        actor: { type: "user", id: user.id },
-        target: { type: "identity", id: user.id },
+        action,
+        actor: { type: "user", id: identity.user.id },
+        target: { type: "identity", id: identity.user.id },
         outcome: "succeeded",
         delivery: "required",
       });
@@ -149,6 +199,8 @@ export function createAuthenticationWorkflow(
       if (auditResult.status === "unavailable") {
         session.unset("oidcState");
         session.unset("oidcCodeVerifier");
+        session.unset("oidcMaxAgeSeconds");
+        session.unset("authenticationPurpose");
         session.unset("returnTo");
         session.flash(
           "authError",
@@ -163,16 +215,25 @@ export function createAuthenticationWorkflow(
       }
 
       const authenticatedSession = await getSession();
-      authenticatedSession.set("user", user);
+      authenticatedSession.set("user", identity.user);
+      if (identity.authenticatedAt !== undefined) {
+        authenticatedSession.set("authenticatedAt", identity.authenticatedAt);
+      }
+
+      const cookies: string[] = [];
+      if (existingAuthentication.user) {
+        cookies.push(await destroySession(existingAuthentication.session));
+      }
+      cookies.push(
+        await commitSession(authenticatedSession),
+        await destroyAuthenticationFlowSession(session),
+        await clearForceReauthenticationCookie(),
+      );
 
       return {
         status: "authenticated" as const,
         location: returnTo,
-        cookies: [
-          await commitSession(authenticatedSession),
-          await destroyAuthenticationFlowSession(session),
-          await clearForceReauthenticationCookie(),
-        ],
+        cookies,
       };
     },
 
@@ -227,7 +288,10 @@ export function createAuthenticationWorkflow(
 type AuthenticationAuditInput = Readonly<{
   publisher: AuditPublisher;
   correlationId: string;
-  action: "authentication.login" | "authentication.logout";
+  action:
+    | "authentication.login"
+    | "authentication.logout"
+    | "authentication.reauthenticate";
   actor: AuditActor;
   target: AuditTarget;
   outcome: AuditOutcome;
@@ -254,6 +318,12 @@ function publishAuthenticationOutcome({
       outcome,
     },
   });
+}
+
+function authenticationAction(purpose: "login" | "reauthenticate") {
+  return purpose === "reauthenticate"
+    ? ("authentication.reauthenticate" as const)
+    : ("authentication.login" as const);
 }
 
 export const authenticationWorkflow = createAuthenticationWorkflow();

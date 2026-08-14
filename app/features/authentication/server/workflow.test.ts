@@ -7,6 +7,7 @@ import {
 import {
   commitAuthenticationFlowSession,
   commitSession,
+  getAuthenticatedSession,
   getAuthenticationFlowSession,
   getSession,
   hasForceReauthentication,
@@ -48,12 +49,47 @@ describe("authentication workflow", () => {
         state: "generated-state",
         codeVerifier: "generated-verifier",
         forceReauthentication: false,
+        maxAgeSeconds: undefined,
       }),
     );
     const session = await getAuthenticationFlowSession(outcome.cookies[0]);
     expect(session.get("oidcState")).toBe("generated-state");
     expect(session.get("oidcCodeVerifier")).toBe("generated-verifier");
     expect(session.get("returnTo")).toBe("/submit");
+  });
+
+  it("starts bounded provider reauthentication for an over-age session", async () => {
+    const existingSession = await getSession();
+    existingSession.set("user", {
+      id: "user-123",
+      username: "local-user",
+      groups: [],
+    });
+    existingSession.set("authenticatedAt", 0);
+    const existingCookie = await commitSession(existingSession);
+    const dependencies = createDependencies({
+      getOidcMaximumAuthenticationAgeSeconds: () => 3_600,
+    });
+    const workflow = createAuthenticationWorkflow(dependencies);
+
+    const outcome = await workflow.beginSignIn(
+      new Request("http://localhost/auth/login?returnTo=%2Fsubmit", {
+        headers: { Cookie: cookiePair(existingCookie) },
+      }),
+    );
+
+    expect(outcome.status).toBe("redirect");
+    if (outcome.status !== "redirect") {
+      throw new Error("Expected a redirect outcome.");
+    }
+    expect(dependencies.buildAuthorizationUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ maxAgeSeconds: 3_600 }),
+    );
+    const flowSession = await getAuthenticationFlowSession(
+      cookiePair(outcome.cookies[0]),
+    );
+    expect(flowSession.get("authenticationPurpose")).toBe("reauthenticate");
+    expect(flowSession.get("oidcMaxAgeSeconds")).toBe(3_600);
   });
 
   it("completes the callback and replaces transient state with the user", async () => {
@@ -78,6 +114,7 @@ describe("authentication workflow", () => {
       request,
       expectedState: "expected-state",
       codeVerifier: "expected-verifier",
+      maxAgeSeconds: undefined,
     });
     const restored = await getSession(outcome.cookies[0]);
     expect(restored.get("user")).toEqual({
@@ -98,6 +135,83 @@ describe("authentication workflow", () => {
           actor: { type: "user", id: "user-123" },
           source: "http",
           action: "authentication.login",
+          target: { type: "identity", id: "user-123" },
+          outcome: "succeeded",
+        },
+      },
+    ]);
+  });
+
+  it("records bounded reauthentication and rotates the authenticated session", async () => {
+    const audit = new AuditRecorder();
+    const existingSession = await getSession();
+    existingSession.set("user", {
+      id: "user-123",
+      username: "old-username",
+      groups: [],
+    });
+    existingSession.set("authenticatedAt", 10_000);
+    const existingCookie = await commitSession(existingSession);
+
+    const flowSession = await getAuthenticationFlowSession();
+    flowSession.set("oidcState", "expected-state");
+    flowSession.set("oidcCodeVerifier", "expected-verifier");
+    flowSession.set("oidcMaxAgeSeconds", 3_600);
+    flowSession.set("authenticationPurpose", "reauthenticate");
+    flowSession.set("returnTo", "/define/opaque-entry");
+    const flowCookie = await commitAuthenticationFlowSession(flowSession);
+    const dependencies = createDependencies({
+      auditPublisher: audit,
+      completeAuthorizationCodeGrant: vi.fn().mockResolvedValue({
+        user: {
+          id: "user-123",
+          username: "refreshed-username",
+          groups: ["dictionary-readers"],
+        },
+        authenticatedAt: 20_000,
+      }),
+    });
+    const workflow = createAuthenticationWorkflow(dependencies);
+    const request = new Request(
+      "http://localhost/auth/callback?code=code",
+      {
+        headers: {
+          Cookie: `${cookiePair(existingCookie)}; ${cookiePair(flowCookie)}`,
+        },
+      },
+    );
+
+    const outcome = await workflow.completeSignIn(request);
+
+    expect(outcome).toMatchObject({
+      status: "authenticated",
+      location: "/define/opaque-entry",
+    });
+    expect(dependencies.completeAuthorizationCodeGrant).toHaveBeenCalledWith({
+      request,
+      expectedState: "expected-state",
+      codeVerifier: "expected-verifier",
+      maxAgeSeconds: 3_600,
+    });
+    expect(outcome.cookies).toHaveLength(4);
+    expect(outcome.cookies[0]).toContain("Expires=Thu, 01 Jan 1970");
+    const rotatedSession = await getSession(cookiePair(outcome.cookies[1]));
+    expect(rotatedSession.get("user")).toMatchObject({
+      username: "refreshed-username",
+      groups: ["dictionary-readers"],
+    });
+    expect(rotatedSession.get("authenticatedAt")).toBe(20_000);
+    expect(
+      (await getSession(cookiePair(existingCookie))).get("user"),
+    ).toBeUndefined();
+    expectAuditAttempts(audit, [
+      {
+        delivery: "required",
+        event: {
+          correlationId: "correlation-123",
+          actor: { type: "user", id: "user-123" },
+          source: "http",
+          action: "authentication.reauthenticate",
           target: { type: "identity", id: "user-123" },
           outcome: "succeeded",
         },
@@ -302,17 +416,26 @@ function createDependencies(
     randomOidcState: () => "generated-state",
     randomOidcCodeVerifier: () => "generated-verifier",
     hasForceReauthentication: vi.fn().mockResolvedValue(false),
+    getOidcMaximumAuthenticationAgeSeconds: () => undefined,
+    getAuthenticatedSession,
     buildAuthorizationUrl: vi
       .fn()
       .mockResolvedValue(new URL("https://identity.example.test/authorize")),
     completeAuthorizationCodeGrant: vi.fn().mockResolvedValue({
-      id: "user-123",
-      username: "local-user",
-      groups: [],
+      user: {
+        id: "user-123",
+        username: "local-user",
+        groups: [],
+      },
+      authenticatedAt: undefined,
     }),
     buildOidcLogoutUrl: vi.fn().mockResolvedValue(null),
     auditPublisher: new AuditRecorder(),
     randomCorrelationId: () => "correlation-123",
     ...overrides,
   };
+}
+
+function cookiePair(setCookie: string) {
+  return setCookie.split(";", 1)[0];
 }

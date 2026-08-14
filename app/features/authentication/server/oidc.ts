@@ -44,6 +44,7 @@ export async function buildAuthorizationUrl(input: {
   state: string;
   codeVerifier: string;
   forceReauthentication?: boolean;
+  maxAgeSeconds?: number;
 }) {
   const config = await getOidcConfig();
 
@@ -55,18 +56,34 @@ export async function buildAuthorizationUrl(input: {
     input.codeVerifier,
   );
 
-  const authorizationUrl = oidc.buildAuthorizationUrl(config, {
+  const parameters: Record<string, string> = {
     redirect_uri: getOidcRedirectUri(input.request),
     scope: getOidcScopes(),
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
     state: input.state,
-  });
+  };
 
-  return addReauthenticationPrompt(
-    authorizationUrl,
-    input.forceReauthentication,
+  const authorizationUrl = oidc.buildAuthorizationUrl(config, parameters);
+
+  return addMaximumAuthenticationAge(
+    addReauthenticationPrompt(
+      authorizationUrl,
+      input.forceReauthentication,
+    ),
+    input.maxAgeSeconds,
   );
+}
+
+export function addMaximumAuthenticationAge(
+  authorizationUrl: URL,
+  maxAgeSeconds: number | undefined,
+) {
+  if (maxAgeSeconds !== undefined) {
+    authorizationUrl.searchParams.set("max_age", String(maxAgeSeconds));
+  }
+
+  return authorizationUrl;
 }
 
 export function addReauthenticationPrompt(
@@ -101,6 +118,7 @@ export async function completeAuthorizationCodeGrant(input: {
   request: Request;
   expectedState: string;
   codeVerifier: string;
+  maxAgeSeconds?: number;
 }) {
   const config = await getOidcConfig();
 
@@ -114,6 +132,7 @@ export async function completeAuthorizationCodeGrant(input: {
     {
       expectedState: input.expectedState,
       pkceCodeVerifier: input.codeVerifier,
+      maxAge: input.maxAgeSeconds,
     },
     {
       redirect_uri: getOidcRedirectUri(input.request),
@@ -126,7 +145,12 @@ export async function completeAuthorizationCodeGrant(input: {
     throw new Error("OIDC provider did not return an ID token.");
   }
 
-  return mapClaimsToUser(claims);
+  return mapClaimsToAuthenticatedIdentity(claims, input.maxAgeSeconds);
+}
+
+export function getOidcMaximumAuthenticationAgeSeconds() {
+  const minutes = getAppConfig().session.reauthenticationIntervalMinutes;
+  return minutes === undefined ? undefined : minutes * 60;
 }
 
 export function randomOidcState() {
@@ -184,6 +208,30 @@ export function mapClaimsToUser(claims: Record<string, unknown>): AuthUser {
     email: getClaimString(claims, claimConfig.email),
     groups: getClaimStringArray(claims, claimConfig.groups),
   };
+}
+
+export function mapClaimsToAuthenticatedIdentity(
+  claims: Record<string, unknown>,
+  maxAgeSeconds: number | undefined,
+  nowSeconds = Math.floor(Date.now() / 1_000),
+) {
+  const user = mapClaimsToUser(claims);
+
+  if (maxAgeSeconds === undefined) {
+    return { user, authenticatedAt: undefined };
+  }
+
+  const authenticatedAt = claims.auth_time;
+  if (
+    typeof authenticatedAt !== "number" ||
+    !Number.isInteger(authenticatedAt) ||
+    authenticatedAt > nowSeconds + 60 ||
+    authenticatedAt + maxAgeSeconds <= nowSeconds
+  ) {
+    throw new Error("OIDC provider returned an invalid authentication time.");
+  }
+
+  return { user, authenticatedAt };
 }
 
 function getFirstClaimString(
