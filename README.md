@@ -119,12 +119,27 @@ require currently signed-in users to authenticate once after the upgrade.
 
 `SESSION_ABSOLUTE_TIMEOUT_MINUTES` limits total authenticated-session age;
 activity never extends that deadline. `SESSION_INACTIVITY_TIMEOUT_MINUTES`
-limits time between authenticated application requests. Both accept whole
-minutes from 1 through 10080 (seven days), and inactivity cannot exceed the
-absolute lifetime. Standard deployments default both values to 480 minutes,
-which preserves the original eight-hour behavior. Controlled deployments must
-set both explicitly so operators can apply their deployment policy and align
-the application values with their identity-provider session policy.
+limits time between authenticated application requests.
+`SESSION_REAUTHENTICATION_INTERVAL_MINUTES` limits how long the application
+accepts the provider's last active authentication. All three accept whole
+minutes from 1 through 10080 (seven days); inactivity and reauthentication
+cannot exceed the absolute lifetime. Standard deployments default the first
+two values to 480 minutes and do not enforce a provider authentication age
+unless the third is configured. Controlled deployments must set all three
+explicitly so operators can apply their deployment policy and align the values
+with their identity-provider session policy.
+
+When a reauthentication interval is configured, the provider must support the
+OIDC `max_age` request parameter and return an `auth_time` claim in the ID token.
+The application rejects missing, stale, or invalid authentication times. When
+the interval expires, document navigation redirects through the provider and a
+successful callback refreshes identity claims and rotates the application
+session. Data and mutation requests fail with `401 Unauthorized` instead of
+replaying request content; the user must reauthenticate and retry the action.
+Provider access and refresh tokens are not stored in the application session.
+Existing controlled sessions created before this setting was introduced have
+no trusted authentication time and therefore require one reauthentication
+after upgrade.
 
 To enable OIDC, configure all three provider credentials:
 
@@ -146,11 +161,12 @@ Set `ACRONYMICON_DEPLOYMENT_PROFILE=controlled` when the application must
 reject unsafe production identity and transport settings. This profile requires
 production mode, an explicit HTTPS `ACRONYMICON_PUBLIC_ORIGIN`, complete OIDC
 credentials, and explicit HTTPS callback and post-logout destinations on that
-same origin. It also requires explicit absolute and inactivity session
-lifetimes, rejects insecure session cookies and insecure OIDC transport, and
-applies no-store, transport, framing, referrer, and content-type response
-protections. Dictionary pages and data endpoints require an authenticated and
-authorized session in this profile. Configure exact,
+same origin. It also requires explicit absolute, inactivity, and provider
+reauthentication session intervals, rejects insecure session cookies and
+insecure OIDC transport, and applies no-store, transport, framing, referrer,
+and content-type response protections. Dictionary pages and data endpoints
+require a current, authenticated, and authorized session in this profile.
+Configure exact,
 case-sensitive OIDC group names with `ACRONYMICON_READ_GROUPS` and
 `ACRONYMICON_SUBMIT_GROUPS`; comma-separate multiple groups. Submit-group
 membership also grants dictionary read access. At least one read or submit group

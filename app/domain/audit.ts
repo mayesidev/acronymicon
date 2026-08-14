@@ -1,6 +1,7 @@
 export const auditActions = [
   "authentication.login",
   "authentication.logout",
+  "authentication.reauthenticate",
   "authorization.check",
   "acronym.submit",
   "acronym.import",

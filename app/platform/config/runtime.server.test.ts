@@ -25,6 +25,7 @@ describe("application configuration", () => {
         previousSecrets: [],
         absoluteTimeoutMinutes: 480,
         inactivityTimeoutMinutes: 480,
+        reauthenticationIntervalMinutes: undefined,
         secureCookie: false,
       },
       oidc: null,
@@ -41,6 +42,7 @@ describe("application configuration", () => {
         SESSION_SECRET: "production-secret",
         SESSION_ABSOLUTE_TIMEOUT_MINUTES: "720",
         SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
         SESSION_COOKIE_SECURE: "false",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
@@ -62,6 +64,7 @@ describe("application configuration", () => {
         previousSecrets: [],
         absoluteTimeoutMinutes: 720,
         inactivityTimeoutMinutes: 30,
+        reauthenticationIntervalMinutes: 60,
         secureCookie: false,
       },
       oidc: {
@@ -147,6 +150,13 @@ describe("application configuration", () => {
       },
       "SESSION_INACTIVITY_TIMEOUT_MINUTES cannot exceed SESSION_ABSOLUTE_TIMEOUT_MINUTES",
     ],
+    [
+      {
+        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
+      },
+      "SESSION_REAUTHENTICATION_INTERVAL_MINUTES cannot exceed SESSION_ABSOLUTE_TIMEOUT_MINUTES",
+    ],
   ])("rejects an invalid session lifetime", (environment, message) => {
     expect(() => parseAppConfig(environment)).toThrow(message);
   });
@@ -162,6 +172,7 @@ describe("application configuration", () => {
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
         SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
         SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -182,6 +193,7 @@ describe("application configuration", () => {
       session: {
         absoluteTimeoutMinutes: 480,
         inactivityTimeoutMinutes: 30,
+        reauthenticationIntervalMinutes: 60,
         secureCookie: true,
       },
       oidc: { allowInsecureHttp: false },
@@ -215,6 +227,10 @@ describe("application configuration", () => {
       "SESSION_INACTIVITY_TIMEOUT_MINUTES is required",
     ],
     [
+      { SESSION_REAUTHENTICATION_INTERVAL_MINUTES: undefined },
+      "SESSION_REAUTHENTICATION_INTERVAL_MINUTES is required",
+    ],
+    [
       { OIDC_ALLOW_INSECURE_HTTP: "true" },
       "OIDC_ALLOW_INSECURE_HTTP cannot be true",
     ],
@@ -236,6 +252,7 @@ describe("application configuration", () => {
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
         SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
         SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -255,6 +272,7 @@ describe("application configuration", () => {
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
         SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
         SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
       }),
     ).toThrow(
       "ACRONYMICON_PUBLIC_ORIGIN is required for the controlled deployment profile",
@@ -282,6 +300,7 @@ describe("application configuration", () => {
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
         SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
         SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",
@@ -308,6 +327,7 @@ describe("application configuration", () => {
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
         SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
         SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
         OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
         OIDC_CLIENT_ID: "acronymicon",
         OIDC_CLIENT_SECRET: "client-secret",

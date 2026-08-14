@@ -34,6 +34,7 @@ describe("audit contract", () => {
     expect(auditActions).toEqual([
       "authentication.login",
       "authentication.logout",
+      "authentication.reauthenticate",
       "authorization.check",
       "acronym.submit",
       "acronym.import",

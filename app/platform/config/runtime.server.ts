@@ -80,6 +80,7 @@ const applicationEnvironmentSchema = z
     SESSION_COOKIE_SECURE: optionalBoolean,
     SESSION_ABSOLUTE_TIMEOUT_MINUTES: optionalSessionLifetime,
     SESSION_INACTIVITY_TIMEOUT_MINUTES: optionalSessionLifetime,
+    SESSION_REAUTHENTICATION_INTERVAL_MINUTES: optionalSessionLifetime,
     OIDC_ISSUER_URL: optionalUrl,
     OIDC_CLIENT_ID: optionalString,
     OIDC_CLIENT_SECRET: optionalString,
@@ -121,6 +122,8 @@ const applicationEnvironmentSchema = z
       environment.SESSION_ABSOLUTE_TIMEOUT_MINUTES ?? 60 * 8;
     const inactivityTimeoutMinutes =
       environment.SESSION_INACTIVITY_TIMEOUT_MINUTES ?? 60 * 8;
+    const reauthenticationIntervalMinutes =
+      environment.SESSION_REAUTHENTICATION_INTERVAL_MINUTES;
 
     if (inactivityTimeoutMinutes > absoluteTimeoutMinutes) {
       context.addIssue({
@@ -128,6 +131,18 @@ const applicationEnvironmentSchema = z
         message:
           "SESSION_INACTIVITY_TIMEOUT_MINUTES cannot exceed SESSION_ABSOLUTE_TIMEOUT_MINUTES.",
         path: ["SESSION_INACTIVITY_TIMEOUT_MINUTES"],
+      });
+    }
+
+    if (
+      reauthenticationIntervalMinutes !== undefined &&
+      reauthenticationIntervalMinutes > absoluteTimeoutMinutes
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "SESSION_REAUTHENTICATION_INTERVAL_MINUTES cannot exceed SESSION_ABSOLUTE_TIMEOUT_MINUTES.",
+        path: ["SESSION_REAUTHENTICATION_INTERVAL_MINUTES"],
       });
     }
 
@@ -186,6 +201,7 @@ const applicationEnvironmentSchema = z
     for (const name of [
       "SESSION_ABSOLUTE_TIMEOUT_MINUTES",
       "SESSION_INACTIVITY_TIMEOUT_MINUTES",
+      "SESSION_REAUTHENTICATION_INTERVAL_MINUTES",
     ] as const) {
       if (environment[name] === undefined) {
         context.addIssue({
@@ -370,6 +386,8 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
       absoluteTimeoutMinutes: values.SESSION_ABSOLUTE_TIMEOUT_MINUTES ?? 60 * 8,
       inactivityTimeoutMinutes:
         values.SESSION_INACTIVITY_TIMEOUT_MINUTES ?? 60 * 8,
+      reauthenticationIntervalMinutes:
+        values.SESSION_REAUTHENTICATION_INTERVAL_MINUTES,
       secureCookie:
         values.SESSION_COOKIE_SECURE === undefined
           ? values.NODE_ENV === "production"

@@ -11,11 +11,14 @@ import type { AuthUser } from "../model";
 
 type AuthenticatedSessionData = {
   user: AuthUser;
+  authenticatedAt?: number;
 };
 
 type AuthenticationFlowData = {
   oidcState: string;
   oidcCodeVerifier: string;
+  oidcMaxAgeSeconds?: number;
+  authenticationPurpose: "login" | "reauthenticate";
   returnTo: string;
 };
 
@@ -98,8 +101,40 @@ export const { getSession, commitSession, destroySession } =
   });
 
 export async function getOptionalUser(request: Request) {
+  return (await getAuthenticatedSession(request)).user;
+}
+
+export async function getAuthenticatedSession(request: Request) {
   const session = await getSession(request.headers.get("Cookie"));
-  return session.get("user") ?? null;
+
+  return {
+    session,
+    user: session.get("user") ?? null,
+    authenticatedAt: session.get("authenticatedAt"),
+  };
+}
+
+export function isReauthenticationDue(
+  authentication: Readonly<{
+    user: AuthUser | null;
+    authenticatedAt?: number;
+  }>,
+  intervalMinutes: number | undefined,
+  nowSeconds = Math.floor(Date.now() / 1_000),
+) {
+  if (!authentication.user || intervalMinutes === undefined) {
+    return false;
+  }
+
+  const authenticatedAt = authentication.authenticatedAt;
+
+  return (
+    typeof authenticatedAt !== "number" ||
+    !Number.isInteger(authenticatedAt) ||
+    authenticatedAt < 0 ||
+    authenticatedAt > nowSeconds + 60 ||
+    nowSeconds >= authenticatedAt + intervalMinutes * 60
+  );
 }
 
 export async function createForceReauthenticationCookie() {

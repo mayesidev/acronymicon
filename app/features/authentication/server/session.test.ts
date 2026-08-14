@@ -10,6 +10,7 @@ import {
   getSession,
   getSessionSecrets,
   hasForceReauthentication,
+  isReauthenticationDue,
 } from "./session";
 
 function createTestStorage(secrets: string[]) {
@@ -139,5 +140,36 @@ describe("session lifecycle", () => {
     expect(getAuthenticatedSessionMaxAge({ absoluteTimeoutMinutes: 30 })).toBe(
       1_800,
     );
+  });
+
+  it("requires reauthentication when the configured authentication age is reached", () => {
+    const user = { id: "user-123", username: "local-user", groups: [] };
+
+    expect(
+      isReauthenticationDue(
+        { user, authenticatedAt: 1_000 },
+        30,
+        2_799,
+      ),
+    ).toBe(false);
+    expect(
+      isReauthenticationDue(
+        { user, authenticatedAt: 1_000 },
+        30,
+        2_800,
+      ),
+    ).toBe(true);
+    expect(
+      isReauthenticationDue({ user, authenticatedAt: undefined }, 30, 1_000),
+    ).toBe(true);
+    expect(
+      isReauthenticationDue({ user, authenticatedAt: -1 }, 30, 1_000),
+    ).toBe(true);
+    expect(
+      isReauthenticationDue({ user, authenticatedAt: 1_061 }, 30, 1_000),
+    ).toBe(true);
+    expect(
+      isReauthenticationDue({ user, authenticatedAt: undefined }, undefined),
+    ).toBe(false);
   });
 });

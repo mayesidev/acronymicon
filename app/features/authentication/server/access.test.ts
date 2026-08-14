@@ -94,6 +94,63 @@ describe("dictionary access", () => {
     },
   );
 
+  it("redirects an over-age controlled document session to sign in", async () => {
+    const audit = new AuditRecorder();
+    const response = await authorizeDictionaryAccess(
+      await authenticatedRequest(
+        "https://app.example.test/define/opaque-entry?view=all",
+        ["dictionary-readers"],
+        currentAuthenticationTime - 60 * 60,
+      ),
+      controlledConfig(),
+      authorizationDependencies(audit),
+    );
+
+    expect(response).toBeInstanceOf(Response);
+    if (!(response instanceof Response)) {
+      throw new Error("Expected reauthentication to redirect.");
+    }
+    expect(response.headers.get("Location")).toBe(
+      "/auth/login?returnTo=%2Fdefine%2Fopaque-entry%3Fview%3Dall",
+    );
+    expectDeniedAttempt(audit, { type: "user", id: "user-123" });
+  });
+
+  it("denies over-age controlled data and mutation requests without replay", async () => {
+    for (const request of [
+      await authenticatedRequest(
+        "https://app.example.test/define/opaque-entry.data",
+        ["dictionary-readers"],
+        currentAuthenticationTime - 60 * 60,
+      ),
+      await authenticatedRequest(
+        "https://app.example.test/submit",
+        ["dictionary-submitters"],
+        currentAuthenticationTime - 60 * 60,
+        { method: "POST", body: "protected-input" },
+      ),
+    ]) {
+      const audit = new AuditRecorder();
+      const response = await rejectedResponse(
+        request.method === "POST"
+          ? authorizeSubmissionAccess(
+              request,
+              controlledConfig(),
+              authorizationDependencies(audit),
+            )
+          : authorizeDictionaryAccess(
+              request,
+              controlledConfig(),
+              authorizationDependencies(audit),
+            ),
+      );
+
+      expect(response.status).toBe(401);
+      expect(await response.text()).toBe("");
+      expectDeniedAttempt(audit, { type: "user", id: "user-123" });
+    }
+  });
+
   it("matches controlled-profile groups exactly and case-sensitively", () => {
     expect(
       hasCapability(
@@ -211,6 +268,7 @@ function authorizationDependencies(auditPublisher: AuditRecorder) {
   return {
     auditPublisher,
     randomCorrelationId: () => "correlation-123",
+    nowSeconds: () => currentAuthenticationTime,
   };
 }
 
@@ -252,6 +310,7 @@ function controlledConfig() {
     SESSION_SECRET: "production-session-secret-at-least-32-characters",
     SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
     SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+    SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
     OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
     OIDC_CLIENT_ID: "acronymicon",
     OIDC_CLIENT_SECRET: "client-secret",
@@ -260,14 +319,23 @@ function controlledConfig() {
   });
 }
 
-async function authenticatedRequest(url: string, groups: string[]) {
+async function authenticatedRequest(
+  url: string,
+  groups: string[],
+  authenticatedAt = currentAuthenticationTime,
+  init?: RequestInit,
+) {
   const session = await getSession();
   session.set("user", userWithGroups(groups));
+  session.set("authenticatedAt", authenticatedAt);
 
   return new Request(url, {
+    ...init,
     headers: { Cookie: await commitSession(session) },
   });
 }
+
+const currentAuthenticationTime = Math.floor(Date.now() / 1_000);
 
 function userWithGroups(groups: string[]) {
   return {
