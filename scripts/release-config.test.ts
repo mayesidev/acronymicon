@@ -37,6 +37,8 @@ describe("semantic release policy", () => {
     ["chore(deps-runtime): update the SQLite driver", "patch"],
     ["fix: correct a user-facing defect", "patch"],
     ["feat: add a user-facing capability", "minor"],
+    ["feat!: replace an API", "major"],
+    ["feat(authentication)!: replace an identity contract", "major"],
     [
       "feat: replace an API\n\nBREAKING CHANGE: the old API was removed",
       "major",

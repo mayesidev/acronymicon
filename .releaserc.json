@@ -4,6 +4,8 @@
     [
       "@semantic-release/commit-analyzer",
       {
+        "preset": "conventionalcommits",
+        "presetConfig": {},
         "releaseRules": [
           { "type": "test", "release": false },
           { "type": "ci", "release": false },

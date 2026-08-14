@@ -15,6 +15,8 @@ declare module "@semantic-release/commit-analyzer" {
   };
 
   type AnalyzerOptions = {
+    preset?: string;
+    presetConfig?: Record<string, unknown>;
     releaseRules?: ReleaseRule[];
   };
 
