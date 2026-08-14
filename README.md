@@ -45,7 +45,9 @@ application code. The supported single-instance topology, persistence and
 backup ownership, scaling triggers, and automatic release gates are documented
 in [the deployment and release decision](docs/architecture/deployment.md). The
 current framework choice and the evidence required to revisit it are recorded
-in [the router framework decision](docs/architecture/router.md).
+in [the router framework decision](docs/architecture/router.md). Operators using
+the controlled profile should follow the
+[protected deployment operator guide](docs/protected-deployment.md).
 
 ## Database
 
