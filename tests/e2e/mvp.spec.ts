@@ -233,18 +233,22 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   await expect(page.getByText("End To End Verification")).toBeVisible();
 
   await page.goto("/submit");
-  expect(
-    (await submit(page, "E2E", "Browser Integration Verification")).status(),
-  ).toBe(409);
+  await page.getByLabel("Acronym").fill("E2E");
+  await page.getByLabel("Definition").fill("Browser Integration Verification");
+  await expect(
+    page.getByRole("button", { name: "Submit Anyway", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "See warning" }).click();
   await expect(page.getByRole("dialog")).toContainText("E2E already exists");
   await expect(page.getByRole("dialog")).toContainText(
     "End To End Verification",
   );
   await page.getByRole("button", { name: "Close" }).click();
-  const confirmedResponse = waitForSubmitResponse(page);
+  const confirmedResponse = waitForSubmitResponse(page, {
+    confirmDuplicate: true,
+  });
   await page.getByRole("button", { name: "Submit Anyway" }).click();
-  await confirmedResponse;
+  expect((await confirmedResponse).ok()).toBe(true);
   await expect(page).toHaveURL((url) =>
     url.pathname.startsWith("/define/") && !url.searchParams.has("q"),
   );
@@ -325,10 +329,29 @@ async function submit(page: Page, acronym: string, definition: string) {
   return response;
 }
 
-function waitForSubmitResponse(page: Page) {
-  return page.waitForResponse(
-    (response) =>
-      response.request().method() === "POST" &&
-      new URL(response.url()).pathname === "/submit.data",
-  );
+function waitForSubmitResponse(
+  page: Page,
+  expected: { confirmDuplicate?: boolean } = {},
+) {
+  return page.waitForResponse((response) => {
+    const request = response.request();
+    if (
+      request.method() !== "POST" ||
+      new URL(response.url()).pathname !== "/submit.data"
+    ) {
+      return false;
+    }
+
+    const formData = new URLSearchParams(request.postData() ?? "");
+    if (formData.get("intent") !== "submit") {
+      return false;
+    }
+
+    if (expected.confirmDuplicate === undefined) {
+      return true;
+    }
+
+    const confirmsDuplicate = formData.get("confirmDuplicate") === "true";
+    return confirmsDuplicate === expected.confirmDuplicate;
+  });
 }
