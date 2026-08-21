@@ -18,7 +18,7 @@ RUN pnpm run build \
 
 # Keep the shell, package managers, build tools, and development dependencies
 # out of the non-root runtime image.
-FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:fbbdda866ea71aef98c4abece17e3d61fbf820cc2ef3961522caa2478716171a
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:ffab599740d4aaa66029d02b9e6d3de4f622fefb7410081c5ef69c86430f364d
 ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=build-env --chown=65532:65532 /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/
