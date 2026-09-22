@@ -84,3 +84,17 @@ describe("CI build metadata policy", () => {
     ).toHaveLength(2);
   });
 });
+
+describe("Renovate configuration validation", () => {
+  it("runs the validator in the required quality job when Renovate config changes", () => {
+    expect(ciWorkflow).toContain(
+      "renovate_config: ${{ steps.scope.outputs.renovate_config }}",
+    );
+    expect(qualityJob).toContain(
+      "if: needs.scope.outputs.renovate_config == 'true'",
+    );
+    expect(qualityJob).toContain(
+      "pnpm --package=renovate@44.39.0 dlx renovate-config-validator",
+    );
+  });
+});

@@ -8,9 +8,15 @@ const scope = {
   browser: false,
   container: false,
   multi_arch: false,
+  renovate_config: false,
 };
 
 for (const file of changedFiles) {
+  if (file === "renovate.json") {
+    scope.renovate_config = true;
+    continue;
+  }
+
   if (isDocumentation(file)) {
     continue;
   }
