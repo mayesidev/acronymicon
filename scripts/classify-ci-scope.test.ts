@@ -23,6 +23,7 @@ describe("CI scope classification", () => {
       browser: false,
       container: false,
       multi_arch: false,
+      renovate_config: false,
     });
   });
 
@@ -39,6 +40,7 @@ describe("CI scope classification", () => {
       browser: true,
       container: true,
       multi_arch: false,
+      renovate_config: false,
     });
   });
 
@@ -55,6 +57,7 @@ describe("CI scope classification", () => {
       browser: false,
       container: true,
       multi_arch: true,
+      renovate_config: false,
     });
   });
 
@@ -64,6 +67,7 @@ describe("CI scope classification", () => {
       browser: true,
       container: true,
       multi_arch: true,
+      renovate_config: false,
     });
   });
 
@@ -76,6 +80,7 @@ describe("CI scope classification", () => {
       browser: true,
       container: true,
       multi_arch: true,
+      renovate_config: false,
     });
   });
 
@@ -90,6 +95,25 @@ describe("CI scope classification", () => {
       browser: true,
       container: true,
       multi_arch: false,
+      renovate_config: false,
+    });
+  });
+
+  it("validates Renovate configuration without selecting application suites", () => {
+    expect(classify(["renovate.json"])).toEqual({
+      application: false,
+      browser: false,
+      container: false,
+      multi_arch: false,
+      renovate_config: true,
+    });
+
+    expect(classify(["renovate.json", "app/root.tsx"])).toEqual({
+      application: true,
+      browser: true,
+      container: true,
+      multi_arch: false,
+      renovate_config: true,
     });
   });
 });

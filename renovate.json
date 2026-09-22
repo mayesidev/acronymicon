@@ -6,6 +6,9 @@
     "security:minimumReleaseAgeNpm"
   ],
   "prHourlyLimit": 0,
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "semanticCommits": "enabled",
   "vulnerabilityAlerts": {
     "labels": [
@@ -13,6 +16,17 @@
     ]
   },
   "packageRules": [
+    {
+      "description": "Keep compatible ESLint peer tooling updates together",
+      "matchPackageNames": [
+        "@eslint/js",
+        "eslint",
+        "eslint-plugin-react-hooks",
+        "typescript-eslint"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "ESLint toolchain"
+    },
     {
       "description": "Keep dependency updates non-releasing by default",
       "matchPackageNames": [
@@ -48,6 +62,12 @@
       ],
       "semanticCommitType": "build",
       "semanticCommitScope": "runtime"
+    },
+    {
+      "description": "Release lockfile refreshes because transitive runtime packages can change",
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps-runtime"
     }
   ]
 }
