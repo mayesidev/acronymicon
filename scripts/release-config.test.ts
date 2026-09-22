@@ -40,6 +40,10 @@ describe("semantic release policy", () => {
     ["feat!: replace an API", "major"],
     ["feat(authentication)!: replace an identity contract", "major"],
     [
+      "chore(deps)!: align package resolution\n\nBREAKING CHANGE: new packages require a 72-hour waiting period",
+      "major",
+    ],
+    [
       "feat: replace an API\n\nBREAKING CHANGE: the old API was removed",
       "major",
     ],
