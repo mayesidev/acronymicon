@@ -9,6 +9,16 @@
   "lockFileMaintenance": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^pnpm-workspace\\.yaml$/"],
+      "matchStrings": ["nodeVersion:\\s*(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    }
+  ],
   "semanticCommits": "enabled",
   "vulnerabilityAlerts": {
     "labels": [
@@ -60,6 +70,15 @@
       "matchManagers": [
         "dockerfile"
       ],
+      "semanticCommitType": "build",
+      "semanticCommitScope": "runtime"
+    },
+    {
+      "description": "Update the Node image, pnpm runtime version, and Node types together",
+      "matchPackageNames": ["node", "@types/node"],
+      "matchFileNames": ["Dockerfile", "pnpm-workspace.yaml", "package.json"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Node.js toolchain",
       "semanticCommitType": "build",
       "semanticCommitScope": "runtime"
     },
