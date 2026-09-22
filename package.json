@@ -5,7 +5,7 @@
   "license": "MIT",
   "engines": {
     "node": ">=24.0.0 <25",
-    "pnpm": ">=11.20.0 <12"
+    "pnpm": ">=11.20.0 <13"
   },
   "scripts": {
     "build": "react-router build && vite build --config vite.importer.config.ts",
@@ -83,5 +83,5 @@
     "vite": "^8.2.1",
     "vitest": "4.1.11"
   },
-  "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621"
+  "packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f"
 }
