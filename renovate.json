@@ -17,6 +17,12 @@
   },
   "packageRules": [
     {
+      "description": "Keep pnpm on 11 until GitHub's dependency graph supports pnpm 12 lockfiles",
+      "matchPackageNames": ["pnpm"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": "Keep compatible ESLint peer tooling updates together",
       "matchPackageNames": [
         "@eslint/js",
