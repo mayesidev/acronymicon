@@ -8,7 +8,7 @@ engineStrict: true
 overrides:
   "@esbuild-kit/core-utils>esbuild": 0.25.12
 # Delay newly published packages long enough for registry takeovers to be detected.
-minimumReleaseAge: 1440
+minimumReleaseAge: 4320
 minimumReleaseAgeStrict: true
 nodeVersion: 24.19.0
 # Keep downgrade detection enabled while tolerating trust metadata gaps on old packages.
