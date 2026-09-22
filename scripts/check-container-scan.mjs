@@ -1,24 +1,24 @@
 import { readFileSync } from "node:fs";
 
-const [, , reportPath, exceptionsPath] = process.argv;
+const expiryOnly = process.argv[2] === "--check-expiry";
+const [reportPath, exceptionsPath] = expiryOnly
+  ? [undefined, process.argv[3]]
+  : process.argv.slice(2);
 
-if (!reportPath || !exceptionsPath) {
+if ((!expiryOnly && !reportPath) || !exceptionsPath) {
   console.error(
-    "Usage: node scripts/check-container-scan.mjs <grype-report.json> <exceptions.json>",
+    "Usage: node scripts/check-container-scan.mjs <grype-report.json> <exceptions.json> | --check-expiry <exceptions.json>",
   );
   process.exit(2);
 }
 
-const report = readJson(reportPath);
 const policy = readJson(exceptionsPath);
 const currentDate = process.env.CONTAINER_SCAN_DATE ?? today();
 
-if (!Array.isArray(report.matches)) {
-  throw new Error("Grype report must contain a matches array.");
-}
-
 if (policy.version !== 1 || !Array.isArray(policy.exceptions)) {
-  throw new Error("Container scan exceptions must use version 1 and an exceptions array.");
+  throw new Error(
+    "Container scan exceptions must use version 1 and an exceptions array.",
+  );
 }
 
 if (!isIsoDate(currentDate)) {
@@ -38,6 +38,18 @@ if (expired.length > 0) {
   process.exit(1);
 }
 
+if (expiryOnly) {
+  console.log(
+    `Container vulnerability policy passed: ${exceptions.length} current exceptions.`,
+  );
+  process.exit(0);
+}
+
+const report = readJson(reportPath);
+if (!Array.isArray(report.matches)) {
+  throw new Error("Grype report must contain a matches array.");
+}
+
 const findings = uniqueFindings(report.matches).filter((finding) =>
   ["HIGH", "CRITICAL"].includes(finding.severity.toUpperCase()),
 );
@@ -49,7 +61,9 @@ const unused = exceptions.filter(
 );
 
 if (unused.length > 0) {
-  console.warn("Container vulnerability exceptions no longer present in the report:");
+  console.warn(
+    "Container vulnerability exceptions no longer present in the report:",
+  );
   for (const exception of unused) {
     console.warn(`- ${formatException(exception)}`);
   }
@@ -111,7 +125,9 @@ function uniqueFindings(matches_) {
     };
 
     if (Object.values(finding).some((value) => typeof value !== "string")) {
-      throw new Error("Grype match is missing vulnerability or package metadata.");
+      throw new Error(
+        "Grype match is missing vulnerability or package metadata.",
+      );
     }
 
     findings.set(
@@ -140,7 +156,9 @@ function isIsoDate(value) {
     return false;
   }
 
-  return new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value;
+  return (
+    new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value
+  );
 }
 
 function today() {

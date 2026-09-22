@@ -46,6 +46,18 @@ describe("container vulnerability policy", () => {
     );
   });
 
+  it("checks expiry without a scan report for the scheduled gate", () => {
+    const current = writeExceptions([
+      buildException({ expiresOn: "2026-08-06" }),
+    ]);
+    const expired = writeExceptions([
+      buildException({ expiresOn: "2026-08-04" }),
+    ]);
+
+    expect(runExpiryCheck(current)).toContain("1 current exceptions");
+    expect(() => runExpiryCheck(expired)).toThrow(/Command failed/);
+  });
+
   function writeExceptions(exceptions: unknown[]) {
     const directory = mkdtempSync(join(tmpdir(), "acronymicon-scan-policy-"));
     directories.push(directory);
@@ -59,6 +71,19 @@ function runPolicy(reportPath: string, exceptionsPath: string) {
   return execFileSync(
     "node",
     ["scripts/check-container-scan.mjs", reportPath, exceptionsPath],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      env: { ...process.env, CONTAINER_SCAN_DATE: "2026-08-05" },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+}
+
+function runExpiryCheck(exceptionsPath: string) {
+  return execFileSync(
+    "node",
+    ["scripts/check-container-scan.mjs", "--check-expiry", exceptionsPath],
     {
       cwd: process.cwd(),
       encoding: "utf8",
