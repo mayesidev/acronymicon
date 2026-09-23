@@ -21,6 +21,13 @@ for (const file of changedFiles) {
     continue;
   }
 
+  if (
+    file === ".github/workflows/ci.yml" ||
+    file === "scripts/classify-ci-scope.mjs"
+  ) {
+    scope.multi_arch = true;
+  }
+
   if (isContainerOnly(file)) {
     scope.container = true;
     scope.multi_arch = true;

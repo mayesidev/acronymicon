@@ -32,7 +32,6 @@ describe("CI scope classification", () => {
     ["shared UI source", ["app/ui/components/button.tsx"]],
     ["dependency metadata", ["package.json", "pnpm-lock.yaml"]],
     ["executable scripts", ["scripts/import-acronyms.ts"]],
-    ["workflow configuration", [".github/workflows/ci.yml"]],
     ["mixed documentation and source", ["README.md", "app/root.tsx"]],
   ])("selects full validation for %s", (_, files) => {
     expect(classify(files)).toEqual({
@@ -40,6 +39,19 @@ describe("CI scope classification", () => {
       browser: true,
       container: true,
       multi_arch: false,
+      renovate_config: false,
+    });
+  });
+
+  it.each([
+    ".github/workflows/ci.yml",
+    "scripts/classify-ci-scope.mjs",
+  ])("runs every suite when %s changes", (file) => {
+    expect(classify([file])).toEqual({
+      application: true,
+      browser: true,
+      container: true,
+      multi_arch: true,
       renovate_config: false,
     });
   });
