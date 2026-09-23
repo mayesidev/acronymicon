@@ -56,7 +56,7 @@ describe("release container-publish policy", () => {
   });
 
   it("builds AMD64 and ARM64 natively without QEMU", () => {
-    expect(buildJob).toContain("platform: linux/amd64\n            runner: ubuntu-24.04");
+    expect(buildJob).toContain("platform: linux/amd64\n            runner: ubuntu-26.04");
     expect(buildJob).toContain("platform: linux/arm64\n            runner: ubuntu-26.04-arm");
     expect(buildJob).toContain("platforms: ${{ matrix.platform }}");
     expect(publishWorkflow).not.toContain("docker/setup-qemu-action");
