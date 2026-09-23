@@ -96,6 +96,17 @@ jobs:
         if: needs.scope.outputs.application == 'true'
         run: pnpm run verify
 
+      - name: Verify database migrations
+        if: needs.scope.outputs.application == 'true'
+        run: |
+          pnpm exec drizzle-kit check
+          pnpm run db:generate
+          if [[ -n "$(git status --porcelain --untracked-files=all -- drizzle/)" ]]; then
+            git status --short --untracked-files=all -- drizzle/
+            echo "::error::Database schema and committed migrations differ."
+            exit 1
+          fi
+
       - name: Security checks
         if: needs.scope.outputs.application == 'true'
         run: pnpm run security:check
