@@ -59,10 +59,6 @@ describe("CI scope classification", () => {
   it.each([
     ["Dockerfile", ["Dockerfile"]],
     ["Docker ignore rules", [".dockerignore"]],
-    [
-      "container publishing workflow",
-      [".github/workflows/publish-container.yml"],
-    ],
   ])("selects container validation for %s", (_, files) => {
     expect(classify(files)).toEqual({
       application: false,
@@ -90,6 +86,16 @@ describe("CI scope classification", () => {
     expect(classify(["package.json", "pnpm-lock.yaml"], changeTitle)).toEqual({
       application: true,
       browser: true,
+      container: true,
+      multi_arch: true,
+      renovate_config: false,
+    });
+  });
+
+  it("checks release workflow policy and both native container builds", () => {
+    expect(classify([".github/workflows/publish-container.yml"])).toEqual({
+      application: true,
+      browser: false,
       container: true,
       multi_arch: true,
       renovate_config: false,

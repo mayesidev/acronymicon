@@ -21,6 +21,13 @@ for (const file of changedFiles) {
     continue;
   }
 
+  if (file === ".github/workflows/publish-container.yml") {
+    scope.application = true;
+    scope.container = true;
+    scope.multi_arch = true;
+    continue;
+  }
+
   if (
     file === ".github/workflows/ci.yml" ||
     file === "scripts/classify-ci-scope.mjs"
@@ -52,11 +59,7 @@ function isDocumentation(file) {
 }
 
 function isContainerOnly(file) {
-  return [
-    ".dockerignore",
-    ".github/workflows/publish-container.yml",
-    "Dockerfile",
-  ].includes(file);
+  return file === ".dockerignore" || file === "Dockerfile";
 }
 
 function isShippedRuntimeChange(title) {

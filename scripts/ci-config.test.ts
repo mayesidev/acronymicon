@@ -10,17 +10,20 @@ const publishWorkflow = readFileSync(
 const qualityJob = ciWorkflow
   .split("\n  quality:\n", 2)[1]
   ?.split("\n  browser:\n", 1)[0];
+const prepareJob = publishWorkflow
+  .split("\n  prepare:\n", 2)[1]
+  ?.split("\n  build:\n", 1)[0];
+const buildJob = publishWorkflow
+  .split("\n  build:\n", 2)[1]
+  ?.split("\n  publish:\n", 1)[0];
 const publishJob = publishWorkflow.split("\n  publish:\n", 2)[1];
-const qemuStep = publishJob
-  ?.split("\n      - name: Set up QEMU\n", 2)[1]
-  ?.split("\n      - name:", 1)[0];
 
 if (!qualityJob) {
   throw new Error("CI must define a quality job before the browser job.");
 }
 
-if (!publishJob || !qemuStep) {
-  throw new Error("Container publishing must define a QEMU setup step.");
+if (!prepareJob || !buildJob || !publishJob) {
+  throw new Error("Container publishing must validate, build, and assemble.");
 }
 
 describe("CI container-build policy", () => {
@@ -46,21 +49,45 @@ describe("CI container-build policy", () => {
 });
 
 describe("release container-publish policy", () => {
-  it("disables the QEMU image cache without granting cache-write access", () => {
-    expect(qemuStep).toContain("cache-image: false");
-    expect(publishWorkflow).not.toContain("actions: write");
+  it("checks out a validated release tag before building", () => {
+    expect(prepareJob).toContain("^v[0-9]+\\.[0-9]+\\.[0-9]+$");
+    expect(buildJob).toContain("needs: prepare");
+    expect(buildJob).toContain("ref: refs/tags/${{ inputs.release_tag }}");
   });
 
-  it("retains multi-architecture publication and supply-chain metadata", () => {
-    expect(publishJob).toContain("platforms: linux/amd64,linux/arm64");
-    expect(publishJob).toContain("provenance: mode=max");
-    expect(publishJob).toContain("sbom: true");
+  it("builds AMD64 and ARM64 natively without QEMU", () => {
+    expect(buildJob).toContain("platform: linux/amd64\n            runner: ubuntu-24.04");
+    expect(buildJob).toContain("platform: linux/arm64\n            runner: ubuntu-26.04-arm");
+    expect(buildJob).toContain("platforms: ${{ matrix.platform }}");
+    expect(publishWorkflow).not.toContain("docker/setup-qemu-action");
+  });
+
+  it("preserves per-platform provenance and SBOM in digest-based publication", () => {
+    expect(buildJob).toContain("push-by-digest=true,name-canonical=true,push=true");
+    expect(buildJob).toContain("provenance: mode=max");
+    expect(buildJob).toContain("sbom: true");
+    expect(buildJob).toContain("IMAGE_DIGEST: ${{ steps.image.outputs.digest }}");
+    expect(publishWorkflow).not.toContain("actions: write");
+    expect(publishWorkflow).not.toContain("attestations: write");
+    expect(publishWorkflow).not.toContain("id-token: write");
   });
 
   it("builds the release tag into the published application metadata", () => {
-    expect(publishJob).toContain(
+    expect(buildJob).toContain(
       "ACRONYMICON_VERSION=${{ inputs.release_tag }}",
     );
+  });
+
+  it("applies existing tags only after both platforms build and verifies the manifest", () => {
+    expect(publishJob).toContain("- prepare\n      - build");
+    expect(publishJob).toContain("type=raw,value=${{ needs.prepare.outputs.version }}");
+    expect(publishJob).toContain("type=raw,value=${{ needs.prepare.outputs.major_minor }}");
+    expect(publishJob).toContain("type=raw,value=latest");
+    expect(publishJob).toContain('"${#digests[@]}" -eq 2');
+    expect(publishJob).toContain('docker buildx imagetools create "${args[@]}"');
+    expect(publishJob).toContain('sort == ["amd64", "arm64"]');
+    expect(publishJob).toContain("--format '{{json .Provenance}}'");
+    expect(publishJob).toContain("--format '{{json .SBOM}}'");
   });
 });
 
