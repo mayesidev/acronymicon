@@ -17,6 +17,16 @@
       "depNameTemplate": "node",
       "datasourceTemplate": "node-version",
       "versioningTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github\\/workflows\\/publish-container\\.yml$/"],
+      "matchStrings": [
+        "runner:[ \\t]*ubuntu-(?<currentValue>\\d+\\.\\d+)[ \\t]*\\r?\\n"
+      ],
+      "depNameTemplate": "ubuntu",
+      "datasourceTemplate": "github-runners",
+      "versioningTemplate": "docker"
     }
   ],
   "semanticCommits": "enabled",
@@ -87,6 +97,14 @@
       "matchUpdateTypes": ["lockFileMaintenance"],
       "semanticCommitType": "chore",
       "semanticCommitScope": "deps-runtime"
+    },
+    {
+      "description": "Move x64 and ARM Ubuntu runners together",
+      "matchDatasources": ["github-runners"],
+      "matchPackageNames": ["ubuntu"],
+      "groupName": "Ubuntu runners",
+      "semanticCommitType": "ci",
+      "semanticCommitScope": "deps"
     }
   ]
 }

@@ -20,7 +20,7 @@ concurrency:
 jobs:
   scope:
     name: Determine check scope
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       browser: ${{ steps.scope.outputs.browser }}
       application: ${{ steps.scope.outputs.application }}
@@ -66,12 +66,15 @@ jobs:
     name: Quality and build
     needs: scope
     if: needs.scope.outputs.application == 'true' || needs.scope.outputs.container == 'true' || needs.scope.outputs.renovate_config == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
 
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify Ubuntu runner alignment
+        run: node scripts/check-ubuntu-runners.mjs
 
       - name: Set up pnpm
         if: needs.scope.outputs.application == 'true' || needs.scope.outputs.renovate_config == 'true'
@@ -166,7 +169,7 @@ jobs:
     name: Browser integration tests
     needs: scope
     if: needs.scope.outputs.browser == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Check out source
@@ -233,7 +236,7 @@ jobs:
   commit:
     name: Commit metadata
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Check out source
