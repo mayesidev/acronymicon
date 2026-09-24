@@ -5,6 +5,8 @@ import {
   authorizeSubmissionAccess,
   withoutSearchParameters,
 } from "../features/authentication/server/access";
+import { DataPageShell } from "../features/deployment-notices/components/data-page-shell";
+import { loadSensitivityLabel } from "../features/deployment-notices/server/api";
 import { SubmissionForm } from "../features/submission/components/submission-form";
 import {
   getSuccessfulSubmissionLocation,
@@ -13,7 +15,6 @@ import {
 } from "../features/submission/server/api";
 import { validateSubmissionInput } from "../features/submission/server/input";
 import { TextLink } from "../ui/components/link";
-import { PageShell } from "../ui/components/page-shell";
 
 export function meta() {
   return [{ title: "Submit acronym | Acronymicon" }];
@@ -28,7 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     return user;
   }
 
-  return { user };
+  return { user, sensitivityLabel: loadSensitivityLabel() };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -105,7 +106,10 @@ export default function SubmitAcronym({
     actionData?.status === "preview" ? undefined : actionData;
 
   return (
-    <PageShell contentClassName="gap-6">
+    <DataPageShell
+      contentClassName="gap-6"
+      sensitivityLabel={loaderData.sensitivityLabel}
+    >
       <header className="border-b border-border pb-5">
         <TextLink href="/" className="text-sm">
           Back to dictionary
@@ -119,7 +123,7 @@ export default function SubmitAcronym({
       </header>
 
       <SubmissionForm actionData={submissionActionData} />
-    </PageShell>
+    </DataPageShell>
   );
 }
 

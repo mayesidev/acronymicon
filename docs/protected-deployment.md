@@ -21,6 +21,7 @@ security baseline.
 | A single-instance SQLite persistence model with application-managed migrations                                | Exclusive durable storage, encryption and access control, backup retention, restore drills, and recovery objectives                      |
 | Bounded structured audit records on standard output and sink-health records on standard error                 | Protected collection of both streams, reliable transport, time synchronization, retention, monitoring, alerting, and response procedures |
 | Versioned multi-architecture images with attached SBOM and provenance attestations                            | Selection and verification of an immutable release or digest, timely patch deployment, rollback planning, and runtime hardening          |
+| A configurable notice before application sign-in and a sensitivity label on data-bearing pages                 | Approved notice and label text, user access agreements and their acknowledgement records, and required markings on generated output or media |
 
 ## Application configuration
 
@@ -33,6 +34,8 @@ NODE_ENV=production
 ACRONYMICON_DEPLOYMENT_PROFILE=controlled
 ACRONYMICON_DICTIONARY_ACCESS=authenticated
 ACRONYMICON_PUBLIC_ORIGIN=https://acronymicon.example.test
+ACRONYMICON_ACCESS_NOTICE=<approved access notice>
+ACRONYMICON_SENSITIVITY_LABEL=<approved content label>
 
 ACRONYMICON_READ_GROUPS=acronymicon-readers
 ACRONYMICON_SUBMIT_GROUPS=acronymicon-contributors
@@ -59,6 +62,19 @@ Use the real public origin in every application and provider registration.
 Never copy the example hostnames, credentials, or local Compose secrets into a
 production deployment. Startup validation and its automated evidence are in
 the [runtime configuration tests](../app/platform/config/runtime.server.test.ts).
+
+The controlled profile rejects missing or blank notice and label values. The
+access notice appears before Acronymicon starts sign-in; the label appears on
+dictionary and submission pages. Supply approved wording through runtime
+configuration, and keep client-specific text and assessment evidence outside
+the public repository. The notice is informational; this application does not
+collect access-agreement acknowledgements. The operator must arrange those
+before granting users access. Any future print or export feature that contains
+dictionary content must carry the configured label and follow the deployment's
+marking requirements.
+
+Before upgrading an existing controlled deployment, add both approved settings
+to its runtime configuration. Without them, the new version rejects startup.
 
 ### Identity and access
 
@@ -201,6 +217,9 @@ require restoring a compatible backup.
       access and rotation procedures are documented and tested.
 - [ ] The identity provider enforces the approved account, authentication,
       reauthentication, and group-assignment policies.
+- [ ] Approved access notice and label values are configured; the notice appears
+      before sign-in and the label appears on every data-bearing page. Required
+      access agreements and output markings are handled by the operator.
 - [ ] Anonymous, unmapped, read-only, and submitting test identities receive
       exactly the intended application capabilities.
 - [ ] Absolute, inactivity, provider reauthentication, and provider-session

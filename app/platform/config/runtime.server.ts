@@ -6,6 +6,11 @@ const optionalString = z.preprocess(
   z.string().trim().min(1).optional(),
 );
 
+const optionalAccessNotice = optionalString.pipe(z.string().max(4000).optional());
+const optionalSensitivityLabel = optionalString.pipe(
+  z.string().max(120).regex(/^[^\r\n]+$/, "must be a single line").optional(),
+);
+
 const optionalUrl = z.preprocess(
   (value) =>
     typeof value === "string" && value.trim() === "" ? undefined : value,
@@ -70,6 +75,8 @@ const applicationEnvironmentSchema = z
       .default("standard"),
     ACRONYMICON_DICTIONARY_ACCESS: optionalDictionaryAccess,
     ACRONYMICON_PUBLIC_ORIGIN: optionalUrl,
+    ACRONYMICON_ACCESS_NOTICE: optionalAccessNotice,
+    ACRONYMICON_SENSITIVITY_LABEL: optionalSensitivityLabel,
     ACRONYMICON_READ_GROUPS: optionalGroupList,
     ACRONYMICON_SUBMIT_GROUPS: optionalGroupList,
     NODE_ENV: z
@@ -196,6 +203,19 @@ const applicationEnvironmentSchema = z
 
     if (environment.ACRONYMICON_DEPLOYMENT_PROFILE !== "controlled") {
       return;
+    }
+
+    for (const name of [
+      "ACRONYMICON_ACCESS_NOTICE",
+      "ACRONYMICON_SENSITIVITY_LABEL",
+    ] as const) {
+      if (!environment[name]) {
+        context.addIssue({
+          code: "custom",
+          message: `${name} is required for the controlled deployment profile.`,
+          path: [name],
+        });
+      }
     }
 
     for (const name of [
@@ -375,6 +395,10 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
     authorization: {
       readGroups: [...new Set(values.ACRONYMICON_READ_GROUPS)],
       submitGroups: [...new Set(values.ACRONYMICON_SUBMIT_GROUPS)],
+    },
+    notices: {
+      access: values.ACRONYMICON_ACCESS_NOTICE,
+      sensitivityLabel: values.ACRONYMICON_SENSITIVITY_LABEL,
     },
     database: buildDatabaseConfig(values),
     session: {

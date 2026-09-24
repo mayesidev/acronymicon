@@ -62,6 +62,8 @@ try {
   startServer(port);
   startServer(authenticatedPort, {
     ACRONYMICON_DICTIONARY_ACCESS: "authenticated",
+    ACRONYMICON_ACCESS_NOTICE: "Authorized test access only.",
+    ACRONYMICON_SENSITIVITY_LABEL: "Test controlled content",
     OIDC_REDIRECT_URI: `http://localhost:${authenticatedPort}/auth/callback`,
     OIDC_POST_LOGOUT_REDIRECT_URI: `http://localhost:${authenticatedPort}/`,
   });

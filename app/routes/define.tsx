@@ -5,6 +5,8 @@ import {
   DefinitionText,
   formatSubmittedDate,
 } from "../features/dictionary/components/dictionary-list";
+import { DataPageShell } from "../features/deployment-notices/components/data-page-shell";
+import { loadSensitivityLabel } from "../features/deployment-notices/server/api";
 import {
   authorizeDictionaryAccess,
   withoutSearchParameters,
@@ -23,7 +25,6 @@ import { Card } from "../ui/components/card";
 import { Field } from "../ui/components/field";
 import { TextLink } from "../ui/components/link";
 import { NativeSelect } from "../ui/components/native-select";
-import { PageShell } from "../ui/components/page-shell";
 
 export function meta() {
   return [{ title: "Definition | Acronymicon" }];
@@ -48,6 +49,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirect("/");
   }
 
+  const sensitivityLabel = loadSensitivityLabel();
   const sort = parseDictionarySort(url.searchParams.get("sort"));
 
   if (params.entryId) {
@@ -56,7 +58,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       related: url.searchParams.get("view") === "all",
       sort,
     });
-    return { ...result, sort };
+    return { ...result, sort, sensitivityLabel };
   }
 
   const legacyResult = await lookupDefinition({
@@ -95,14 +97,14 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     }
   }
 
-  return { ...legacyResult, sort };
+  return { ...legacyResult, sort, sensitivityLabel };
 }
 
 export default function Define({ loaderData }: Route.ComponentProps) {
   const submit = useSubmit();
   if (loaderData.status === "missing-acronym") {
     return (
-      <Page>
+      <Page sensitivityLabel={loaderData.sensitivityLabel}>
         <h1 className="text-2xl font-semibold">Choose a definition</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Select an acronym or definition from the dictionary to view it here.
@@ -113,7 +115,7 @@ export default function Define({ loaderData }: Route.ComponentProps) {
 
   if (loaderData.status === "not-found") {
     return (
-      <Page>
+      <Page sensitivityLabel={loaderData.sensitivityLabel}>
         <h1 className="text-2xl font-semibold">Definition not found</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           The requested definition is not available.
@@ -126,7 +128,7 @@ export default function Define({ loaderData }: Route.ComponentProps) {
     loaderData.status === "entry" ? [loaderData.entry] : loaderData.entries;
 
   return (
-    <Page>
+    <Page sensitivityLabel={loaderData.sensitivityLabel}>
       <h1 className="text-3xl font-semibold">
         {loaderData.acronym.toUpperCase()}
       </h1>
@@ -198,12 +200,18 @@ export default function Define({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function Page({ children }: { children: React.ReactNode }) {
+function Page({
+  children,
+  sensitivityLabel,
+}: {
+  children: React.ReactNode;
+  sensitivityLabel?: string;
+}) {
   return (
-    <PageShell>
+    <DataPageShell sensitivityLabel={sensitivityLabel}>
       <BackLink />
       {children}
-    </PageShell>
+    </DataPageShell>
   );
 }
 
