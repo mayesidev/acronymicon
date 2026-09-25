@@ -21,6 +21,9 @@ test("anonymous users can browse and search seeded entries", async ({
   await expect(
     page.getByText("Application Programming Interface"),
   ).toBeVisible();
+  await expect(
+    page.getByRole("complementary", { name: "Content handling notice" }),
+  ).toHaveCount(0);
 
   const submitLink = page.getByRole("link", { name: "Submit acronym" });
   const aboutLink = page.getByRole("link", { name: "About Acronymicon" });
@@ -99,6 +102,9 @@ test("authenticated dictionary access protects pages and data requests", async (
   }
 
   await page.goto("/define?acr=API&sort=recent");
+  await expect(page.getByRole("heading", { name: "Before you sign in" })).toBeVisible();
+  await expect(page.getByText("Authorized test access only.")).toBeVisible();
+  await expect(page.getByText("Application Programming Interface")).toHaveCount(0);
   await signIn(page, "user");
   await expect(page).toHaveURL((url) =>
     url.pathname.startsWith("/define/") &&
@@ -109,6 +115,67 @@ test("authenticated dictionary access protects pages and data requests", async (
   await expect(
     page.getByText("Application Programming Interface"),
   ).toBeVisible();
+  await expect(
+    page.getByRole("complementary", { name: "Content handling notice" }),
+  ).toHaveText("Test controlled content");
+  const definitionUrl = page.url();
+
+  await page.goto("/submit");
+  await expect(
+    page.getByRole("complementary", { name: "Content handling notice" }),
+  ).toHaveText("Test controlled content");
+
+  await page.goto("/");
+  await expect(
+    page.getByRole("complementary", { name: "Content handling notice" }),
+  ).toHaveText("Test controlled content");
+  await expect(page.getByText("Authorized test access only.")).toHaveCount(0);
+
+  await page.goto("/about");
+  await expect(
+    page.getByRole("complementary", { name: "Content handling notice" }),
+  ).toHaveCount(0);
+
+  const noJavaScriptContext = await browser.newContext({
+    baseURL: "http://localhost:3101",
+    javaScriptEnabled: false,
+    storageState: await context.storageState(),
+  });
+  const noJavaScriptPage = await noJavaScriptContext.newPage();
+  await noJavaScriptPage.goto(definitionUrl);
+  await expect(
+    noJavaScriptPage.getByRole("complementary", {
+      name: "Content handling notice",
+    }),
+  ).toHaveText("Test controlled content");
+  await noJavaScriptContext.close();
+
+  await context.close();
+});
+
+test("configured access notice works without client JavaScript", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3101",
+    javaScriptEnabled: false,
+  });
+  const page = await context.newPage();
+
+  const directSignIn = await context.request.post(
+    "/auth/login?returnTo=%2Fdefine%2Fentry",
+    { maxRedirects: 0 },
+  );
+  expect(directSignIn.status()).toBe(302);
+  expect(directSignIn.headers().location).toBe(
+    "/auth/login?returnTo=%2Fdefine%2Fentry",
+  );
+
+  await page.goto("/auth/login?returnTo=%2Fdefine%2Fentry");
+  await expect(page.getByRole("heading", { name: "Before you sign in" })).toBeVisible();
+  await expect(page.getByText("Authorized test access only.")).toBeVisible();
+  await page.getByRole("button", { name: "Continue to sign in" }).click();
+  await expect(page).toHaveURL(/keycloak\.localtest\.me:8080/);
 
   await context.close();
 });
@@ -312,6 +379,12 @@ async function signIn(
   username: string,
   options: { expectReauthentication?: boolean } = {},
 ) {
+  const continueToSignIn = page.getByRole("button", {
+    name: "Continue to sign in",
+  });
+  if (await continueToSignIn.isVisible()) {
+    await continueToSignIn.click();
+  }
   if (options.expectReauthentication) {
     expect(new URL(page.url()).searchParams.get("prompt")).toBe("login");
   }

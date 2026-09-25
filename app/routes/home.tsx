@@ -9,6 +9,8 @@ import {
 
 import { buildAboutHref } from "../features/about/model";
 import { HeaderActions } from "../features/authentication/components/header-actions";
+import { DataPageShell } from "../features/deployment-notices/components/data-page-shell";
+import { loadSensitivityLabel } from "../features/deployment-notices/server/api";
 import {
   authorizeDictionaryAccess,
   shouldShowSubmissionAction,
@@ -31,7 +33,6 @@ import { Field } from "../ui/components/field";
 import { Input } from "../ui/components/input";
 import { TextLink } from "../ui/components/link";
 import { NativeSelect } from "../ui/components/native-select";
-import { PageShell } from "../ui/components/page-shell";
 
 export function meta() {
   return [
@@ -69,6 +70,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     controlledSearch,
     user,
     showSubmit: shouldShowSubmissionAction(user),
+    sensitivityLabel: loadSensitivityLabel(),
   };
 }
 
@@ -128,7 +130,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     : `${entryCount} published entr${entryCount === 1 ? "y" : "ies"}`;
 
   return (
-    <PageShell width="wide" contentClassName="gap-6">
+    <DataPageShell
+      width="wide"
+      contentClassName="gap-6"
+      sensitivityLabel={loaderData.sensitivityLabel}
+    >
       <header className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-baseline gap-4">
@@ -221,7 +227,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       ) : (
         <EmptyState isFiltered={isFiltered} />
       )}
-    </PageShell>
+    </DataPageShell>
   );
 }
 

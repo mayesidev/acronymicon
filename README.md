@@ -176,6 +176,13 @@ is required, while omitting submit groups creates a read-only deployment. The
 claim selected by `OIDC_CLAIM_GROUPS` must be an array of exact group-name
 strings; missing or malformed claims grant no access.
 
+The controlled profile also requires `ACRONYMICON_ACCESS_NOTICE` and
+`ACRONYMICON_SENSITIVITY_LABEL`. Supply approved text through runtime
+configuration rather than the image. The notice is shown before application
+sign-in, and the label appears on dictionary and submission pages. Standard
+deployments may configure these values but are not required to do so. See the
+[operator guide](docs/protected-deployment.md) for the responsibility boundary.
+
 The application does not use forwarded host headers to construct security-
 sensitive redirects in this profile. Configure the reverse proxy and server
 adapter with a canonical request origin, and keep the explicit application and

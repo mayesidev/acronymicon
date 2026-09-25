@@ -163,6 +163,8 @@ describe("submit route completion navigation", () => {
 function configureControlledProfile() {
   const environment = {
     ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+    ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+    ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
     ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
     ACRONYMICON_READ_GROUPS: "dictionary-readers",
     ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters",

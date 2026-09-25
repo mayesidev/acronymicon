@@ -15,6 +15,10 @@ describe("application configuration", () => {
         readGroups: [],
         submitGroups: [],
       },
+      notices: {
+        access: undefined,
+        sensitivityLabel: undefined,
+      },
       database: {
         path: "./data/acronymicon.sqlite",
         migrationsFolder: "./drizzle",
@@ -165,6 +169,8 @@ describe("application configuration", () => {
     expect(
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+        ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         ACRONYMICON_READ_GROUPS: "dictionary-readers, shared-users",
         ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters,shared-users",
@@ -190,6 +196,10 @@ describe("application configuration", () => {
         readGroups: ["dictionary-readers", "shared-users"],
         submitGroups: ["dictionary-submitters", "shared-users"],
       },
+      notices: {
+        access: "Authorized access only.",
+        sensitivityLabel: "Controlled content",
+      },
       session: {
         absoluteTimeoutMinutes: 480,
         inactivityTimeoutMinutes: 30,
@@ -201,6 +211,9 @@ describe("application configuration", () => {
   });
 
   it.each([
+    [{ ACRONYMICON_ACCESS_NOTICE: "   " }, "ACRONYMICON_ACCESS_NOTICE is required"],
+    [{ ACRONYMICON_SENSITIVITY_LABEL: " " }, "ACRONYMICON_SENSITIVITY_LABEL is required"],
+    [{ ACRONYMICON_SENSITIVITY_LABEL: "First\nSecond" }, "must be a single line"],
     [{ NODE_ENV: "development" }, "NODE_ENV must be production"],
     [
       { ACRONYMICON_PUBLIC_ORIGIN: "http://app.example.test" },
@@ -246,6 +259,8 @@ describe("application configuration", () => {
     expect(() =>
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+        ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
@@ -267,6 +282,8 @@ describe("application configuration", () => {
     expect(() =>
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+        ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
@@ -293,6 +310,8 @@ describe("application configuration", () => {
     expect(() =>
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+        ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
         ACRONYMICON_DICTIONARY_ACCESS: "open",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         ACRONYMICON_READ_GROUPS: "dictionary-readers",
@@ -322,6 +341,8 @@ describe("application configuration", () => {
     expect(() =>
       parseAppConfig({
         ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+        ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+        ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
         ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
         NODE_ENV: "production",
         SESSION_SECRET: "production-session-secret-at-least-32-characters",
