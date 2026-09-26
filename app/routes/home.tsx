@@ -110,10 +110,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const {
     clearSearch,
     searchResult,
+    searchRef,
     searchValue,
     setSearchValue,
     setSortValue,
     sortValue,
+    sortRef,
   } = useDictionarySearch({
     initialResult: loaderData,
     controlledResult: controlledSearchResult,
@@ -172,6 +174,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             className="flex-1"
           >
             <Input
+              ref={searchRef}
               name="q"
               type="search"
               value={searchValue}
@@ -204,6 +207,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           labelClassName="font-normal text-muted-foreground"
         >
           <NativeSelect
+            ref={sortRef}
             value={sortValue}
             onChange={(event) =>
               setSortValue(event.target.value as DictionarySort)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form } from "react-router";
 
 import { Button } from "../../../ui/components/button";
@@ -23,6 +23,17 @@ export function SubmissionForm({
   const values = actionData?.values;
   const [acronym, setAcronym] = useState(values?.acronym ?? "");
   const [definition, setDefinition] = useState(values?.definition ?? "");
+  const acronymRef = useRef<HTMLInputElement>(null);
+  const definitionRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (acronymRef.current) {
+      setAcronym(acronymRef.current.value);
+    }
+    if (definitionRef.current) {
+      setDefinition(definitionRef.current.value);
+    }
+  }, []);
   const {
     definitionError,
     exactDuplicate,
@@ -49,6 +60,7 @@ export function SubmissionForm({
           className="mt-4"
         >
           <Input
+            ref={acronymRef}
             name="acronym"
             value={acronym}
             onChange={(event) => setAcronym(event.target.value)}
@@ -69,6 +81,7 @@ export function SubmissionForm({
           className="mt-4"
         >
           <Input
+            ref={definitionRef}
             name="definition"
             value={definition}
             onChange={(event) => setDefinition(event.target.value)}
