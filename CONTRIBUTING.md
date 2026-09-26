@@ -64,8 +64,9 @@ container checks for application changes, and its required checks have the
 final say on whether a pull request is acceptable to merge. Local results do
 not override a pending or failing required check. Documentation-only pull
 requests still run the scope and commit metadata checks, but skip application
-quality, browser, and container checks. The end-to-end suite requires Docker
-and a local Keycloak container when it is run locally.
+quality, browser, and container checks. The end-to-end suite builds the app and
+runs its production server with a local Keycloak container. It requires Docker
+when run locally.
 
 Changes to authentication, persistence, imports, or user-facing workflows
 should include focused tests. Changes to the browser workflow should include
