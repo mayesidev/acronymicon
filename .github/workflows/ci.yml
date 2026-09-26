@@ -170,6 +170,7 @@ jobs:
     needs: scope
     if: needs.scope.outputs.browser == 'true'
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
 
     steps:
       - name: Check out source
@@ -191,6 +192,8 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run browser integration tests
+        env:
+          DEBUG: pw:webserver
         run: pnpm run test:e2e
 
       - name: Upload Playwright report
