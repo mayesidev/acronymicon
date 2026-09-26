@@ -77,6 +77,58 @@ test("anonymous users can browse and search seeded entries", async ({
   expect(hydrationErrors).toEqual([]);
 });
 
+test("search keeps input entered before client hydration", async ({ page }) => {
+  const scripts = await pauseClientScripts(page);
+
+  try {
+    await page.goto("/", { waitUntil: "commit" });
+    await page.getByRole("searchbox", { name: "Search acronyms" }).fill("performance");
+    await page.getByLabel("Sort results").selectOption("recent");
+    await expect.poll(scripts.blocked).toBeGreaterThan(0);
+  } finally {
+    scripts.release();
+  }
+
+  await expect(page.getByText('1 result for "performance"')).toBeVisible();
+  await expect(page).toHaveURL(/q=performance&sort=recent/);
+  await page.getByRole("button", { name: "Search" }).click();
+  await expect(page).toHaveURL(/q=performance&sort=recent/);
+  await expect(page.getByText("Annual Performance Index")).toBeVisible();
+  // The previous bug redirected to an empty query after the 150 ms live-search debounce.
+  // eslint-disable-next-line playwright/no-wait-for-timeout
+  await page.waitForTimeout(300);
+  await expect(page).toHaveURL(/q=performance&sort=recent/);
+});
+
+test("controlled search keeps early input out of the URL", async ({
+  browser,
+  page,
+}) => {
+  await page.goto("http://localhost:3101/");
+  await signIn(page, "user");
+
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3101",
+    storageState: await page.context().storageState(),
+  });
+  const earlyPage = await context.newPage();
+  const scripts = await pauseClientScripts(earlyPage);
+
+  try {
+    await earlyPage.goto("/", { waitUntil: "commit" });
+    await earlyPage.getByRole("searchbox", { name: "Search acronyms" }).fill("performance");
+    await expect.poll(scripts.blocked).toBeGreaterThan(0);
+  } finally {
+    scripts.release();
+  }
+
+  await expect(earlyPage.getByText('1 result for "performance"')).toBeVisible();
+  await earlyPage.getByRole("button", { name: "Search" }).click();
+  await expect(earlyPage.getByText("Application Programming Interface")).toBeHidden();
+  await expect(earlyPage).toHaveURL("http://localhost:3101/");
+  await context.close();
+});
+
 test("authenticated dictionary access protects pages and data requests", async ({
   browser,
 }) => {
@@ -339,6 +391,36 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Submit" })).toBeDisabled();
 });
 
+test("submission keeps input entered before client hydration", async ({
+  browser,
+  page,
+}) => {
+  await page.goto("/submit");
+  await signIn(page, "user");
+
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3100",
+    storageState: await page.context().storageState(),
+  });
+  const earlyPage = await context.newPage();
+  const scripts = await pauseClientScripts(earlyPage);
+
+  try {
+    await earlyPage.goto("/submit", { waitUntil: "commit" });
+    await earlyPage.getByRole("textbox", { name: "Acronym" }).fill("API");
+    await earlyPage.getByRole("textbox", { name: "Definition" }).fill("New meaning");
+    await expect.poll(scripts.blocked).toBeGreaterThan(0);
+  } finally {
+    scripts.release();
+  }
+
+  await expect(earlyPage.getByRole("button", { name: "See warning" })).toBeVisible();
+  await expect(earlyPage.getByRole("button", { name: "Submit Anyway" })).toBeEnabled();
+  await expect(earlyPage.getByRole("textbox", { name: "Acronym" })).toHaveValue("API");
+  await expect(earlyPage.getByRole("textbox", { name: "Definition" })).toHaveValue("New meaning");
+  await context.close();
+});
+
 test("users can sign out and switch accounts", async ({ page }) => {
   await page.goto("/submit");
   await signIn(page, "user");
@@ -427,4 +509,22 @@ function waitForSubmitResponse(
     const confirmsDuplicate = formData.get("confirmDuplicate") === "true";
     return confirmsDuplicate === expected.confirmDuplicate;
   });
+}
+
+async function pauseClientScripts(page: Page) {
+  let release!: () => void;
+  const pause = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let blocked = 0;
+
+  await page.route("**/*", async (route) => {
+    if (route.request().resourceType() === "script") {
+      blocked += 1;
+      await pause;
+    }
+    await route.continue();
+  });
+
+  return { release, blocked: () => blocked };
 }

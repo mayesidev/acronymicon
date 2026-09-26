@@ -1,7 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FetcherSubmitFunction, SubmitFunction } from "react-router";
 
-import type { DictionarySearchResult, DictionarySort } from "./model";
+import {
+  parseDictionarySort,
+  type DictionarySearchResult,
+  type DictionarySort,
+} from "./model";
 
 export function useDictionarySearch({
   initialResult,
@@ -20,6 +24,17 @@ export function useDictionarySearch({
     controlledSearch && controlledResult ? controlledResult : initialResult;
   const [searchValue, setSearchValue] = useState(initialResult.query);
   const [sortValue, setSortValue] = useState(initialResult.sort);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const sortRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    if (searchRef.current) {
+      setSearchValue(searchRef.current.value);
+    }
+    if (sortRef.current) {
+      setSortValue(parseDictionarySort(sortRef.current.value));
+    }
+  }, []);
 
   useEffect(() => {
     if (
@@ -53,9 +68,11 @@ export function useDictionarySearch({
   return {
     clearSearch: () => setSearchValue(""),
     searchResult,
+    searchRef,
     searchValue,
     setSearchValue,
     setSortValue: (sort: DictionarySort) => setSortValue(sort),
     sortValue,
+    sortRef,
   };
 }
