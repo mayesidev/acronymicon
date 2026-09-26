@@ -100,6 +100,43 @@ test("search keeps input entered before client hydration", async ({ page }) => {
   await expect(page).toHaveURL(/q=performance&sort=recent/);
 });
 
+test("native search submits the visible sort before hydration", async ({ page }) => {
+  const scripts = await pauseClientScripts(page);
+
+  try {
+    await page.goto("/", { waitUntil: "commit" });
+    await page.getByRole("searchbox", { name: "Search acronyms" }).fill("performance");
+    await page.getByLabel("Sort results").selectOption("recent");
+    await expect.poll(scripts.blocked).toBeGreaterThan(0);
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page).toHaveURL(/q=performance&sort=recent/);
+    await expect(page.getByLabel("Sort results")).toHaveValue("recent");
+  } finally {
+    scripts.release();
+  }
+
+  await expect(page).toHaveURL(/q=performance&sort=recent/);
+});
+
+test("native search uses the visible sort without JavaScript", async ({ browser }) => {
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3100",
+    javaScriptEnabled: false,
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto("/");
+    await page.getByRole("searchbox", { name: "Search acronyms" }).fill("performance");
+    await page.getByLabel("Sort results").selectOption("recent");
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page).toHaveURL(/q=performance&sort=recent/);
+    await expect(page.getByLabel("Sort results")).toHaveValue("recent");
+  } finally {
+    await context.close();
+  }
+});
+
 test("authenticated dictionary access protects pages and data requests", async ({
   browser,
 }) => {
@@ -250,6 +287,40 @@ test("users can open a specific definition variant and see marked ranges", async
     page.getByRole("heading", { name: "Choose a definition" }),
   ).toBeVisible();
   await expect(backLink).toBeVisible();
+});
+
+test("definition sort can submit before hydration", async ({ page }) => {
+  const scripts = await pauseClientScripts(page);
+
+  try {
+    await page.goto("/define?acr=api", { waitUntil: "commit" });
+    await page.getByLabel("Sort definitions").selectOption("recent");
+    await expect.poll(scripts.blocked).toBeGreaterThan(0);
+    await page.getByRole("button", { name: "Apply sort" }).click();
+    await expect(page).toHaveURL(/view=all&sort=recent/);
+  } finally {
+    scripts.release();
+  }
+
+  await expect(page.getByLabel("Sort definitions")).toHaveValue("recent");
+});
+
+test("definition sort can submit without JavaScript", async ({ browser }) => {
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3100",
+    javaScriptEnabled: false,
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto("/define?acr=api");
+    await page.getByLabel("Sort definitions").selectOption("recent");
+    await page.getByRole("button", { name: "Apply sort" }).click();
+    await expect(page).toHaveURL(/view=all&sort=recent/);
+    await expect(page.getByLabel("Sort definitions")).toHaveValue("recent");
+  } finally {
+    await context.close();
+  }
 });
 
 test("users can submit and review duplicate definitions", async ({ page }) => {
