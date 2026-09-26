@@ -5,22 +5,22 @@
       "vulnerability": "CVE-2026-85091",
       "package": "zlib1g",
       "version": "1:1.3.dfsg+really1.3.1-1+b1",
-      "expiresOn": "2026-10-06",
-      "reason": "Debian still marks this zlib build vulnerable without a Trixie fix. The reported overflow requires gz* writing functions, which the application does not call; reassess the disputed affected range and update the base image before expiry."
+      "expiresOn": "2026-10-17",
+      "reason": "The 2026-09-26 runtime scan still finds this exact package; Debian Trixie has no packaged fix, though upstream has a patch. The overflow requires a nonblocking gzwrite stall followed by gzprintf or gzvprintf. Application code does not call these functions; native dependency reachability is uncertain. Recheck the stable base image before expiry."
     },
     {
       "vulnerability": "CVE-2026-19499",
       "package": "libc6",
       "version": "2.41-12+deb13u4",
-      "expiresOn": "2026-10-06",
-      "reason": "Debian rates the strfmon right-justified formatting overflow as minor/no-DSA for Trixie. The application does not call strfmon or strfmon_l; reassess when a stable fix is available."
+      "expiresOn": "2026-10-17",
+      "reason": "The 2026-09-26 runtime scan still finds this exact package. Debian rates the strfmon right-justified formatting overflow as minor/no-DSA for Trixie, with no packaged stable fix. Application code does not call strfmon or strfmon_l; native dependency reachability is uncertain. Recheck the stable base image before expiry."
     },
     {
       "vulnerability": "CVE-2026-5435",
       "package": "libc6",
       "version": "2.41-12+deb13u4",
-      "expiresOn": "2026-10-06",
-      "reason": "Debian rates the deprecated resolver-debug TSIG printing overflow as minor/no-DSA for Trixie. The application does not call the affected functions; reassess when a stable fix is available."
+      "expiresOn": "2026-10-17",
+      "reason": "The 2026-09-26 runtime scan still finds this exact package. Debian rates the deprecated resolver-debug TSIG printing overflow as minor/no-DSA for Trixie, with no packaged stable fix. Application code does not call the affected functions; native dependency reachability is uncertain. Recheck the stable base image before expiry."
     }
   ]
 }
