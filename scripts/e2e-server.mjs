@@ -1,17 +1,12 @@
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 const port = "3100";
 const authenticatedPort = "3101";
 const directory = mkdtempSync(join(tmpdir(), "acronymicon-e2e-"));
 const databasePath = join(directory, "acronymicon.sqlite");
-const serveBinPath = join(
-  dirname(fileURLToPath(import.meta.resolve("@react-router/serve/package.json"))),
-  "bin.cjs",
-);
 const oidcIssuerUrl =
   "http://keycloak.localtest.me:8080/realms/acronymicon";
 const environment = {
@@ -58,12 +53,6 @@ try {
     env: environment,
     stdio: "inherit",
   });
-  execFileSync("pnpm", ["run", "build"], {
-    cwd: process.cwd(),
-    env: environment,
-    stdio: "inherit",
-  });
-
   startServer(port);
   startServer(authenticatedPort, {
     ACRONYMICON_DICTIONARY_ACCESS: "authenticated",
@@ -81,16 +70,20 @@ try {
 }
 
 function startServer(serverPort, overrides = {}) {
-  const server = spawn(process.execPath, [serveBinPath, "./build/server/index.js"], {
-    cwd: process.cwd(),
-    env: {
-      ...environment,
-      ...overrides,
-      HOST: "0.0.0.0",
-      PORT: serverPort,
+  const server = spawn(
+    "pnpm",
+    ["run", "dev", "--host", "0.0.0.0", "--port", serverPort, "--strictPort"],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...environment,
+        ...overrides,
+        HOST: "0.0.0.0",
+        PORT: serverPort,
+      },
+      stdio: "inherit",
     },
-    stdio: "inherit",
-  });
+  );
 
   server.on("exit", (code) => {
     if (!shuttingDown) {
