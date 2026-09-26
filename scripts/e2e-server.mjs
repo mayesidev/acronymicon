@@ -1,12 +1,17 @@
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const port = "3100";
 const authenticatedPort = "3101";
 const directory = mkdtempSync(join(tmpdir(), "acronymicon-e2e-"));
 const databasePath = join(directory, "acronymicon.sqlite");
+const serveBinPath = join(
+  dirname(fileURLToPath(import.meta.resolve("@react-router/serve/package.json"))),
+  "bin.cjs",
+);
 const oidcIssuerUrl =
   "http://keycloak.localtest.me:8080/realms/acronymicon";
 const environment = {
@@ -76,7 +81,7 @@ try {
 }
 
 function startServer(serverPort, overrides = {}) {
-  const server = spawn("pnpm", ["run", "start"], {
+  const server = spawn(process.execPath, [serveBinPath, "./build/server/index.js"], {
     cwd: process.cwd(),
     env: {
       ...environment,
