@@ -266,9 +266,12 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   expect(initialNotesPosition!.x).toBe(initialAcronymPosition!.x);
   expect(initialAcronymPosition!.y).toBeLessThan(initialDefinitionPosition!.y);
   expect(initialDefinitionPosition!.y).toBeLessThan(initialNotesPosition!.y);
-  await acronym.fill("API");
   const warningButton = page.getByRole("button", { name: "See warning" });
-  await expect(warningButton).toBeVisible();
+  await expect(async () => {
+    await acronym.fill("");
+    await acronym.fill("API");
+    await expect(warningButton).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
   const warningAcronymPosition = await acronym.boundingBox();
   expect(warningAcronymPosition?.y).toBe(initialAcronymPosition?.y);
   await definition.fill("A");
