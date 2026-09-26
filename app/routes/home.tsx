@@ -163,6 +163,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       <section aria-label="Search dictionary">
         <SearchForm
+          id="dictionary-search-form"
           method={loaderData.controlledSearch ? "post" : "get"}
           action="/"
           className="flex w-full items-start gap-2"
@@ -182,7 +183,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               placeholder="Search acronym or definition"
             />
           </Field>
-          <input type="hidden" name="sort" value={sortValue} />
           {isFiltered ? (
             <Button
               type="button"
@@ -208,6 +208,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         >
           <NativeSelect
             ref={sortRef}
+            form="dictionary-search-form"
+            name="sort"
             value={sortValue}
             onChange={(event) =>
               setSortValue(event.target.value as DictionarySort)

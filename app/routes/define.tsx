@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/define";
 import { Form, redirect, useSubmit } from "react-router";
 
@@ -20,7 +21,9 @@ import {
   buildDefinitionHref,
   dictionarySortOptions,
   parseDictionarySort,
+  type DictionarySort,
 } from "../features/dictionary/model";
+import { Button } from "../ui/components/button";
 import { Card } from "../ui/components/card";
 import { Field } from "../ui/components/field";
 import { TextLink } from "../ui/components/link";
@@ -101,7 +104,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function Define({ loaderData }: Route.ComponentProps) {
-  const submit = useSubmit();
   if (loaderData.status === "missing-acronym") {
     return (
       <Page sensitivityLabel={loaderData.sensitivityLabel}>
@@ -139,34 +141,7 @@ export default function Define({ loaderData }: Route.ComponentProps) {
       </p>
 
       {loaderData.status === "list" ? (
-        <Form method="get" className="mt-4 flex justify-end">
-          <input type="hidden" name="view" value="all" />
-          <Field
-            label="Sort definitions"
-            className="flex items-center gap-2"
-            labelClassName="font-normal text-muted-foreground"
-          >
-            <NativeSelect
-              name="sort"
-              value={loaderData.sort}
-              onChange={(event) => {
-                if (event.currentTarget.form) {
-                  void submit(event.currentTarget.form, {
-                    method: "get",
-                    replace: true,
-                  });
-                }
-              }}
-              className="min-h-9 w-auto py-1"
-            >
-              {dictionarySortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-        </Form>
+        <DefinitionSortForm sort={loaderData.sort} />
       ) : null}
 
       <Card className="mt-6 overflow-hidden">
@@ -197,6 +172,62 @@ export default function Define({ loaderData }: Route.ComponentProps) {
         </ol>
       </Card>
     </Page>
+  );
+}
+
+function DefinitionSortForm({ sort }: { sort: DictionarySort }) {
+  const submit = useSubmit();
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const previousSort = useRef(sort);
+  const [selectedSort, setSelectedSort] = useState(sort);
+
+  useEffect(() => {
+    if (selectRef.current) {
+      setSelectedSort(parseDictionarySort(selectRef.current.value));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (previousSort.current !== sort) {
+      previousSort.current = sort;
+      setSelectedSort(sort);
+    }
+  }, [sort]);
+
+  return (
+    <Form method="get" className="mt-4 flex items-end justify-end gap-2">
+      <input type="hidden" name="view" value="all" />
+      <Field
+        label="Sort definitions"
+        className="flex items-center gap-2"
+        labelClassName="font-normal text-muted-foreground"
+      >
+        <NativeSelect
+          ref={selectRef}
+          name="sort"
+          value={selectedSort}
+          onChange={(event) => {
+            setSelectedSort(parseDictionarySort(event.currentTarget.value));
+            if (event.currentTarget.form) {
+              void submit(event.currentTarget.form, {
+                method: "get",
+                replace: true,
+              });
+            }
+          }}
+          className="min-h-9 w-auto py-1"
+        >
+          {dictionarySortOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      <Button type="submit" variant="secondary" className="min-h-9 px-3">
+        Apply sort
+      </Button>
+    </Form>
   );
 }
 

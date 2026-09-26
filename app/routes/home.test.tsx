@@ -190,6 +190,43 @@ it("keeps the standard UI search shareable", async () => {
   );
 });
 
+it.each([false, true])(
+  "submits the visible sort as the only sort field when controlled is %s",
+  async (controlledSearch) => {
+    const Routes = createRoutesStub([
+      {
+        path: "/",
+        Component: Home,
+        loader: () => ({
+          entries: [entry],
+          query: "",
+          sort: "alphabetical" as const,
+          controlledSearch,
+          user,
+          showSubmit: false,
+        }),
+      },
+    ]);
+
+    render(<Routes />);
+    const searchbox = await screen.findByRole("searchbox", {
+      name: "Search acronyms",
+    });
+    const form = searchbox.closest("form");
+    const sort = screen.getByLabelText("Sort results");
+    if (!form || !(sort instanceof HTMLSelectElement)) {
+      throw new TypeError("Expected a search form and sort select.");
+    }
+    sort.value = "recent";
+
+    expect([...new FormData(form).getAll("sort")]).toEqual(["recent"]);
+    expect(form).toHaveAttribute(
+      "method",
+      controlledSearch ? "post" : "get",
+    );
+  },
+);
+
 it("submits controlled UI searches without navigation or URL content", async () => {
   let capturedRequest:
     | { method: string; url: string; values: Record<string, FormDataEntryValue> }
