@@ -53,6 +53,11 @@ try {
     env: environment,
     stdio: "inherit",
   });
+  execFileSync("pnpm", ["run", "build"], {
+    cwd: process.cwd(),
+    env: environment,
+    stdio: "inherit",
+  });
   startServer(port);
   startServer(authenticatedPort, {
     ACRONYMICON_DICTIONARY_ACCESS: "authenticated",
@@ -72,12 +77,13 @@ try {
 function startServer(serverPort, overrides = {}) {
   const server = spawn(
     "pnpm",
-    ["run", "dev", "--host", "0.0.0.0", "--port", serverPort, "--strictPort"],
+    ["run", "start"],
     {
       cwd: process.cwd(),
       env: {
         ...environment,
         ...overrides,
+        NODE_ENV: "production",
         HOST: "0.0.0.0",
         PORT: serverPort,
       },
