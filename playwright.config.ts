@@ -22,9 +22,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm run test:e2e:server",
+    command: "node scripts/e2e-server.mjs",
     url: "http://localhost:3100/",
     reuseExistingServer: false,
     timeout: 120_000,
+    gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
   },
 });
