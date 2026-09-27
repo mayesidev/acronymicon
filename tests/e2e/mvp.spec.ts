@@ -451,6 +451,7 @@ test("submission keeps input entered before client hydration", async ({
     await earlyPage.goto("/submit", { waitUntil: "commit" });
     await earlyPage.getByRole("textbox", { name: "Acronym" }).fill("API");
     await earlyPage.getByRole("textbox", { name: "Definition" }).fill("New meaning");
+    await earlyPage.getByRole("textbox", { name: "Notes" }).fill("Entered before scripts loaded");
     await expect.poll(scripts.blocked).toBeGreaterThan(0);
   } finally {
     scripts.release();
@@ -460,6 +461,7 @@ test("submission keeps input entered before client hydration", async ({
   await expect(earlyPage.getByRole("button", { name: "Submit Anyway" })).toBeEnabled();
   await expect(earlyPage.getByRole("textbox", { name: "Acronym" })).toHaveValue("API");
   await expect(earlyPage.getByRole("textbox", { name: "Definition" })).toHaveValue("New meaning");
+  await expect(earlyPage.getByRole("textbox", { name: "Notes" })).toHaveValue("Entered before scripts loaded");
   await context.close();
 });
 
