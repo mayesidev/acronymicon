@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 
 import { Button } from "./button";
+import { useHydrated } from "../use-hydrated";
 
 type Theme = "light" | "dark";
 
 const themeStorageKey = "acronymicon-theme";
 
 export function ThemeToggle() {
+  const hydrated = useHydrated();
   useEffect(() => {
     const storedTheme = window.localStorage.getItem(themeStorageKey);
     const mediaQuery =
@@ -44,7 +46,7 @@ export function ThemeToggle() {
     applyTheme(nextTheme);
   }
 
-  return (
+  return hydrated ? (
     <Button
       type="button"
       variant="secondary"
@@ -55,7 +57,7 @@ export function ThemeToggle() {
     >
       Theme
     </Button>
-  );
+  ) : null;
 }
 
 function applyTheme(theme: Theme) {

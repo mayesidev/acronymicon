@@ -100,6 +100,28 @@ test("search keeps input entered before client hydration", async ({ page }) => {
   await expect(page).toHaveURL(/q=performance&sort=recent/);
 });
 
+test("client-only controls appear when their handlers are ready", async ({ page }) => {
+  const scripts = await pauseClientScripts(page);
+
+  try {
+    await page.goto("/?q=performance", { waitUntil: "commit" });
+    await expect(page.getByText('2 results for "performance"')).toBeVisible();
+    await expect(page.getByRole("button", { name: "Toggle color theme" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Clear" })).toHaveCount(0);
+    await expect.poll(scripts.blocked).toBeGreaterThan(0);
+  } finally {
+    scripts.release();
+  }
+
+  await expect(page.getByRole("button", { name: "Toggle color theme" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear" }).click();
+  await expect(page.getByRole("searchbox", { name: "Search acronyms" })).toHaveValue("");
+  await expect(page.getByText(/published entries/)).toBeVisible();
+  await page.getByRole("button", { name: "Toggle color theme" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+});
+
 test("native search submits the visible sort before hydration", async ({ page }) => {
   const scripts = await pauseClientScripts(page);
 
