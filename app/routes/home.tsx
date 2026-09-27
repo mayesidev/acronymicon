@@ -150,6 +150,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               aria-label="About Acronymicon"
               href={buildAboutHref(
                 `${location.pathname}${location.search}${location.hash}`,
+                loaderData.controlledSearch,
               )}
               className="text-sm"
             >

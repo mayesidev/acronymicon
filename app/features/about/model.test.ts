@@ -12,6 +12,20 @@ describe("About navigation", () => {
     );
   });
 
+  it("keeps controlled About return links free of untrusted query text", () => {
+    const entryId = "5b3b6c8d-3930-40b1-b09b-dc8ec56860de";
+
+    expect(buildAboutHref("/?q=SECRET&sort=recent", true)).toBe(
+      "/about?returnTo=%2F",
+    );
+    expect(
+      resolveAboutReturnTo(
+        `/define/${entryId}?view=all&sort=recent&context=SECRET`,
+        true,
+      ),
+    ).toBe(`/define/${entryId}?view=all&sort=recent`);
+  });
+
   it.each([
     null,
     "",

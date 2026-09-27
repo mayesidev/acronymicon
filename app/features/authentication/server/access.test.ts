@@ -96,9 +96,10 @@ describe("dictionary access", () => {
 
   it("redirects an over-age controlled document session to sign in", async () => {
     const audit = new AuditRecorder();
+    const entryId = "5b3b6c8d-3930-40b1-b09b-dc8ec56860de";
     const response = await authorizeDictionaryAccess(
       await authenticatedRequest(
-        "https://app.example.test/define/opaque-entry?view=all",
+        `https://app.example.test/define/${entryId}?view=all`,
         ["dictionary-readers"],
         currentAuthenticationTime - 60 * 60,
       ),
@@ -111,9 +112,22 @@ describe("dictionary access", () => {
       throw new Error("Expected reauthentication to redirect.");
     }
     expect(response.headers.get("Location")).toBe(
-      "/auth/login?returnTo=%2Fdefine%2Fopaque-entry%3Fview%3Dall",
+      `/auth/login?returnTo=%2Fdefine%2F${entryId}%3Fview%3Dall`,
     );
     expectDeniedAttempt(audit, { type: "user", id: "user-123" });
+  });
+
+  it("does not copy untrusted controlled query text into an access redirect", async () => {
+    const response = await authorizeDictionaryAccess(
+      new Request("https://app.example.test/submit?draft=SECRET"),
+      controlledConfig(),
+      authorizationDependencies(new AuditRecorder()),
+    );
+
+    expect(response).toBeInstanceOf(Response);
+    expect((response as Response).headers.get("Location")).toBe(
+      "/auth/login?returnTo=%2Fsubmit",
+    );
   });
 
   it("denies over-age controlled data and mutation requests without replay", async () => {

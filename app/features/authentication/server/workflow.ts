@@ -14,6 +14,8 @@ import type {
   AuditTarget,
 } from "../../../domain/audit";
 import { auditPublisher } from "../../../platform/audit/runtime.server";
+import { getAppConfig } from "../../../platform/config/runtime.server";
+import { controlledReturnDestination } from "../return-destination";
 import {
   clearForceReauthenticationCookie,
   commitAuthenticationFlowSession,
@@ -40,6 +42,7 @@ export type AuthenticationDependencies = {
   buildOidcLogoutUrl: typeof buildOidcLogoutUrl;
   auditPublisher: AuditPublisher;
   randomCorrelationId: () => string;
+  isControlledProfile: () => boolean;
 };
 
 const defaultDependencies: AuthenticationDependencies = {
@@ -54,6 +57,7 @@ const defaultDependencies: AuthenticationDependencies = {
   buildOidcLogoutUrl,
   auditPublisher,
   randomCorrelationId: () => crypto.randomUUID(),
+  isControlledProfile: () => getAppConfig().deployment.profile === "controlled",
 };
 
 export function createAuthenticationWorkflow(
@@ -70,6 +74,7 @@ export function createAuthenticationWorkflow(
       );
       const returnTo = safeReturnTo(
         new URL(request.url).searchParams.get("returnTo"),
+        dependencies.isControlledProfile(),
       );
       const authenticatedSession =
         await dependencies.getAuthenticatedSession(request);
@@ -134,7 +139,10 @@ export function createAuthenticationWorkflow(
       const maxAgeSeconds = session.get("oidcMaxAgeSeconds");
       const authenticationPurpose =
         session.get("authenticationPurpose") ?? "login";
-      const returnTo = session.get("returnTo") ?? "/";
+      const returnTo = safeReturnTo(
+        session.get("returnTo") ?? "/",
+        dependencies.isControlledProfile(),
+      );
       const existingAuthentication =
         await dependencies.getAuthenticatedSession(request);
       const action = authenticationAction(authenticationPurpose);
@@ -328,7 +336,14 @@ function authenticationAction(purpose: "login" | "reauthenticate") {
 
 export const authenticationWorkflow = createAuthenticationWorkflow();
 
-export function safeReturnTo(value: string | null) {
+export function safeReturnTo(
+  value: string | null,
+  controlled = getAppConfig().deployment.profile === "controlled",
+) {
+  if (controlled) {
+    return controlledReturnDestination(value);
+  }
+
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return "/";
   }

@@ -204,7 +204,7 @@ describe("integrated controlled-profile guarantees", () => {
         groups: ["dictionary-readers"],
       },
       controlledNowSeconds - 60 * 60,
-      "https://app.example.test/define/opaque-entry",
+      "https://app.example.test/define/5b3b6c8d-3930-40b1-b09b-dc8ec56860de",
     );
     const staleDocumentResponse = await harness.read(stale.request);
     expect(staleDocumentResponse).toBeInstanceOf(Response);
@@ -212,7 +212,7 @@ describe("integrated controlled-profile guarantees", () => {
       throw new Error("Expected stale document access to redirect.");
     }
     expect(staleDocumentResponse.headers.get("Location")).toBe(
-      "/auth/login?returnTo=%2Fdefine%2Fopaque-entry",
+      "/auth/login?returnTo=%2Fdefine%2F5b3b6c8d-3930-40b1-b09b-dc8ec56860de",
     );
     const staleDataResponse = await rejectedResponse(
       harness.read(

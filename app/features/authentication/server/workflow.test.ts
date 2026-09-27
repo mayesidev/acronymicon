@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { controlledContentSentinel } from "../../../../test/support/content-boundary";
 
 import {
   AuditRecorder,
@@ -56,6 +57,28 @@ describe("authentication workflow", () => {
     expect(session.get("oidcState")).toBe("generated-state");
     expect(session.get("oidcCodeVerifier")).toBe("generated-verifier");
     expect(session.get("returnTo")).toBe("/submit");
+  });
+
+  it("stores a canonical controlled destination for direct sign-in", async () => {
+    const workflow = createAuthenticationWorkflow(
+      createDependencies({ isControlledProfile: () => true }),
+    );
+    const entryId = "5b3b6c8d-3930-40b1-b09b-dc8ec56860de";
+    const returnTo = `/define/${entryId}?view=all&sort=recent&context=${controlledContentSentinel}`;
+    const outcome = await workflow.beginSignIn(
+      new Request(
+        `http://localhost/auth/login?returnTo=${encodeURIComponent(returnTo)}`,
+      ),
+    );
+
+    expect(outcome.status).toBe("redirect");
+    if (outcome.status !== "redirect") {
+      throw new Error("Expected a redirect outcome.");
+    }
+    const session = await getAuthenticationFlowSession(outcome.cookies[0]);
+    expect(session.get("returnTo")).toBe(
+      `/define/${entryId}?view=all&sort=recent`,
+    );
   });
 
   it("starts bounded provider reauthentication for an over-age session", async () => {
@@ -140,6 +163,25 @@ describe("authentication workflow", () => {
         },
       },
     ]);
+  });
+
+  it("sanitizes an existing controlled flow destination at callback", async () => {
+    const session = await getAuthenticationFlowSession();
+    session.set("oidcState", "expected-state");
+    session.set("oidcCodeVerifier", "expected-verifier");
+    session.set("returnTo", `/submit?draft=${controlledContentSentinel}`);
+    const workflow = createAuthenticationWorkflow(
+      createDependencies({ isControlledProfile: () => true }),
+    );
+
+    const outcome = await workflow.completeSignIn(
+      new Request("http://localhost/auth/callback?code=code", {
+        headers: { Cookie: await commitAuthenticationFlowSession(session) },
+      }),
+    );
+
+    expect(outcome.status).toBe("authenticated");
+    expect(outcome.location).toBe("/submit");
   });
 
   it("records bounded reauthentication and rotates the authenticated session", async () => {
@@ -406,6 +448,22 @@ describe("return destination policy", () => {
   ])("maps %s to %s", (value, expected) => {
     expect(safeReturnTo(value)).toBe(expected);
   });
+
+  it.each([
+    ["/submit?draft=SECRET#preview", "/submit"],
+    ["/submit/?draft=SECRET", "/submit"],
+    ["/about?returnTo=%2F%3Fq%3DSECRET", "/about"],
+    ["/define", "/define"],
+    ["/define?acr=SECRET", "/"],
+    ["/define/SECRET?view=all", "/"],
+    ["/unknown?content=SECRET", "/"],
+    [
+      "/define/5b3b6c8d-3930-40b1-b09b-dc8ec56860de?view=all&sort=recent&context=SECRET#section",
+      "/define/5b3b6c8d-3930-40b1-b09b-dc8ec56860de?view=all&sort=recent",
+    ],
+  ])("sanitizes controlled destination %s", (value, expected) => {
+    expect(safeReturnTo(value, true)).toBe(expected);
+  });
 });
 
 function createDependencies(
@@ -432,6 +490,7 @@ function createDependencies(
     buildOidcLogoutUrl: vi.fn().mockResolvedValue(null),
     auditPublisher: new AuditRecorder(),
     randomCorrelationId: () => "correlation-123",
+    isControlledProfile: () => false,
     ...overrides,
   };
 }

@@ -15,4 +15,15 @@ describe("About page API", () => {
       version: "development",
     });
   });
+
+  it("sanitizes a direct controlled About return destination", () => {
+    const page = loadAboutPage(
+      new Request(
+        "https://app.example.test/about?returnTo=%2F%3Fq%3DSECRET",
+      ),
+      true,
+    );
+
+    expect(page.returnTo).toBe("/");
+  });
 });
