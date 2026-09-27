@@ -35,6 +35,22 @@ export function getOidcPostLogoutRedirectUri(request: Request) {
   ).toString();
 }
 
+export function getOidcCallbackUrl(request: Request) {
+  const url = new URL(request.url);
+  const publicOrigin = getAppConfig().deployment.publicOrigin;
+
+  if (publicOrigin) {
+    const canonical = new URL(publicOrigin);
+    url.protocol = canonical.protocol;
+    url.hostname = canonical.hostname;
+    url.port = canonical.port;
+    url.username = "";
+    url.password = "";
+  }
+
+  return url;
+}
+
 export function getOidcScopes() {
   return getAppConfig().oidc?.scopes ?? "openid profile email";
 }
@@ -128,7 +144,7 @@ export async function completeAuthorizationCodeGrant(input: {
 
   const tokens = await oidc.authorizationCodeGrant(
     config,
-    new URL(input.request.url),
+    getOidcCallbackUrl(input.request),
     {
       expectedState: input.expectedState,
       pkceCodeVerifier: input.codeVerifier,

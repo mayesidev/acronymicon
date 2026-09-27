@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   addMaximumAuthenticationAge,
   addReauthenticationPrompt,
+  getOidcCallbackUrl,
   getOidcPostLogoutRedirectUri,
   getOidcRedirectUri,
   mapClaimsToUser,
@@ -116,5 +117,27 @@ describe("OIDC claim mapping", () => {
     expect(getOidcPostLogoutRedirectUri(untrustedRequest)).toBe(
       "https://app.example.test/",
     );
+    expect(
+      getOidcCallbackUrl(
+        new Request("http://localhost:3103/auth/callback?state=opaque&code=token"),
+      ).toString(),
+    ).toBe("https://app.example.test/auth/callback?state=opaque&code=token");
+
+    vi.stubEnv("ACRONYMICON_PUBLIC_ORIGIN", "https://app.example.test:8443");
+    vi.stubEnv("OIDC_REDIRECT_URI", "https://app.example.test:8443/auth/callback");
+    vi.stubEnv("OIDC_POST_LOGOUT_REDIRECT_URI", "https://app.example.test:8443/");
+    expect(
+      getOidcCallbackUrl(
+        new Request("http://localhost:3103/auth/callback?state=opaque"),
+      ).toString(),
+    ).toBe("https://app.example.test:8443/auth/callback?state=opaque");
+  });
+
+  it("keeps the request URL when no public origin is configured", () => {
+    expect(
+      getOidcCallbackUrl(
+        new Request("http://localhost:3100/auth/callback?state=opaque"),
+      ).toString(),
+    ).toBe("http://localhost:3100/auth/callback?state=opaque");
   });
 });
