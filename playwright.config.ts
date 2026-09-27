@@ -25,7 +25,7 @@ export default defineConfig({
     command: "pnpm run test:e2e:server",
     url: "http://localhost:3100/",
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 180_000,
     gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
   },
 });
