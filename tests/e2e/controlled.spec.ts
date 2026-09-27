@@ -92,7 +92,7 @@ test("controlled search sends content in POST bodies without URL metadata", asyn
       await native.page.getByLabel("Sort results").selectOption("recent");
       await native.page.getByRole("searchbox", { name: "Search acronyms" }).fill("performance");
       const nativeRequest = native.page.waitForRequest((request) =>
-        request.method() === "POST" && request.url() === origin + "/",
+        request.method() === "POST" && request.url() === origin + "/?index",
       );
       await native.page.getByRole("button", { name: "Search" }).click();
       const request = await nativeRequest;
