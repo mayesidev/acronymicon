@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Form } from "react-router";
 
 import { Button } from "../../../ui/components/button";
@@ -23,6 +23,11 @@ export function SubmissionForm({
   const values = actionData?.values;
   const [acronym, setAcronym] = useState(values?.acronym ?? "");
   const [definition, setDefinition] = useState(values?.definition ?? "");
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientHydrationState,
+    getServerHydrationState,
+  );
   const acronymRef = useRef<HTMLInputElement>(null);
   const definitionRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +45,7 @@ export function SubmissionForm({
     existingEntries,
     showDuplicateFeedback,
     showDuplicateWarning,
+    showServerFeedback,
   } = useDuplicatePreview({ acronym, definition, actionData });
   const definitionFieldError = getSubmissionFieldError(
     actionData,
@@ -105,12 +111,15 @@ export function SubmissionForm({
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
             type="submit"
-            disabled={Boolean(
-              exactDuplicate ||
-                definitionError ||
-                !acronym.trim() ||
-                !definition.trim(),
-            )}
+            disabled={
+              hydrated &&
+              Boolean(
+                exactDuplicate ||
+                  definitionError ||
+                  !acronym.trim() ||
+                  !definition.trim(),
+              )
+            }
           >
             {showDuplicateWarning ? "Submit Anyway" : "Submit"}
           </Button>
@@ -119,6 +128,7 @@ export function SubmissionForm({
               acronym={acronym}
               exactDuplicate={exactDuplicate}
               existingEntries={existingEntries}
+              inline={showServerFeedback}
             />
           ) : null}
           <ActionLink href="/" variant="secondary">
@@ -128,6 +138,18 @@ export function SubmissionForm({
       </Form>
     </Card>
   );
+}
+
+function subscribeToHydration() {
+  return () => {};
+}
+
+function getClientHydrationState() {
+  return true;
+}
+
+function getServerHydrationState() {
+  return false;
 }
 
 function FieldLabel({

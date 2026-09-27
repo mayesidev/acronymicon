@@ -71,6 +71,8 @@ export function useDuplicatePreview({
     existingEntries,
     showDuplicateFeedback: Boolean(exactDuplicate) || showDuplicateWarning,
     showDuplicateWarning,
+    showServerFeedback:
+      actionWarningMatchesCurrentInput || Boolean(actionExactDuplicate),
   };
 }
 
