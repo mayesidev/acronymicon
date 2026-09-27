@@ -9,12 +9,30 @@ export async function startTlsProxy({ certificatePath, keyPath, port, upstreamPo
       key: readFileSync(keyPath),
     },
     (request, response) => {
+      const host = `localhost:${port}`;
+      const publicOrigin = `https://${host}`;
+      if (request.headers.host !== host) {
+        request.resume();
+        response.writeHead(421).end();
+        return;
+      }
+      if (request.headers.origin && request.headers.origin !== publicOrigin) {
+        request.resume();
+        response.writeHead(403).end();
+        return;
+      }
+
       const headers = { ...request.headers };
       delete headers.forwarded;
-      headers.host = `localhost:${port}`;
+      headers.host = host;
       headers["x-forwarded-host"] = headers.host;
       headers["x-forwarded-proto"] = "https";
       headers["x-forwarded-for"] = "127.0.0.1";
+      // The test server receives HTTP after TLS termination. Keep its action
+      // origin check aligned after validating the browser's HTTPS origin.
+      if (headers.origin) {
+        headers.origin = `http://${host}`;
+      }
 
       const upstream = httpRequest(
         {

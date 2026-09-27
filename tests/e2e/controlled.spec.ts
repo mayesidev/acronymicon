@@ -27,6 +27,11 @@ test("controlled access uses HTTPS and the mapped group", async ({ browser }) =>
     expect(anonymous.status()).toBe(302);
     expect(anonymous.headers().location).toBe("/auth/login?returnTo=%2F");
     expect(await anonymous.text()).not.toContain("Application Programming Interface");
+    const foreignOrigin = await context.request.post("/auth/login", {
+      headers: { Origin: "https://other.example.test" },
+      maxRedirects: 0,
+    });
+    expect(foreignOrigin.status()).toBe(403);
 
     await page.goto("/");
     await expect(page.getByText("Authorized test access only.")).toBeVisible();
