@@ -421,8 +421,9 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
   expect((await submit(page, "E2E", "End To End Verification")).status()).toBe(
     400,
   );
-  await page.getByRole("button", { name: "See warning" }).click();
-  const exactDuplicateWarning = page.getByRole("dialog");
+  const exactDuplicateWarning = page
+    .getByRole("heading", { name: "This definition already exists" })
+    .locator("..");
   await expect(exactDuplicateWarning).toContainText(
     "This definition already exists",
   );
@@ -431,6 +432,54 @@ test("users can submit and review duplicate definitions", async ({ page }) => {
     "Browser Integration Verification",
   );
   await expect(page.getByRole("button", { name: "Submit" })).toBeDisabled();
+});
+
+test("native submission shows duplicate details before confirmation", async ({ browser, page }) => {
+  await page.goto("/submit");
+  await signIn(page, "user");
+
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3100",
+    javaScriptEnabled: false,
+    storageState: await page.context().storageState(),
+  });
+  const nativePage = await context.newPage();
+
+  try {
+    await nativePage.goto("/submit");
+    await expect(nativePage.getByRole("button", { name: "Submit" })).toBeEnabled();
+    await nativePage.getByRole("textbox", { name: "Acronym" }).fill("API");
+    await nativePage.getByRole("textbox", { name: "Definition" }).fill("Native Submission Verification");
+    await nativePage.getByRole("textbox", { name: "Notes" }).fill("No JavaScript needed");
+
+    const warningResponse = nativePage.waitForResponse((response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/submit",
+    );
+    await nativePage.getByRole("button", { name: "Submit", exact: true }).click();
+    expect((await warningResponse).status()).toBe(409);
+    await expect(nativePage.getByRole("heading", { name: "API already exists" })).toBeVisible();
+    await expect(nativePage.getByText("Application Programming Interface")).toBeVisible();
+    await expect(nativePage.getByRole("textbox", { name: "Notes" })).toHaveValue("No JavaScript needed");
+
+    const confirmResponse = nativePage.waitForResponse((response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/submit",
+    );
+    await nativePage.getByRole("button", { name: "Submit Anyway" }).click();
+    const confirmation = await confirmResponse;
+    expect(confirmation.status()).toBe(302);
+    expect(
+      new URLSearchParams(confirmation.request().postData() ?? "").get(
+        "confirmDuplicate",
+      ),
+    ).toBe("true");
+    await expect(nativePage).toHaveURL(/\/define\//);
+    await expect(nativePage.getByText("Native Submission Verification")).toBeVisible();
+    await expect(nativePage.getByText("No JavaScript needed")).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });
 
 test("submission keeps input entered before client hydration", async ({

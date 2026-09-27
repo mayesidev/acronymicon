@@ -8,10 +8,12 @@ export function DuplicateFeedback({
   acronym,
   exactDuplicate,
   existingEntries,
+  inline = false,
 }: {
   acronym: string;
   exactDuplicate: SubmissionDuplicateEntry | null;
   existingEntries: SubmissionDuplicateEntry[];
+  inline?: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -42,6 +44,17 @@ export function DuplicateFeedback({
 
   if (!exactDuplicate && existingEntries.length === 0) {
     return null;
+  }
+
+  if (inline) {
+    return (
+      <DuplicateDetails
+        acronym={acronym}
+        exactDuplicate={exactDuplicate}
+        existingEntries={existingEntries}
+        titleId={titleId}
+      />
+    );
   }
 
   return (

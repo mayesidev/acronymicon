@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { createRoutesStub } from "react-router";
+import { renderToString } from "react-dom/server";
+import { createMemoryRouter, createRoutesStub, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import type { SubmissionActionData } from "../model";
@@ -14,6 +15,29 @@ const existingEntry = {
 };
 
 describe("submission form", () => {
+  it("server-renders an enabled native submit and readable duplicate feedback", () => {
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <SubmissionForm
+            actionData={{
+              status: "duplicate-warning",
+              existingEntries: [existingEntry],
+              values: { acronym: "API", definition: "New meaning" },
+            }}
+          />
+        ),
+      },
+    ]);
+    const view = renderToString(<RouterProvider router={router} />);
+
+    expect(view).toContain(">Submit Anyway</button>");
+    expect(view).not.toContain("disabled=");
+    expect(view).toContain("Application Programming Interface");
+    expect(view).toContain('name="confirmDuplicate"');
+  });
+
   it("recovers submitted values and field errors", () => {
     renderForm({
       status: "error",
@@ -57,12 +81,9 @@ describe("submission form", () => {
     });
 
     const form = screen.getByRole("form", { name: "New dictionary entry" });
-    fireEvent.click(
-      within(form).getByRole("button", { name: "See warning" }),
-    );
-    expect(within(form).getByRole("dialog")).toHaveTextContent(
-      "This definition already exists",
-    );
+    expect(within(form).getByRole("heading", { name: "This definition already exists" })).toBeVisible();
+    expect(within(form).getByText(existingEntry.definition)).toBeVisible();
+    expect(within(form).queryByRole("button", { name: "See warning" })).not.toBeInTheDocument();
     expect(screen.queryByText(exactDuplicateMessage)).not.toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "Definition" }),
@@ -89,12 +110,9 @@ describe("submission form", () => {
     });
 
     const form = screen.getByRole("form", { name: "New dictionary entry" });
-    fireEvent.click(
-      within(form).getByRole("button", { name: "See warning" }),
-    );
-    expect(within(form).getByRole("dialog")).toHaveTextContent(
-      existingEntry.definition,
-    );
+    expect(within(form).getByRole("heading", { name: "API already exists" })).toBeVisible();
+    expect(within(form).getByText(existingEntry.definition)).toBeVisible();
+    expect(within(form).queryByRole("button", { name: "See warning" })).not.toBeInTheDocument();
     expect(screen.getByDisplayValue("true")).toHaveAttribute(
       "name",
       "confirmDuplicate",
