@@ -33,6 +33,7 @@ import { Field } from "../ui/components/field";
 import { Input } from "../ui/components/input";
 import { TextLink } from "../ui/components/link";
 import { NativeSelect } from "../ui/components/native-select";
+import { useHydrated } from "../ui/use-hydrated";
 
 export function meta() {
   return [
@@ -99,6 +100,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
+  const hydrated = useHydrated();
   const { user } = loaderData;
   const location = useLocation();
   const submit = useSubmit();
@@ -184,7 +186,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               placeholder="Search acronym or definition"
             />
           </Field>
-          {isFiltered ? (
+          {isFiltered && hydrated ? (
             <Button
               type="button"
               variant="secondary"

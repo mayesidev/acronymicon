@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form } from "react-router";
 
 import { Button } from "../../../ui/components/button";
@@ -7,6 +7,7 @@ import { Field } from "../../../ui/components/field";
 import { Input } from "../../../ui/components/input";
 import { ActionLink } from "../../../ui/components/link";
 import { Textarea } from "../../../ui/components/textarea";
+import { useHydrated } from "../../../ui/use-hydrated";
 import type { SubmissionActionData } from "../model";
 import { exactDuplicateMessage } from "../policy";
 import {
@@ -23,11 +24,7 @@ export function SubmissionForm({
   const values = actionData?.values;
   const [acronym, setAcronym] = useState(values?.acronym ?? "");
   const [definition, setDefinition] = useState(values?.definition ?? "");
-  const hydrated = useSyncExternalStore(
-    subscribeToHydration,
-    getClientHydrationState,
-    getServerHydrationState,
-  );
+  const hydrated = useHydrated();
   const acronymRef = useRef<HTMLInputElement>(null);
   const definitionRef = useRef<HTMLInputElement>(null);
 
@@ -138,18 +135,6 @@ export function SubmissionForm({
       </Form>
     </Card>
   );
-}
-
-function subscribeToHydration() {
-  return () => {};
-}
-
-function getClientHydrationState() {
-  return true;
-}
-
-function getServerHydrationState() {
-  return false;
 }
 
 function FieldLabel({
