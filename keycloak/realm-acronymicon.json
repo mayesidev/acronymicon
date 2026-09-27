@@ -34,6 +34,39 @@
       },
       "defaultClientScopes": ["web-origins", "acr", "profile", "email"],
       "optionalClientScopes": ["address", "phone", "offline_access"]
+    },
+    {
+      "clientId": "acronymicon-controlled-e2e",
+      "name": "Acronymicon controlled browser fixture",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-controlled-e2e-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["https://localhost:3102/auth/callback"],
+      "webOrigins": ["https://localhost:3102"],
+      "attributes": {
+        "post.logout.redirect.uris": "https://localhost:3102/"
+      },
+      "defaultClientScopes": ["basic", "web-origins", "acr", "profile", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"],
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     }
   ],
   "groups": [
