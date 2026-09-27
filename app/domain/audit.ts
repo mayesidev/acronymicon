@@ -3,6 +3,7 @@ export const auditActions = [
   "authentication.logout",
   "authentication.reauthenticate",
   "authorization.check",
+  "dictionary.read",
   "acronym.submit",
   "acronym.import",
   "database.migrate",

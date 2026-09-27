@@ -169,18 +169,28 @@ primary stream is unavailable, it attempts one `audit.sink.append` health event
 on standard error. Capture both streams separately from interactive terminal
 output and transport them to the deployment's protected collector.
 
+The controlled profile records one `dictionary.read` event for each successful
+home or search response and each definition or duplicate response that includes
+published dictionary content. The event contains the user ID and application
+target; it omits query text and dictionary values. If the audit event cannot be
+recorded, the application returns HTTP 503 instead of the protected response.
+Size the collector for repeated reads and investigate 503 responses alongside
+sink-health events.
+
 The application deliberately excludes dictionary text, notes, credentials,
 tokens, raw request URLs and queries, and free-form exception details from its
 audit contract. Do not add those values during collector enrichment. Preserve
 the schema fields, restrict log access, synchronize the application host and
 collector clocks, and define retention, alerting, review, and incident-response
 procedures. Alert on sink-health failures and unexpected gaps in expected
-authentication, authorization, submission, import, or migration activity.
+authentication, authorization, dictionary read, submission, import, or migration
+activity.
 
 The event contract, redaction, delivery semantics, and fallback behavior are
 covered by the [audit publisher tests](../app/platform/audit/publisher.test.ts),
 [JSON-line sink tests](../app/platform/audit/json-line-sink.server.test.ts), and
-[integrated controlled-profile suite](../app/controlled-profile.integration.test.ts).
+[controlled read audit tests](../app/features/dictionary/server/read-audit.test.ts),
+plus the [integrated controlled-profile suite](../app/controlled-profile.integration.test.ts).
 
 ## Release selection and updates
 

@@ -8,6 +8,7 @@ const dependencies = vi.hoisted(() => ({
   authorizeDictionaryAccess: vi.fn(),
   lookupDefinition: vi.fn(),
   lookupDefinitionById: vi.fn(),
+  recordControlledDictionaryRead: vi.fn(),
   usesControlledDictionarySearch: vi.fn(),
 }));
 
@@ -26,6 +27,10 @@ vi.mock("../features/dictionary/server/api", () => ({
   lookupDefinitionById: dependencies.lookupDefinitionById,
   usesControlledDictionarySearch:
     dependencies.usesControlledDictionarySearch,
+}));
+
+vi.mock("../features/dictionary/server/read-audit", () => ({
+  recordControlledDictionaryRead: dependencies.recordControlledDictionaryRead,
 }));
 
 import { loader } from "./define";
@@ -47,6 +52,7 @@ beforeEach(() => {
   dependencies.authorizeDictionaryAccess.mockReset().mockResolvedValue(null);
   dependencies.lookupDefinition.mockReset();
   dependencies.lookupDefinitionById.mockReset();
+  dependencies.recordControlledDictionaryRead.mockReset().mockResolvedValue(undefined);
   dependencies.usesControlledDictionarySearch.mockReset().mockReturnValue(false);
 });
 
@@ -73,6 +79,42 @@ describe("definition route identifiers", () => {
       related: true,
       sort: "recent",
     });
+    expect(dependencies.recordControlledDictionaryRead).toHaveBeenCalledOnce();
+  });
+
+  it("does not audit a controlled definition miss", async () => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    dependencies.lookupDefinitionById.mockResolvedValue({
+      status: "not-found",
+      entryId: "unknown",
+    });
+
+    await expect(
+      loader({
+        request: new Request("https://app.example.test/define/unknown"),
+        params: { entryId: "unknown" },
+      } as never),
+    ).resolves.toMatchObject({ status: "not-found" });
+    expect(dependencies.recordControlledDictionaryRead).not.toHaveBeenCalled();
+  });
+
+  it("blocks a controlled definition when its read audit fails", async () => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    dependencies.lookupDefinitionById.mockResolvedValue({
+      status: "entry",
+      acronym: "API",
+      entry,
+    });
+    dependencies.recordControlledDictionaryRead.mockRejectedValue(
+      new Response(null, { status: 503 }),
+    );
+
+    await expect(
+      loader({
+        request: new Request("https://app.example.test/define/opaque-entry-id"),
+        params: { entryId: "opaque-entry-id" },
+      } as never),
+    ).rejects.toMatchObject({ status: 503 });
   });
 
   it("canonicalizes controlled legacy content before authorization", async () => {
@@ -90,6 +132,7 @@ describe("definition route identifiers", () => {
     expect((response as Response).headers.get("Location")).toBe("/");
     expect(dependencies.lookupDefinition).not.toHaveBeenCalled();
     expect(dependencies.lookupDefinitionById).not.toHaveBeenCalled();
+    expect(dependencies.recordControlledDictionaryRead).not.toHaveBeenCalled();
   });
 
   it("strips unrecognized controlled query text before authorization", async () => {
