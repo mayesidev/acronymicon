@@ -98,7 +98,12 @@ test("controlled search sends content in POST bodies without URL metadata", asyn
       const request = await nativeRequest;
       expect(new URLSearchParams(request.postData() ?? "").get("q")).toBe("performance");
       expect(new URLSearchParams(request.postData() ?? "").get("sort")).toBe("recent");
-      expect(native.page.url()).toBe(origin + "/");
+      const submittedUrl = new URL(native.page.url());
+      expect(submittedUrl.origin).toBe(origin);
+      expect(submittedUrl.pathname).toBe("/");
+      expect(submittedUrl.searchParams.has("q")).toBe(false);
+      expect(submittedUrl.searchParams.has("sort")).toBe(false);
+      expect(native.page.url()).not.toContain("performance");
     } finally {
       await native.context.close();
     }
