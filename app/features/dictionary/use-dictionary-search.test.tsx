@@ -16,7 +16,7 @@ afterEach(() => {
 
 it.each([
   { controlled: false, method: "get", options: { method: "get", replace: true } },
-  { controlled: true, method: "post", options: { method: "post", action: "/" } },
+  { controlled: true, method: "post", options: { method: "post", action: "/?index" } },
 ])("submits $method search input entered before hydration", async ({
   controlled,
   options,

@@ -224,6 +224,10 @@ it.each([false, true])(
       "method",
       controlledSearch ? "post" : "get",
     );
+    expect(form).toHaveAttribute(
+      "action",
+      controlledSearch ? "/?index" : "/",
+    );
   },
 );
 
@@ -283,7 +287,7 @@ it("submits controlled UI searches without navigation or URL content", async () 
 
   expect(capturedRequest).toEqual({
     method: "POST",
-    url: "http://localhost/",
+    url: "http://localhost/?index",
     values: {
       q: "Sensitive internal term",
       sort: "alphabetical",
