@@ -16,7 +16,16 @@ export async function startTlsProxy({ certificatePath, keyPath, port, upstreamPo
         response.writeHead(421).end();
         return;
       }
-      if (request.headers.origin && request.headers.origin !== publicOrigin) {
+      const opaqueSameOriginDocument =
+        request.headers.origin === "null" &&
+        request.headers["sec-fetch-site"] === "same-origin" &&
+        request.headers["sec-fetch-mode"] === "navigate" &&
+        request.headers["sec-fetch-dest"] === "document";
+      if (
+        request.headers.origin &&
+        request.headers.origin !== publicOrigin &&
+        !opaqueSameOriginDocument
+      ) {
         request.resume();
         response.writeHead(403).end();
         return;
@@ -29,7 +38,8 @@ export async function startTlsProxy({ certificatePath, keyPath, port, upstreamPo
       headers["x-forwarded-proto"] = "https";
       headers["x-forwarded-for"] = "127.0.0.1";
       // The test server receives HTTP after TLS termination. Keep its action
-      // origin check aligned after validating the browser's HTTPS origin.
+      // origin check aligned after validating the browser's HTTPS origin or
+      // its opaque same-origin document submission from the test certificate.
       if (headers.origin) {
         headers.origin = `http://${host}`;
       }

@@ -32,6 +32,11 @@ test("controlled access uses HTTPS and the mapped group", async ({ browser }) =>
       maxRedirects: 0,
     });
     expect(foreignOrigin.status()).toBe(403);
+    const opaqueCrossSite = await context.request.post("/auth/login", {
+      headers: { Origin: "null", "Sec-Fetch-Site": "cross-site" },
+      maxRedirects: 0,
+    });
+    expect(opaqueCrossSite.status()).toBe(403);
 
     await page.goto("/");
     await expect(page.getByText("Authorized test access only.")).toBeVisible();
@@ -94,10 +99,20 @@ test("controlled search sends content in POST bodies without URL metadata", asyn
       const nativeRequest = native.page.waitForRequest((request) =>
         request.method() === "POST" && request.url() === origin + "/?index",
       );
+      const nativeResponse = native.page.waitForResponse((response) =>
+        response.request().method() === "POST" && response.url() === origin + "/?index",
+      );
       await native.page.getByRole("button", { name: "Search" }).click();
       const request = await nativeRequest;
+      const response = await nativeResponse;
       expect(new URLSearchParams(request.postData() ?? "").get("q")).toBe("performance");
       expect(new URLSearchParams(request.postData() ?? "").get("sort")).toBe("recent");
+      expect(response.status()).toBe(200);
+      expect(JSON.stringify(response.headers())).not.toContain("performance");
+      await expect(native.page.getByText('2 results for "performance"')).toBeVisible();
+      await expect(native.page.getByText("Annual Performance Index")).toBeVisible();
+      await expect(native.page.getByRole("searchbox", { name: "Search acronyms" })).toHaveValue("performance");
+      await expect(native.page.getByLabel("Sort results")).toHaveValue("recent");
       const submittedUrl = new URL(native.page.url());
       expect(submittedUrl.origin).toBe(origin);
       expect(submittedUrl.pathname).toBe("/");
