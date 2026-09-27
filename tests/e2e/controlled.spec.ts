@@ -109,6 +109,10 @@ test("controlled search sends content in POST bodies without URL metadata", asyn
       expect(new URLSearchParams(request.postData() ?? "").get("sort")).toBe("recent");
       expect(response.status()).toBe(200);
       expect(JSON.stringify(response.headers())).not.toContain("performance");
+      await expect(native.page.getByText('2 results for "performance"')).toBeVisible();
+      await expect(native.page.getByText("Annual Performance Index")).toBeVisible();
+      await expect(native.page.getByRole("searchbox", { name: "Search acronyms" })).toHaveValue("performance");
+      await expect(native.page.getByLabel("Sort results")).toHaveValue("recent");
       const submittedUrl = new URL(native.page.url());
       expect(submittedUrl.origin).toBe(origin);
       expect(submittedUrl.pathname).toBe("/");

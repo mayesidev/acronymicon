@@ -105,6 +105,21 @@ describe("home route search boundary", () => {
     expect(dependencies.loadDictionarySearch).not.toHaveBeenCalled();
   });
 
+  it("allows the index action marker through controlled loader revalidation", async () => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    const request = new Request("https://app.example.test/?index");
+
+    await expect(loader({ request } as never)).resolves.toMatchObject({
+      query: "",
+      sort: "alphabetical",
+      controlledSearch: true,
+    });
+    expect(dependencies.loadDictionarySearch).toHaveBeenCalledWith(
+      "",
+      "alphabetical",
+    );
+  });
+
   it("returns controlled search results from an authenticated POST body", async () => {
     dependencies.usesControlledDictionarySearch.mockReturnValue(true);
     const request = searchRequest({

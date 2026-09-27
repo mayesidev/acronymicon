@@ -55,7 +55,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     return user;
   }
 
-  if (controlledSearch && url.search) {
+  if (controlledSearch && url.search && url.search !== "?index") {
     return redirect("/");
   }
 
@@ -98,7 +98,7 @@ export async function action({ request }: Route.ActionArgs) {
   );
 }
 
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   const { user } = loaderData;
   const location = useLocation();
   const submit = useSubmit();
@@ -117,7 +117,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     sortValue,
     sortRef,
   } = useDictionarySearch({
-    initialResult: loaderData,
+    initialResult:
+      loaderData.controlledSearch && actionData ? actionData : loaderData,
     controlledResult: controlledSearchResult,
     controlledSearch: loaderData.controlledSearch,
     submitControlledSearch,
