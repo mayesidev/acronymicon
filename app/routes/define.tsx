@@ -8,10 +8,7 @@ import {
 } from "../features/dictionary/components/dictionary-list";
 import { DataPageShell } from "../features/deployment-notices/components/data-page-shell";
 import { loadSensitivityLabel } from "../features/deployment-notices/server/api";
-import {
-  authorizeDictionaryAccess,
-  withoutSearchParameters,
-} from "../features/authentication/server/access";
+import { authorizeDictionaryAccess } from "../features/authentication/server/access";
 import {
   lookupDefinition,
   lookupDefinitionById,
@@ -38,11 +35,14 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const hasLegacyContent =
     url.searchParams.has("acr") || url.searchParams.has("var");
   const controlled = usesControlledDictionarySearch();
-  const access = await authorizeDictionaryAccess(
-    controlled && hasLegacyContent
-      ? withoutSearchParameters(request)
-      : request,
-  );
+  const authorizationRequest = controlled
+    ? controlledDefinitionAuthorizationRequest(
+        request,
+        params.entryId,
+        hasLegacyContent,
+      )
+    : request;
+  const access = await authorizeDictionaryAccess(authorizationRequest);
 
   if (access instanceof Response) {
     return access;
@@ -50,6 +50,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   if (controlled && hasLegacyContent) {
     return redirect("/");
+  }
+
+  if (controlled && authorizationRequest.url !== request.url) {
+    const canonicalUrl = new URL(authorizationRequest.url);
+    return redirect(`${canonicalUrl.pathname}${canonicalUrl.search}`);
   }
 
   const sensitivityLabel = loadSensitivityLabel();
@@ -101,6 +106,32 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   return { ...legacyResult, sort, sensitivityLabel };
+}
+
+function controlledDefinitionAuthorizationRequest(
+  request: Request,
+  entryId: string | undefined,
+  hasLegacyContent: boolean,
+) {
+  const originalUrl = new URL(request.url);
+  const canonicalUrl = new URL(originalUrl);
+  canonicalUrl.search = "";
+
+  if (entryId && !hasLegacyContent) {
+    if (originalUrl.searchParams.get("view") === "all") {
+      canonicalUrl.searchParams.set("view", "all");
+    }
+    if (originalUrl.searchParams.get("sort") === "recent") {
+      canonicalUrl.searchParams.set("sort", "recent");
+    }
+  }
+
+  return canonicalUrl.href === originalUrl.href
+    ? request
+    : new Request(canonicalUrl, {
+        method: request.method,
+        headers: request.headers,
+      });
 }
 
 export default function Define({ loaderData }: Route.ComponentProps) {
