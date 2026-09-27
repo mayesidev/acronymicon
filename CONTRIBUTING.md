@@ -9,8 +9,10 @@ Open pull requests against `main`. The repository requires change-scope,
 quality and build, browser integration, ARM64 container, commit metadata, and
 CodeQL checks to complete successfully before merging. Checks that do not
 apply to a change may complete with GitHub's successful skipped-job result.
-There is no required reviewer approval because this project currently has a
-single maintainer.
+Community pull requests require approval from the repository code owner before
+merge. The `main` ruleset requires an approving review and code owner review;
+the maintainer may merge their own pull requests through the ruleset's
+pull-request-only bypass after the required checks pass.
 
 Use a Conventional Commit title for every pull request. Examples:
 
@@ -60,11 +62,12 @@ is the simplest way to validate the change or when diagnosing a CI failure.
 
 GitHub Actions is the authoritative pull-request validation environment. It
 runs the most complete applicable quality, browser, security, build, and
-container checks for application changes, and its required checks have the
-final say on whether a pull request is acceptable to merge. Local results do
-not override a pending or failing required check. Documentation-only pull
-requests still run the scope and commit metadata checks, but skip application
-quality, browser, and container checks. The end-to-end suite builds the app and
+container checks for application changes, and its required checks must pass
+before merging. Passing checks do not replace maintainer approval for
+community pull requests. Local results do not override a pending or failing
+required check. Documentation-only pull requests still run the scope and commit
+metadata checks, but skip application quality, browser, and container checks.
+The end-to-end suite builds the app and
 runs its production server with a local Keycloak container. It requires Docker
 when run locally.
 

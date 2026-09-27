@@ -18,6 +18,7 @@ behavior. Include security, browser, or container checks only when applicable.
 
 - [ ] Changes are committed on a focused branch and pushed
 - [ ] Required CI checks have passed; CI is the authoritative acceptance gate
+- [ ] Maintainer approval has been obtained for a community contribution
 - [ ] The pull request is ready to squash-merge
 
 ## Notes
