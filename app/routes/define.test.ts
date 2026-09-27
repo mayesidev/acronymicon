@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  controlledContentSentinel,
+  expectContentFreeMetadata,
+} from "../../test/support/content-boundary";
 
 const dependencies = vi.hoisted(() => ({
   authorizeDictionaryAccess: vi.fn(),
@@ -85,6 +89,74 @@ describe("definition route identifiers", () => {
     expect(response).toBeInstanceOf(Response);
     expect((response as Response).headers.get("Location")).toBe("/");
     expect(dependencies.lookupDefinition).not.toHaveBeenCalled();
+    expect(dependencies.lookupDefinitionById).not.toHaveBeenCalled();
+  });
+
+  it("strips unrecognized controlled query text before authorization", async () => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    const denied = new Response(null, { status: 302 });
+    dependencies.authorizeDictionaryAccess.mockResolvedValue(denied);
+    const request = new Request(
+      `https://app.example.test/define/opaque-entry-id?view=all&sort=recent&context=${controlledContentSentinel}`,
+    );
+
+    const response = await loader({
+      request,
+      params: { entryId: "opaque-entry-id" },
+    } as never);
+
+    const authorizationRequest = dependencies.authorizeDictionaryAccess.mock
+      .calls[0]?.[0] as Request;
+    expect(authorizationRequest.url).toBe(
+      "https://app.example.test/define/opaque-entry-id?view=all&sort=recent",
+    );
+    expectContentFreeMetadata(authorizationRequest.url);
+    expect(response).toBe(denied);
+    expect(dependencies.lookupDefinitionById).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    `view=${controlledContentSentinel}`,
+    `sort=${controlledContentSentinel}`,
+    `view=all&view=${controlledContentSentinel}`,
+  ])("strips untrusted controlled option values from %s", async (query) => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    const request = new Request(
+      `https://app.example.test/define/opaque-entry-id?${query}`,
+    );
+
+    const response = await loader({
+      request,
+      params: { entryId: "opaque-entry-id" },
+    } as never);
+    const authorizationRequest = dependencies.authorizeDictionaryAccess.mock
+      .calls[0]?.[0] as Request;
+
+    expectContentFreeMetadata(authorizationRequest.url);
+    expectContentFreeMetadata((response as Response).headers.get("Location"));
+    expect(dependencies.lookupDefinitionById).not.toHaveBeenCalled();
+  });
+
+  it("redirects authorized controlled requests to a canonical query", async () => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    const request = new Request(
+      `https://app.example.test/define/opaque-entry-id?view=all&sort=recent&context=${controlledContentSentinel}`,
+    );
+
+    const response = await loader({
+      request,
+      params: { entryId: "opaque-entry-id" },
+    } as never);
+    const authorizationRequest = dependencies.authorizeDictionaryAccess.mock
+      .calls[0]?.[0] as Request;
+
+    expect(authorizationRequest.url).toBe(
+      "https://app.example.test/define/opaque-entry-id?view=all&sort=recent",
+    );
+    expect(response).toBeInstanceOf(Response);
+    expect((response as Response).headers.get("Location")).toBe(
+      "/define/opaque-entry-id?view=all&sort=recent",
+    );
     expect(dependencies.lookupDefinitionById).not.toHaveBeenCalled();
   });
 
