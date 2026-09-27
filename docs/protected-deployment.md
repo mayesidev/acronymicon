@@ -189,7 +189,7 @@ environment. Prefer an immutable manifest digest for deployment rather than a
 mutable `latest` tag. Resolve a versioned image before recording that digest:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/mayesidev/acronymicon:vX.Y.Z
+docker buildx imagetools inspect ghcr.io/mayesidev/acronymicon:X.Y.Z
 export ACRONYMICON_IMAGE=ghcr.io/mayesidev/acronymicon@sha256:<manifest-digest>
 ```
 
