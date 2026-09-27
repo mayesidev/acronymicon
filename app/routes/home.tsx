@@ -165,7 +165,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <SearchForm
           id="dictionary-search-form"
           method={loaderData.controlledSearch ? "post" : "get"}
-          action="/"
+          action={loaderData.controlledSearch ? "/?index" : "/"}
           className="flex w-full items-start gap-2"
         >
           <Field

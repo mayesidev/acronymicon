@@ -48,7 +48,7 @@ export function useDictionarySearch({
       const values = { q: searchValue, sort: sortValue };
 
       if (controlledSearch) {
-        void submitControlledSearch(values, { method: "post", action: "/" });
+        void submitControlledSearch(values, { method: "post", action: "/?index" });
       } else {
         void submitStandardSearch(values, { method: "get", replace: true });
       }
