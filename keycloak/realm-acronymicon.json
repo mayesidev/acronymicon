@@ -50,7 +50,7 @@
       "attributes": {
         "post.logout.redirect.uris": "https://localhost:3102/"
       },
-      "defaultClientScopes": ["web-origins", "acr", "profile", "email"],
+      "defaultClientScopes": ["basic", "web-origins", "acr", "profile", "email"],
       "optionalClientScopes": ["address", "phone", "offline_access"],
       "protocolMappers": [
         {
