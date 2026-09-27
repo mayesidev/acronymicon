@@ -14,6 +14,7 @@ import {
   lookupDefinitionById,
   usesControlledDictionarySearch,
 } from "../features/dictionary/server/api";
+import { recordControlledDictionaryRead } from "../features/dictionary/server/read-audit";
 import {
   buildDefinitionHref,
   dictionarySortOptions,
@@ -66,6 +67,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       related: url.searchParams.get("view") === "all",
       sort,
     });
+    if (controlled && result.status !== "not-found") {
+      await recordControlledDictionaryRead(access);
+    }
     return { ...result, sort, sensitivityLabel };
   }
 

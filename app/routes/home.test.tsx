@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const dependencies = vi.hoisted(() => ({
   authorizeDictionaryAccess: vi.fn(),
   loadDictionarySearch: vi.fn(),
+  recordControlledDictionaryRead: vi.fn(),
   shouldShowSubmissionAction: vi.fn(),
   usesControlledDictionarySearch: vi.fn(),
 }));
@@ -27,6 +28,10 @@ vi.mock("../features/dictionary/server/api", () => ({
   loadDictionarySearch: dependencies.loadDictionarySearch,
   usesControlledDictionarySearch:
     dependencies.usesControlledDictionarySearch,
+}));
+
+vi.mock("../features/dictionary/server/read-audit", () => ({
+  recordControlledDictionaryRead: dependencies.recordControlledDictionaryRead,
 }));
 
 import { action, default as Home, loader } from "./home";
@@ -59,6 +64,7 @@ beforeEach(() => {
       (query: string, sort: "alphabetical" | "recent") =>
         Promise.resolve({ entries: [entry], query, sort }),
     );
+  dependencies.recordControlledDictionaryRead.mockReset().mockResolvedValue(undefined);
   dependencies.shouldShowSubmissionAction.mockReset().mockReturnValue(false);
   dependencies.usesControlledDictionarySearch.mockReset().mockReturnValue(false);
 });
@@ -86,6 +92,7 @@ describe("home route search boundary", () => {
       "interface",
       "recent",
     );
+    expect(dependencies.recordControlledDictionaryRead).not.toHaveBeenCalled();
   });
 
   it("canonicalizes legacy controlled search URLs without reading content", async () => {
@@ -103,6 +110,7 @@ describe("home route search boundary", () => {
     expect((response as Response).status).toBe(302);
     expect((response as Response).headers.get("Location")).toBe("/");
     expect(dependencies.loadDictionarySearch).not.toHaveBeenCalled();
+    expect(dependencies.recordControlledDictionaryRead).not.toHaveBeenCalled();
   });
 
   it("allows the index action marker through controlled loader revalidation", async () => {
@@ -118,6 +126,7 @@ describe("home route search boundary", () => {
       "",
       "alphabetical",
     );
+    expect(dependencies.recordControlledDictionaryRead).toHaveBeenCalledExactlyOnceWith(user);
   });
 
   it("returns controlled search results from an authenticated POST body", async () => {
@@ -138,6 +147,19 @@ describe("home route search boundary", () => {
       "Sensitive internal term",
       "recent",
     );
+    expect(dependencies.recordControlledDictionaryRead).toHaveBeenCalledExactlyOnceWith(user);
+  });
+
+  it("blocks a controlled search result after a failed audit write", async () => {
+    dependencies.usesControlledDictionarySearch.mockReturnValue(true);
+    dependencies.recordControlledDictionaryRead.mockRejectedValue(
+      new Response(null, { status: 503 }),
+    );
+
+    await expect(
+      action({ request: searchRequest({ query: "Sensitive", sort: "recent" }) } as never),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(dependencies.loadDictionarySearch).toHaveBeenCalledOnce();
   });
 
   it("authorizes a controlled search before reading or reflecting its body", async () => {

@@ -7,6 +7,8 @@ import {
 } from "../features/authentication/server/access";
 import { DataPageShell } from "../features/deployment-notices/components/data-page-shell";
 import { loadSensitivityLabel } from "../features/deployment-notices/server/api";
+import { recordControlledDictionaryRead } from "../features/dictionary/server/read-audit";
+import { usesControlledDictionarySearch } from "../features/dictionary/server/api";
 import { SubmissionForm } from "../features/submission/components/submission-form";
 import {
   getSuccessfulSubmissionLocation,
@@ -48,6 +50,13 @@ export async function action({ request }: Route.ActionArgs) {
       acronym: getFormDataString(formData, "acronym"),
       definition: getFormDataString(formData, "definition"),
     });
+    if (
+      usesControlledDictionarySearch() &&
+      (duplicatePreview.existingEntries.length > 0 ||
+        duplicatePreview.exactDuplicate !== null)
+    ) {
+      await recordControlledDictionaryRead(user);
+    }
 
     return {
       status: "preview" as const,
@@ -73,6 +82,9 @@ export async function action({ request }: Route.ActionArgs) {
   const outcome = await submitAcronym(values, user);
 
   if (outcome.status === "exact-duplicate") {
+    if (usesControlledDictionarySearch()) {
+      await recordControlledDictionaryRead(user);
+    }
     return data(
       {
         status: "error" as const,
@@ -85,6 +97,9 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   if (outcome.status === "duplicate-warning") {
+    if (usesControlledDictionarySearch() && outcome.existingEntries.length > 0) {
+      await recordControlledDictionaryRead(user);
+    }
     return data(
       {
         status: "duplicate-warning" as const,

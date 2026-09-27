@@ -26,6 +26,7 @@ import {
   loadDictionarySearch,
   usesControlledDictionarySearch,
 } from "../features/dictionary/server/api";
+import { recordControlledDictionaryRead } from "../features/dictionary/server/read-audit";
 import { useDictionarySearch } from "../features/dictionary/use-dictionary-search";
 import { Button } from "../ui/components/button";
 import { Card } from "../ui/components/card";
@@ -65,6 +66,9 @@ export async function loader({ request }: Route.LoaderArgs) {
     ? "alphabetical"
     : parseDictionarySort(url.searchParams.get("sort"));
   const searchResult = await loadDictionarySearch(query, sort);
+  if (controlledSearch) {
+    await recordControlledDictionaryRead(user);
+  }
 
   return {
     ...searchResult,
@@ -93,10 +97,12 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  return loadDictionarySearch(
+  const searchResult = await loadDictionarySearch(
     getFormDataString(formData, "q"),
     parseDictionarySort(getFormDataString(formData, "sort")),
   );
+  await recordControlledDictionaryRead(user);
+  return searchResult;
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
