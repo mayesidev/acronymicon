@@ -43,14 +43,24 @@ export async function authorizeDictionaryAccess(
       dependencies.nowSeconds(),
     )
   ) {
-    return reauthenticationRequiredResponse(request, user, dependencies);
+    return reauthenticationRequiredResponse(
+      request,
+      user,
+      dependencies,
+      config.deployment.profile === "controlled",
+    );
   }
 
   if (hasCapability(user, "dictionary:read", config)) {
     return user;
   }
 
-  return accessDeniedResponse(request, user, dependencies);
+  return accessDeniedResponse(
+    request,
+    user,
+    dependencies,
+    config.deployment.profile === "controlled",
+  );
 }
 
 export async function authorizeSubmissionAccess(
@@ -69,14 +79,24 @@ export async function authorizeSubmissionAccess(
       dependencies.nowSeconds(),
     )
   ) {
-    return reauthenticationRequiredResponse(request, user, dependencies);
+    return reauthenticationRequiredResponse(
+      request,
+      user,
+      dependencies,
+      config.deployment.profile === "controlled",
+    );
   }
 
   if (user && hasCapability(user, "acronym:submit", config)) {
     return user;
   }
 
-  return accessDeniedResponse(request, user, dependencies);
+  return accessDeniedResponse(
+    request,
+    user,
+    dependencies,
+    config.deployment.profile === "controlled",
+  );
 }
 
 export function hasCapability(
@@ -133,6 +153,7 @@ async function accessDeniedResponse(
   request: Request,
   user: AuthUser | null,
   dependencies: AuthorizationDependencies,
+  controlled: boolean,
 ) {
   const result = await dependencies.auditPublisher.publish({
     delivery: "required",
@@ -164,7 +185,10 @@ async function accessDeniedResponse(
   }
 
   const requestUrl = new URL(request.url);
-  const returnTo = safeReturnTo(`${requestUrl.pathname}${requestUrl.search}`);
+  const returnTo = safeReturnTo(
+    `${requestUrl.pathname}${requestUrl.search}`,
+    controlled,
+  );
 
   return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
 }
@@ -173,6 +197,7 @@ async function reauthenticationRequiredResponse(
   request: Request,
   user: AuthUser,
   dependencies: AuthorizationDependencies,
+  controlled: boolean,
 ) {
   const result = await dependencies.auditPublisher.publish({
     delivery: "required",
@@ -204,7 +229,10 @@ async function reauthenticationRequiredResponse(
   }
 
   const requestUrl = new URL(request.url);
-  const returnTo = safeReturnTo(`${requestUrl.pathname}${requestUrl.search}`);
+  const returnTo = safeReturnTo(
+    `${requestUrl.pathname}${requestUrl.search}`,
+    controlled,
+  );
   return redirect(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
 }
 

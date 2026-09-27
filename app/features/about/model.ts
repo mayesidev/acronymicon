@@ -1,18 +1,27 @@
+import { controlledReturnDestination } from "../authentication/return-destination";
+
 export const sourceRepositoryUrl =
   "https://github.com/mayesidev/acronymicon";
 export const licenseUrl = `${sourceRepositoryUrl}/blob/main/LICENSE`;
 
 const applicationOrigin = "https://acronymicon.invalid";
 
-export function buildAboutHref(returnTo: string) {
+export function buildAboutHref(returnTo: string, controlled = false) {
   const searchParameters = new URLSearchParams({
-    returnTo: resolveAboutReturnTo(returnTo),
+    returnTo: resolveAboutReturnTo(returnTo, controlled),
   });
 
   return `/about?${searchParameters.toString()}`;
 }
 
-export function resolveAboutReturnTo(value: string | null) {
+export function resolveAboutReturnTo(
+  value: string | null,
+  controlled = false,
+) {
+  if (controlled) {
+    return controlledReturnDestination(value);
+  }
+
   if (!value?.startsWith("/") || value.startsWith("//")) {
     return "/";
   }

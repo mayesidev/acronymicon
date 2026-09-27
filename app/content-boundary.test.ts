@@ -10,6 +10,8 @@ import {
   authorizeDictionaryAccess,
   withoutSearchParameters,
 } from "./features/authentication/server/access";
+import { safeReturnTo } from "./features/authentication/server/workflow";
+import { loadAboutPage } from "./features/about/server/api";
 import { validateSubmissionInput } from "./features/submission/server/input";
 import type { SubmissionRepository } from "./features/submission/server/repository";
 import { createSubmissionWorkflow } from "./features/submission/server/workflow";
@@ -20,6 +22,23 @@ import { applyDeploymentSecurityHeaders } from "./platform/http/security-headers
 const correlationId = "independent-correlation-id";
 
 describe("controlled dictionary content boundary", () => {
+  it("keeps direct navigation destinations content-free", () => {
+    const loginDestination = safeReturnTo(
+      `/submit?draft=${controlledContentSentinel}`,
+      true,
+    );
+    const aboutDestination = loadAboutPage(
+      new Request(
+        `https://app.example.test/about?returnTo=${encodeURIComponent(`/?q=${controlledContentSentinel}`)}`,
+      ),
+      true,
+    ).returnTo;
+
+    expect(loginDestination).toBe("/submit");
+    expect(aboutDestination).toBe("/");
+    expectContentFreeMetadata({ loginDestination, aboutDestination });
+  });
+
   it("keeps document authorization redirects, headers, and audit metadata content-free", async () => {
     const audit = new AuditRecorder();
     const request = withoutSearchParameters(
