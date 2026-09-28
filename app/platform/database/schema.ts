@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 import type { DefinitionRange } from "../../domain/acronym";
+import type { AuditEvent } from "../../domain/audit";
 
 export const acronymEntries = sqliteTable(
   "acronym_entries",
@@ -58,6 +59,20 @@ export const acronymEntries = sqliteTable(
 
 export type AcronymEntry = typeof acronymEntries.$inferSelect;
 export type NewAcronymEntry = typeof acronymEntries.$inferInsert;
+
+export const pendingAuditEvents = sqliteTable(
+  "pending_audit_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    correlationId: text("correlation_id").notNull(),
+    event: text("event", { mode: "json" }).$type<AuditEvent>().notNull(),
+  },
+  (table) => [
+    uniqueIndex("pending_audit_events_correlation_id_idx").on(
+      table.correlationId,
+    ),
+  ],
+);
 
 export const authenticatedSessions = sqliteTable(
   "authenticated_sessions",

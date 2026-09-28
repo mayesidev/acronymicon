@@ -33,6 +33,7 @@ export type SubmissionRepository = {
       submittedByUserId: string;
       submittedByUsername: string;
       submittedByDisplayName?: string;
+      audit: { correlationId: string; timestamp: string };
     },
   ) => SubmissionCreateResult | Promise<SubmissionCreateResult>;
 };

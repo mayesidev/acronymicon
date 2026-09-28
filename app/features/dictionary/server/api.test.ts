@@ -72,6 +72,6 @@ function initializeTestApplication() {
       DATABASE_PATH: join(directory, "acronymicon.sqlite"),
       DRIZZLE_MIGRATIONS_PATH: join(process.cwd(), "drizzle"),
     }),
-    { registerShutdownHandlers: false },
+    { registerShutdownHandlers: false, startAuditDelivery: false },
   );
 }

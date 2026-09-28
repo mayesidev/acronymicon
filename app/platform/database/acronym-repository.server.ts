@@ -14,11 +14,14 @@ import type { AppDatabase } from "./client.server";
 import { acronymEntries } from "./schema";
 import { insertAcronymEntryAtomic } from "./write.server";
 
+type SubmissionCreateInput = Parameters<SubmissionRepository["createAcronymEntry"]>[0];
+type AcronymCreateInput = Omit<SubmissionCreateInput, "audit"> & {
+  audit?: SubmissionCreateInput["audit"];
+};
+
 type AcronymRepository = DictionaryRepository &
   Omit<SubmissionRepository, "createAcronymEntry"> & {
-    createAcronymEntry: (
-      input: Parameters<SubmissionRepository["createAcronymEntry"]>[0],
-    ) => SubmissionCreateResult;
+    createAcronymEntry: (input: AcronymCreateInput) => SubmissionCreateResult;
   };
 
 export function createAcronymRepository(
@@ -145,9 +148,17 @@ export function createAcronymRepository(
   }
 
   function createAcronymEntry(
-    input: Parameters<typeof buildNewAcronymEntry>[0],
+    input: AcronymCreateInput,
   ) {
-    return insertAcronymEntryAtomic(database, buildNewAcronymEntry(input));
+    return insertAcronymEntryAtomic(database, buildNewAcronymEntry(input), {
+      submissionAudit: input.audit
+        ? {
+            correlationId: input.audit.correlationId,
+            timestamp: input.audit.timestamp,
+            actorId: input.submittedByUserId,
+          }
+        : undefined,
+    });
   }
 
   return {

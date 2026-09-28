@@ -193,6 +193,17 @@ recorded, the application returns HTTP 503 instead of the protected response.
 Size the collector for repeated reads and investigate 503 responses alongside
 sink-health events.
 
+Each successful submission commits its entry and a bounded `acronym.submit`
+event together in SQLite. Pending events are retried to standard output every
+five seconds and on startup. Keep the database migration current so the pending
+event table is present before accepting submissions. Delivery is at least once;
+deduplicate repeated submission events by action and correlation ID if the
+collector requires one record per change. A persistent output failure leaves
+events queued. At 10,000 pending events, the app returns HTTP 503 before saving
+a new submission. Monitor sink-health output and submission 503 responses and
+restore the audit path before the queue fills. The host still owns collector
+delivery and retention.
+
 The application deliberately excludes dictionary text, notes, credentials,
 tokens, raw request URLs and queries, and free-form exception details from its
 audit contract. Do not add those values during collector enrichment. Preserve

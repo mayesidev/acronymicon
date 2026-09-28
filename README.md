@@ -217,6 +217,15 @@ retention, monitoring, and analysis there. Monitor standard error health records
 as a degraded primary audit stream. Keep audit output separate from interactive
 terminal use, and do not enrich it with protected dictionary data.
 
+Successful submissions save a bounded audit record in the same SQLite
+transaction as the new entry. The app sends pending records to standard output
+immediately and retries every five seconds, including after a restart. Delivery
+is at least once: a crash after output but before queue cleanup can repeat an
+event with the same action and correlation ID. If output remains unavailable,
+the queue holds up to 10,000 events; once full, new submissions return HTTP 503
+before saving. Monitor sink-health output and 503 responses, and restore audit
+output promptly. A successful local write does not prove collector receipt.
+
 ## Verification
 
 Run the automated checks relevant to a change:

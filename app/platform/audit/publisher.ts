@@ -28,23 +28,40 @@ export function createAuditPublisher({
         timestamp: clock.now().toISOString(),
       };
 
-      let recorded = false;
-
-      try {
-        const result = await sink.append(event);
-        recorded = result.status === "recorded";
-      } catch {
-        recorded = false;
-      }
-
-      if (recorded) {
-        return { status: "recorded" };
-      }
-
-      await reportSinkFailure(fallbackSink, event);
-      return { status: "unavailable", delivery: publication.delivery };
+      return publishAuditEvent(event, publication.delivery, sink, fallbackSink);
     },
   };
+}
+
+export function createStoredAuditPublisher({
+  sink,
+  fallbackSink,
+}: Pick<AuditPublisherDependencies, "sink" | "fallbackSink">) {
+  return (event: AuditEvent) =>
+    publishAuditEvent(event, "best-effort", sink, fallbackSink);
+}
+
+async function publishAuditEvent(
+  event: AuditEvent,
+  delivery: AuditPublication["delivery"],
+  sink: AuditSink,
+  fallbackSink?: AuditSink,
+): Promise<AuditPublicationResult> {
+  let recorded = false;
+
+  try {
+    const result = await sink.append(event);
+    recorded = result.status === "recorded";
+  } catch {
+    recorded = false;
+  }
+
+  if (recorded) {
+    return { status: "recorded" };
+  }
+
+  await reportSinkFailure(fallbackSink, event);
+  return { status: "unavailable", delivery };
 }
 
 async function reportSinkFailure(
