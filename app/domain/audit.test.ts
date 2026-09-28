@@ -37,6 +37,7 @@ describe("audit contract", () => {
       "authentication.reauthenticate",
       "authorization.check",
       "dictionary.read",
+      "session.revoke",
       "acronym.submit",
       "acronym.import",
       "database.migrate",

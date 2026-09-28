@@ -116,6 +116,14 @@ the overlap.
 Authenticated session records are stored in the application database. The
 browser receives only a signed opaque identifier; user profile and group data
 remain server-side. Deleting a session record revokes that session immediately.
+An operator can revoke all sessions for an exact OIDC user ID with
+`pnpm run sessions:revoke -- <provider-user-id>`, or in the released container
+with `/nodejs/bin/node build/scripts/revoke-user-sessions.mjs <provider-user-id>`.
+Run this from the host's account-removal or incident workflow after changing
+the provider account. It does not automatically receive provider group changes.
+The command reports the number revoked and attempts one bounded audit event.
+If audit output is unavailable, revocation still completes and the command
+exits nonzero so the operator can investigate the missing record.
 Deployments upgrading from versions that stored session data in the cookie will
 require currently signed-in users to authenticate once after the upgrade.
 
