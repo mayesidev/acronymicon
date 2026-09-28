@@ -13,6 +13,10 @@ Community pull requests require approval from the repository code owner before
 merge. The `main` ruleset requires an approving review and code owner review;
 the maintainer may merge their own pull requests through the ruleset's
 pull-request-only bypass after the required checks pass.
+Pull requests from configured maintenance automation, such as Renovate, may
+also be reviewed and merged through that maintainer bypass after their full
+diff and required checks have been inspected. Using the bypass does not record
+a code owner approval on the pull request.
 
 Use a Conventional Commit title for every pull request. Examples:
 
