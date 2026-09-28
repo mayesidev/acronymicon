@@ -8,7 +8,7 @@
     "pnpm": ">=11.20.0 <12"
   },
   "scripts": {
-    "build": "react-router build && vite build --config vite.importer.config.ts",
+    "build": "react-router build && vite build --config vite.importer.config.ts && vite build --config vite.session-revocation.config.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate-database.ts",
     "db:seed": "tsx scripts/import-acronyms.ts seeds/acronyms.seed.json",
@@ -16,6 +16,8 @@
     "dev": "react-router dev",
     "import:acronyms": "tsx scripts/import-acronyms.ts",
     "import:acronyms:container": "node build/scripts/import-acronyms.mjs",
+    "sessions:revoke": "tsx scripts/revoke-user-sessions.ts",
+    "sessions:revoke:container": "node build/scripts/revoke-user-sessions.mjs",
     "lint": "eslint .",
     "lint:commit": "commitlint",
     "start": "react-router-serve ./build/server/index.js",

@@ -117,6 +117,22 @@ For a planned session-secret rotation, deploy the new active value in
 value after the longest possible pre-rotation session has expired. An emergency
 rotation can omit the previous value to invalidate all existing cookies.
 Deleting a server-side session record revokes that session immediately.
+To revoke every session for one provider user ID, invoke the packaged
+`build/scripts/revoke-user-sessions.mjs` command against the application's
+SQLite volume as part of the operator's offboarding or incident workflow. For
+example, with the Compose service running and its usual `DATABASE_PATH`:
+
+```bash
+docker compose exec app /nodejs/bin/node build/scripts/revoke-user-sessions.mjs '<provider-user-id>'
+```
+
+The command matches the stable user ID exactly, reports only the number of
+revoked sessions, and attempts a bounded maintenance audit record. It returns
+nonzero if that record is unavailable even though revocation succeeded. The
+application does not receive provider account or group changes automatically;
+the operator must invoke the command when immediate app-session revocation is
+required. Avoid putting user IDs in shared command histories or logs when they
+are sensitive in the deployment.
 
 Choose absolute, inactivity, and reauthentication values from the deployment's
 approved policy. Inactivity and reauthentication intervals cannot exceed the
