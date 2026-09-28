@@ -35,6 +35,7 @@ export type SubmissionOutcome =
 export type SubmissionDependencies = Readonly<{
   auditPublisher: AuditPublisher;
   randomCorrelationId: () => string;
+  onCreated?: () => void;
 }>;
 
 const defaultDependencies: SubmissionDependencies = {
@@ -121,6 +122,10 @@ export function createSubmissionWorkflow(
         submittedByUserId: submitter.id,
         submittedByUsername: submitter.username,
         submittedByDisplayName: submitter.displayName,
+        audit: {
+          correlationId,
+          timestamp: new Date().toISOString(),
+        },
       });
     } catch (error) {
       await publishCreationOutcome({
@@ -148,13 +153,7 @@ export function createSubmissionWorkflow(
       });
     }
 
-    await publishCreationOutcome({
-      dependencies,
-      correlationId,
-      actorId: submitter.id,
-      target: { type: "acronym-entry", id: result.entry.id },
-      outcome: "succeeded",
-    });
+    dependencies.onCreated?.();
 
     return {
       status: "created",

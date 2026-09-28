@@ -16,4 +16,7 @@ process.env.DATABASE_PATH = join(testDirectory, "acronymicon.sqlite");
 process.env.DRIZZLE_MIGRATIONS_PATH = join(process.cwd(), "drizzle");
 process.env.SESSION_SECRET = "vitest-session-secret";
 
-initializeApplication(undefined, { registerShutdownHandlers: false });
+initializeApplication(undefined, {
+  registerShutdownHandlers: false,
+  startAuditDelivery: false,
+});

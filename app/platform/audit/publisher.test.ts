@@ -6,7 +6,10 @@ import type {
   AuditPublication,
   AuditSink,
 } from "../../domain/audit";
-import { createAuditPublisher } from "./publisher";
+import {
+  createAuditPublisher,
+  createStoredAuditPublisher,
+} from "./publisher";
 
 const eventInput = {
   correlationId: "correlation-1",
@@ -193,5 +196,41 @@ describe("createAuditPublisher", () => {
       "authorization.check",
       "authentication.logout",
     ]);
+  });
+});
+
+describe("stored audit event delivery", () => {
+  it("preserves the original timestamp and reports sink failure without exposing the actor", async () => {
+    const append = vi.fn<AuditSink["append"]>().mockResolvedValue({
+      status: "unavailable",
+    });
+    const fallbackAppend = vi
+      .fn<AuditSink["append"]>()
+      .mockResolvedValue({ status: "recorded" });
+    const publish = createStoredAuditPublisher({
+      sink: { append },
+      fallbackSink: { append: fallbackAppend },
+    });
+    const stored = {
+      ...eventInput,
+      schemaVersion: 1 as const,
+      timestamp: "2026-08-12T23:00:00.000Z",
+    };
+
+    await expect(publish(stored)).resolves.toEqual({
+      status: "unavailable",
+      delivery: "best-effort",
+    });
+    expect(append).toHaveBeenCalledWith(stored);
+    expect(fallbackAppend).toHaveBeenCalledWith({
+      schemaVersion: 1,
+      timestamp: stored.timestamp,
+      correlationId: stored.correlationId,
+      actor: { type: "system" },
+      source: stored.source,
+      action: "audit.sink.append",
+      target: { type: "application" },
+      outcome: "failed",
+    });
   });
 });

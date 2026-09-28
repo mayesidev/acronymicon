@@ -24,7 +24,10 @@ import type { AuthUser } from "./features/authentication/model";
 import { parseAppConfig } from "./platform/config/runtime.server";
 import { createAcronymRepository } from "./platform/database/acronym-repository.server";
 import { getAppDatabase } from "./platform/database/lifecycle.server";
-import { authenticatedSessions } from "./platform/database/schema";
+import {
+  authenticatedSessions,
+  pendingAuditEvents,
+} from "./platform/database/schema";
 import { applyDeploymentSecurityHeaders } from "./platform/http/security-headers.server";
 
 describe("integrated controlled-profile guarantees", () => {
@@ -152,23 +155,27 @@ describe("integrated controlled-profile guarantees", () => {
       definition: controlledContentSentinel,
     });
     expect(submission).toMatchObject({ status: "created" });
-    const success = audit.attempts.find(
-      ({ event }) =>
-        event.action === "acronym.submit" && event.outcome === "succeeded",
-    );
-    expect(success).toMatchObject({
-      delivery: "best-effort",
-      event: {
-        actor: { type: "user", id: "submitter-user" },
-        action: "acronym.submit",
-        outcome: "succeeded",
-        target: { type: "acronym-entry" },
-      },
+    const [success] = dictionaryDatabase.db
+      .select({ event: pendingAuditEvents.event })
+      .from(pendingAuditEvents)
+      .all();
+    expect(success?.event).toMatchObject({
+      actor: { type: "user", id: "submitter-user" },
+      action: "acronym.submit",
+      outcome: "succeeded",
+      target: { type: "acronym-entry" },
     });
     if (success?.event.target.type !== "acronym-entry") {
       throw new Error("Expected an opaque submitted-entry audit target.");
     }
     expect(success.event.target.id).toEqual(expect.any(String));
+    expect(JSON.stringify(success.event)).not.toContain(controlledContentSentinel);
+    expect(
+      audit.attempts.some(
+        ({ event }) =>
+          event.action === "acronym.submit" && event.outcome === "succeeded",
+      ),
+    ).toBe(false);
     const deniedActors = audit.attempts
       .filter(
         ({ event }) =>

@@ -2,6 +2,7 @@ import {
   getAppConfig,
   type AppConfig,
 } from "../config/runtime.server";
+import { createAuditOutbox } from "../audit/outbox.server";
 import {
   createDatabase,
   type AppDatabase,
@@ -9,11 +10,15 @@ import {
 } from "./client.server";
 
 let databaseResource: DatabaseResource | null = null;
+let auditOutbox: ReturnType<typeof createAuditOutbox> | null = null;
 let shutdownHandlersRegistered = false;
 
 export function initializeApplication(
   config: AppConfig = getAppConfig(),
-  options: { registerShutdownHandlers?: boolean } = {},
+  options: {
+    registerShutdownHandlers?: boolean;
+    startAuditDelivery?: boolean;
+  } = {},
 ) {
   if (!databaseResource) {
     databaseResource = createDatabase({
@@ -21,6 +26,10 @@ export function initializeApplication(
       migrationsFolder: config.database.migrationsFolder,
       runMigrations: config.database.runMigrations,
     });
+    auditOutbox = createAuditOutbox(databaseResource.db);
+    if (options.startAuditDelivery !== false) {
+      auditOutbox.start();
+    }
   }
 
   if (options.registerShutdownHandlers !== false) {
@@ -39,7 +48,17 @@ export function getAppDatabase(): AppDatabase {
   return databaseResource.db;
 }
 
+export function getAppAuditOutbox() {
+  if (!auditOutbox) {
+    throw new Error("Application audit delivery is not initialized.");
+  }
+
+  return auditOutbox;
+}
+
 export function closeApplication() {
+  auditOutbox?.stop();
+  auditOutbox = null;
   databaseResource?.close();
   databaseResource = null;
 }

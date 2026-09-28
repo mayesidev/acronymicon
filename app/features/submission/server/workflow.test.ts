@@ -135,12 +135,13 @@ describe("authenticated submission workflow", () => {
 
   it("creates a confirmed meaning with submitter attribution", async () => {
     const audit = new AuditRecorder({ available: false });
+    const onCreated = vi.fn();
     const repository = createRepository({
       findPublishedByAcronym: vi.fn(() => Promise.resolve([existingEntry])),
     });
     const workflow = createSubmissionWorkflow(
       repository,
-      submissionDependencies(audit),
+      { ...submissionDependencies(audit), onCreated },
     );
     const values = { ...submissionValues, confirmDuplicate: "true" as const };
 
@@ -149,21 +150,21 @@ describe("authenticated submission workflow", () => {
       acronym: "API",
       entryId: "created-id",
     });
-    expect(repository.createAcronymEntry).toHaveBeenCalledWith({
+    const createdInput = vi.mocked(repository.createAcronymEntry).mock.calls[0]?.[0];
+    expect(createdInput).toMatchObject({
       acronym: "API",
       definition: "Annual Performance Index",
       notes: "A second meaning",
       submittedByUserId: "user-id",
       submittedByUsername: "user",
       submittedByDisplayName: "Local User",
+      audit: {
+        correlationId: "correlation-123",
+      },
     });
-    expectCreationAttempt(audit, {
-      target: { type: "acronym-entry", id: "created-id" },
-      outcome: "succeeded",
-    });
-    expect(JSON.stringify(audit.attempts)).not.toContain("API");
-    expect(JSON.stringify(audit.attempts)).not.toContain("Annual");
-    expect(JSON.stringify(audit.attempts)).not.toContain("Local User");
+    expect(createdInput?.audit?.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(onCreated).toHaveBeenCalledOnce();
+    expect(audit.attempts).toEqual([]);
   });
 
   it("maps an atomic concurrent duplicate result to an exact duplicate", async () => {

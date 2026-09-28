@@ -4,6 +4,7 @@ vi.mock("../platform/audit/runtime.server", () => ({
   auditPublisher: {
     publish: () => Promise.resolve({ status: "recorded" }),
   },
+  publishStoredAuditEvent: () => Promise.resolve({ status: "recorded" }),
 }));
 
 import {

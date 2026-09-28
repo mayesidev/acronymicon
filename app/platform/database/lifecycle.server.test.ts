@@ -42,9 +42,11 @@ describe("application lifecycle", () => {
 
     const first = initializeApplication(config, {
       registerShutdownHandlers: false,
+      startAuditDelivery: false,
     });
     const second = initializeApplication(config, {
       registerShutdownHandlers: false,
+      startAuditDelivery: false,
     });
 
     expect(second).toBe(first);
