@@ -58,7 +58,7 @@ docker compose up -d --no-build
 ```
 
 `latest` follows the newest release. To select a specific release, change the
-image tag in `compose.yaml` to a published version such as `4.2.4` (without the
+image tag in `compose.yaml` to a published version such as `4.3.0` (without the
 `v` prefix), then run the same update commands. Back up the database before
 upgrading; the backup commands below use this same Compose service.
 
