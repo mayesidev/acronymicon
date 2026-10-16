@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { createPersistentSessionSecretResolver } from "./session-secret.server";
+
+const resolvePersistentSessionSecret = createPersistentSessionSecretResolver();
 
 const optionalString = z.preprocess(
   (value) =>
@@ -102,14 +105,6 @@ const applicationEnvironmentSchema = z
     OIDC_CLAIM_GROUPS: optionalString,
   })
   .superRefine((environment, context) => {
-    if (environment.NODE_ENV === "production" && !environment.SESSION_SECRET) {
-      context.addIssue({
-        code: "custom",
-        message: "SESSION_SECRET is required in production.",
-        path: ["SESSION_SECRET"],
-      });
-    }
-
     const configuredSessionSecrets = [
       environment.SESSION_SECRET,
       ...environment.SESSION_PREVIOUS_SECRETS,
@@ -232,7 +227,7 @@ const applicationEnvironmentSchema = z
       }
     }
 
-    if ((environment.SESSION_SECRET?.length ?? 0) < 32) {
+    if (environment.SESSION_SECRET && environment.SESSION_SECRET.length < 32) {
       context.addIssue({
         code: "custom",
         message:
@@ -367,7 +362,10 @@ export function parseDatabaseConfig(environment: NodeJS.ProcessEnv) {
   return buildDatabaseConfig(result.data);
 }
 
-export function parseAppConfig(environment: NodeJS.ProcessEnv) {
+export function parseAppConfig(
+  environment: NodeJS.ProcessEnv,
+  options: { resolveSessionSecret?: (databasePath: string) => string } = {},
+) {
   const result = applicationEnvironmentSchema.safeParse(environment);
 
   if (!result.success) {
@@ -375,6 +373,31 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
   }
 
   const values = result.data;
+  const database = buildDatabaseConfig(values);
+  const secret =
+    values.SESSION_SECRET ??
+    (values.NODE_ENV === "production"
+      ? options.resolveSessionSecret?.(database.path)
+      : "dev-session-secret-change-me");
+  const sessionResult = z
+    .object({
+      SESSION_SECRET: z
+        .string({ error: "SESSION_SECRET is required in production." })
+        .min(values.ACRONYMICON_DEPLOYMENT_PROFILE === "controlled" ? 32 : 1)
+        .refine(
+          (value) =>
+            values.NODE_ENV !== "production" ||
+            !values.SESSION_PREVIOUS_SECRETS.includes(value),
+          {
+            message:
+              "SESSION_SECRET and SESSION_PREVIOUS_SECRETS must be unique.",
+          },
+        ),
+    })
+    .safeParse({ SESSION_SECRET: secret });
+  if (!sessionResult.success) {
+    throwConfigurationError("application", sessionResult.error);
+  }
   const oidcConfigured = Boolean(
     values.OIDC_ISSUER_URL &&
     values.OIDC_CLIENT_ID &&
@@ -400,12 +423,9 @@ export function parseAppConfig(environment: NodeJS.ProcessEnv) {
       access: values.ACRONYMICON_ACCESS_NOTICE,
       sensitivityLabel: values.ACRONYMICON_SENSITIVITY_LABEL,
     },
-    database: buildDatabaseConfig(values),
+    database,
     session: {
-      secret:
-        values.SESSION_SECRET ??
-        /* c8 ignore next -- production absence is rejected above. */
-        "dev-session-secret-change-me",
+      secret: sessionResult.data.SESSION_SECRET,
       previousSecrets: values.SESSION_PREVIOUS_SECRETS,
       absoluteTimeoutMinutes: values.SESSION_ABSOLUTE_TIMEOUT_MINUTES ?? 60 * 8,
       inactivityTimeoutMinutes:
@@ -451,7 +471,9 @@ function isUrlOrigin(value: string) {
 }
 
 export function getAppConfig() {
-  return parseAppConfig(process.env);
+  return parseAppConfig(process.env, {
+    resolveSessionSecret: resolvePersistentSessionSecret,
+  });
 }
 
 export function getDatabaseConfig() {

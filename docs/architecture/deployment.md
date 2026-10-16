@@ -61,8 +61,9 @@ being treated as a transparent substitute for a shared client/server database.
   access control, restore drills, and the resulting recovery-point and
   recovery-time objectives.
 - The supported simple backup procedure stops the application before copying
-  the database, as documented in the README. This allows SQLite to close and
-  avoids treating a live copy of only the main file as a complete backup.
+  the data directory, including the saved session key, as documented in the
+  README. This allows SQLite to close and avoids treating a live copy of only
+  the main file as a complete backup.
 - Restore into a stopped application and verify the restored database with the
   application release that will open it. A backup is not considered usable
   until a restore drill has opened it successfully and exercised representative

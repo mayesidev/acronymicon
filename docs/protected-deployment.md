@@ -107,8 +107,11 @@ content. These behaviors are exercised by the
 
 ### Session secrets and revocation
 
-Generate `SESSION_SECRET` with a cryptographically secure secret generator and
-inject it at runtime. Do not bake session or OIDC client secrets into an image,
+Production generates a random 32-byte session key in `.acronymicon/session-secret`
+beside the database unless `SESSION_SECRET` is supplied. Keep its app-owned
+directory at `0700` and file at `0600`; invalid files or permissions stop startup.
+For externally managed keys, generate `SESSION_SECRET` securely and inject it at
+runtime. Do not bake session or OIDC client secrets into an image,
 compose file, source file, or log. Restrict access to the runtime configuration
 and restart the application after changing a secret.
 
@@ -162,11 +165,12 @@ service exposure, rate limits, and denial-of-service protections.
 
 Use the supported single-instance topology in the
 [deployment boundary](architecture/deployment.md). Mount `/data` from durable,
-exclusively attached storage and protect the database file, its SQLite journal
-files, snapshots, backups, and any operator-generated copies with the same
+exclusively attached storage and protect the saved session key, database, SQLite
+journal files, snapshots, backups, and any operator-generated copies with the same
 access and encryption controls as the dictionary content.
 
-Stop the application before using the documented simple database-copy backup.
+Stop the application before using the documented data-directory backup, which
+includes the saved session key. Preserve file ownership and permissions on restore.
 Restore into a stopped application, then verify representative reads with the
 release that will open the restored database. Define backup retention,
 recovery-point and recovery-time objectives, and perform scheduled restore
