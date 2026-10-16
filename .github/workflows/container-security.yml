@@ -1,0 +1,78 @@
+name: Container security
+
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: Scan published ${{ matrix.architecture }} image
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-26.04
+          - architecture: arm64
+            runner: ubuntu-26.04-arm
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve published image digest
+        id: image
+        env:
+          REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          docker pull --platform "linux/$ARCHITECTURE" "$REGISTRY_IMAGE:latest"
+          image="$(docker image inspect "$REGISTRY_IMAGE:latest" --format '{{index .RepoDigests 0}}')"
+          [[ "$image" =~ @sha256:[0-9a-f]{64}$ ]]
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          docker image inspect "$image" --format '{{json .}}' > container-image.json
+          printf 'Published image: `%s` (linux/%s)\n' "$image" "$ARCHITECTURE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Scan published runtime image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: ${{ steps.image.outputs.image }}
+          fail-build: false
+          severity-cutoff: high
+          only-fixed: false
+          output-format: sarif
+          output-file: container-vulnerability-report.sarif
+          grype-version: v0.116.1
+          cache-db: true
+
+      - name: Upload container vulnerability report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-container-security-${{ matrix.architecture }}
+          path: |
+            container-vulnerability-report.sarif
+            container-image.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish Grype findings to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        with:
+          sarif_file: container-vulnerability-report.sarif
+          category: grype-published-${{ matrix.architecture }}
+          wait-for-processing: true

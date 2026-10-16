@@ -67,7 +67,10 @@ jobs:
     needs: scope
     if: needs.scope.outputs.application == 'true' || needs.scope.outputs.container == 'true' || needs.scope.outputs.renovate_config == 'true'
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Check out source
@@ -110,10 +113,6 @@ jobs:
             exit 1
           fi
 
-      - name: Security checks
-        if: needs.scope.outputs.application == 'true'
-        run: pnpm run security:check
-
       - name: Set up Docker Buildx
         if: needs.scope.outputs.container == 'true'
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -144,8 +143,8 @@ jobs:
           fail-build: false
           severity-cutoff: high
           only-fixed: false
-          output-format: json
-          output-file: container-vulnerability-report.json
+          output-format: sarif
+          output-file: container-vulnerability-report.sarif
           grype-version: v0.116.1
           cache-db: true
 
@@ -154,16 +153,21 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: container-vulnerability-report
-          path: container-vulnerability-report.json
+          path: container-vulnerability-report.sarif
           if-no-files-found: error
           retention-days: 14
 
-      - name: Enforce container vulnerability policy
-        if: needs.scope.outputs.container == 'true'
-        run: >-
-          node scripts/check-container-scan.mjs
-          container-vulnerability-report.json
-          security/container-scan-exceptions.json
+      - name: Publish Grype findings to GitHub Security
+        if: always() && needs.scope.outputs.container == 'true'
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        with:
+          sarif_file: container-vulnerability-report.sarif
+          category: grype-runtime-amd64
+          wait-for-processing: true
+
+      - name: Security checks
+        if: needs.scope.outputs.application == 'true'
+        run: pnpm run security:check
 
   browser:
     name: Browser integration tests
@@ -212,6 +216,10 @@ jobs:
     needs: scope
     if: needs.scope.outputs.multi_arch == 'true'
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Check out source
@@ -235,6 +243,35 @@ jobs:
           CONTAINER_IMAGE: acronymicon:arm64-ci
           EXPECTED_ACRONYMICON_VERSION: ${{ env.ACRONYMICON_TEST_VERSION }}
         run: node scripts/smoke-container.mjs
+
+      - name: Scan final ARM64 runtime image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: acronymicon:arm64-ci
+          fail-build: false
+          severity-cutoff: high
+          only-fixed: false
+          output-format: sarif
+          output-file: container-vulnerability-report-arm64.sarif
+          grype-version: v0.116.1
+          cache-db: true
+
+      - name: Upload ARM64 container vulnerability report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: container-vulnerability-report-arm64
+          path: container-vulnerability-report-arm64.sarif
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish ARM64 Grype findings to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
+        with:
+          sarif_file: container-vulnerability-report-arm64.sarif
+          category: grype-runtime-arm64
+          wait-for-processing: true
 
   commit:
     name: Commit metadata
