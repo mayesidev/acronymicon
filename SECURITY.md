@@ -12,6 +12,26 @@ and the latest published container release. This project is self-hosted, so
 operators are responsible for supplying production OIDC credentials, session
 secrets, network controls, backups, and timely updates.
 
+## Dependency Vulnerability Policy
+
+GitHub Dependency Review checks pull requests for newly introduced vulnerable
+versions at Low severity or above, including runtime, development, and unknown
+scopes. This required check permits remediation and unrelated changes while
+existing findings are managed in **Security → Dependabot alerts**. Do not add
+advisory allowlists merely to pass a check.
+
+The Dependency security workflow submits the resolved default-branch dependency
+inventory to GitHub after main updates and daily at 08:43 UTC. Submission errors
+or an unexpectedly empty inventory fail that workflow. Dependabot evaluates
+that inventory against GitHub advisories; Renovate remains the update agent.
+Review applicable existing findings during maintenance and before releasing
+affected changes, with maintainer-approved risk decisions recorded in GitHub.
+
+CI retains registry signature verification and pnpm's installation protections.
+`pnpm run security:audit` remains available for a full-inventory registry audit;
+`pnpm run security:check` runs both the audit and signature checks locally.
+These full-inventory audit results are not the pull-request merge gate.
+
 ## Container Vulnerability Policy
 
 CI scans the final loaded runtime image with SHA-pinned Anchore Scan Action

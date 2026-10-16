@@ -1,0 +1,99 @@
+name: Dependency security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - ci/github-dependency-security
+  schedule:
+    - cron: "43 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Review introduced dependency vulnerabilities
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: low
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          show-openssf-scorecard: false
+
+  inventory:
+    name: Refresh dependency inventory
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out default-branch source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Identify scanned source
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Submit resolved dependencies to GitHub
+        uses: advanced-security/component-detection-dependency-submission-action@a02aeda7a175ad4dd38a13c4d3ff2df9da8f2cf0 # v0.2.0
+        with:
+          detectorsCategories: Npm
+          fail-on-empty: true
+          correlator: pnpm-default-branch
+          snapshot-ref: refs/heads/main
+          snapshot-sha: ${{ steps.source.outputs.sha }}
+
+  validation:
+    name: Validate dependency review behavior
+    if: github.event_name == 'push' && github.ref == 'refs/heads/ci/github-dependency-security'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Reject known vulnerable additions
+        id: regression
+        continue-on-error: true
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          base-ref: 8968ec207eabac79ee2cd65b2e85f34a458af7b1
+          head-ref: 0638220dfdb95f958a805ddb78f9ed4e17eb128b
+          fail-on-severity: low
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          show-openssf-scorecard: false
+
+      - name: Confirm rejection includes the known advisories
+        env:
+          REVIEW_OUTCOME: ${{ steps.regression.outcome }}
+          VULNERABLE_CHANGES: ${{ steps.regression.outputs.vulnerable-changes }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          assert.equal(process.env.REVIEW_OUTCOME, 'failure');
+          for (const advisory of ['GHSA-vfj7-8cjw-p6xm', 'GHSA-8r5x-fm3f-whwj', 'GHSA-68fv-2mgg-jv7q']) {
+            assert.ok(process.env.VULNERABLE_CHANGES.includes(advisory), advisory);
+          }
+          JS
+
+      - name: Permit remediation with an existing unpatched finding
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          base-ref: 0638220dfdb95f958a805ddb78f9ed4e17eb128b
+          head-ref: ed05e2f7fe742d7faf845f9ede9f09751fba334f
+          fail-on-severity: low
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          show-openssf-scorecard: false
