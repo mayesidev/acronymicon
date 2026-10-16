@@ -1,12 +1,7 @@
 # Acronymicon
 
-Acronymicon is a self-hosted acronym dictionary web app for searching,
-browsing, and submitting acronym definitions. It is designed for deployment
-on a protected network, while the source is available for reuse and forking.
-
-Use GitHub Issues for public bug reports and feature requests. Internal
-planning and prioritization are maintained in Linear; implementation history
-is preserved in git and published releases.
+Acronymicon is a self-hosted web app for searching, browsing, and submitting
+acronym definitions.
 
 The app supports anonymous browsing, live search across acronyms and
 definitions, fuzzy matches for minor typos, readable definition links,
@@ -36,22 +31,9 @@ The app runs at:
 http://localhost:5173
 ```
 
-## Architecture
-
-The target source layout and allowed dependency direction are documented in
-[the application module boundaries](docs/architecture/modules.md). Keep tests
-beside their owning modules and preserve these boundaries when adding or moving
-application code. The supported single-instance topology, persistence and
-backup ownership, scaling triggers, and automatic release gates are documented
-in [the deployment and release decision](docs/architecture/deployment.md). The
-current framework choice and the evidence required to revisit it are recorded
-in [the router framework decision](docs/architecture/router.md). Operators using
-the controlled profile should follow the
-[protected deployment operator guide](docs/protected-deployment.md).
-
 ## Database
 
-The MVP uses app-owned SQLite through Drizzle.
+Acronymicon stores data in SQLite through Drizzle.
 
 Default local database path:
 
@@ -95,156 +77,16 @@ pnpm run import:acronyms -- path/to/acronyms.json
 
 The import command accepts either an array of entries or an object with an `entries` array. Exact duplicates are skipped using normalized `acronym + definition`.
 
-## Authentication
+## Configuration
 
-Browsing does not require login. Submitting acronyms requires a signed-in user.
+By default, browsing is anonymous and submissions require OIDC sign-in.
+Configure `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, and `OIDC_CLIENT_SECRET` to enable
+OIDC. Keycloak is included for local development; other compatible providers
+are supported. Production requires a securely generated `SESSION_SECRET`.
 
-OIDC configuration is provider-neutral. Keycloak can be used for local
-development, but production can use any compatible provider. `SESSION_SECRET`
-is required in production. In the controlled profile it and any rotation
-predecessors must contain at least 32 characters. Generate an unpredictable
-secret with a cryptographic password generator; do not use the example values.
-
-To rotate without immediately invalidating every session, set the new value as
-`SESSION_SECRET` and place the former value in the comma-separated
-`SESSION_PREVIOUS_SECRETS` list. New cookies use only the active secret, while
-listed predecessors remain valid for verification. After the longest possible
-existing session has expired, remove the predecessor. Secret values must be
-unique, and all application replicas must use the same ordered set throughout
-the overlap.
-
-Authenticated session records are stored in the application database. The
-browser receives only a signed opaque identifier; user profile and group data
-remain server-side. Deleting a session record revokes that session immediately.
-An operator can revoke all sessions for an exact OIDC user ID with
-`pnpm run sessions:revoke -- <provider-user-id>`, or in the released container
-with `/nodejs/bin/node build/scripts/revoke-user-sessions.mjs <provider-user-id>`.
-Run this from the host's account-removal or incident workflow after changing
-the provider account. It does not automatically receive provider group changes.
-The command reports the number revoked and attempts one bounded audit event.
-If audit output is unavailable, revocation still completes and the command
-exits nonzero so the operator can investigate the missing record.
-Deployments upgrading from versions that stored session data in the cookie will
-require currently signed-in users to authenticate once after the upgrade.
-
-`SESSION_ABSOLUTE_TIMEOUT_MINUTES` limits total authenticated-session age;
-activity never extends that deadline. `SESSION_INACTIVITY_TIMEOUT_MINUTES`
-limits time between authenticated application requests.
-`SESSION_REAUTHENTICATION_INTERVAL_MINUTES` limits how long the application
-accepts the provider's last active authentication. All three accept whole
-minutes from 1 through 10080 (seven days); inactivity and reauthentication
-cannot exceed the absolute lifetime. Standard deployments default the first
-two values to 480 minutes and do not enforce a provider authentication age
-unless the third is configured. Controlled deployments must set all three
-explicitly so operators can apply their deployment policy and align the values
-with their identity-provider session policy.
-
-When a reauthentication interval is configured, the provider must support the
-OIDC `max_age` request parameter and return an `auth_time` claim in the ID token.
-The application rejects missing, stale, or invalid authentication times. When
-the interval expires, document navigation redirects through the provider and a
-successful callback refreshes identity claims and rotates the application
-session. Data and mutation requests fail with `401 Unauthorized` instead of
-replaying request content; the user must reauthenticate and retry the action.
-Provider access and refresh tokens are not stored in the application session.
-Existing controlled sessions created before this setting was introduced have
-no trusted authentication time and therefore require one reauthentication
-after upgrade.
-
-To enable OIDC, configure all three provider credentials:
-
-```txt
-OIDC_ISSUER_URL
-OIDC_CLIENT_ID
-OIDC_CLIENT_SECRET
-```
-
-If any OIDC setting is present without those credentials, startup fails with a
-configuration error. `OIDC_REDIRECT_URI` defaults to `/auth/callback` on the
-request origin. For provider logout, set `OIDC_POST_LOGOUT_REDIRECT_URI` to a
-URI registered with the OIDC provider. Boolean settings accept only `true` or
-`false`; optional claim mapping variables are documented in `.env.example`.
-
-### Controlled deployment profile
-
-Set `ACRONYMICON_DEPLOYMENT_PROFILE=controlled` when the application must
-reject unsafe production identity and transport settings. This profile requires
-production mode, an explicit HTTPS `ACRONYMICON_PUBLIC_ORIGIN`, complete OIDC
-credentials, and explicit HTTPS callback and post-logout destinations on that
-same origin. It also requires explicit absolute, inactivity, and provider
-reauthentication session intervals, rejects insecure session cookies and
-insecure OIDC transport, and applies no-store, transport, framing, referrer,
-and content-type response protections. Dictionary pages and data endpoints
-require a current, authenticated, and authorized session in this profile.
-Configure exact,
-case-sensitive OIDC group names with `ACRONYMICON_READ_GROUPS` and
-`ACRONYMICON_SUBMIT_GROUPS`; comma-separate multiple groups. Submit-group
-membership also grants dictionary read access. At least one read or submit group
-is required, while omitting submit groups creates a read-only deployment. The
-claim selected by `OIDC_CLAIM_GROUPS` must be an array of exact group-name
-strings; missing or malformed claims grant no access.
-
-The controlled profile also requires `ACRONYMICON_ACCESS_NOTICE` and
-`ACRONYMICON_SENSITIVITY_LABEL`. Supply approved text through runtime
-configuration rather than the image. The notice is shown before application
-sign-in, and the label appears on dictionary and submission pages. Standard
-deployments may configure these values but are not required to do so. See the
-[operator guide](docs/protected-deployment.md) for the responsibility boundary.
-
-The application does not use forwarded host headers to construct security-
-sensitive redirects in this profile. Configure the reverse proxy and server
-adapter with a canonical request origin, and keep the explicit application and
-OIDC destinations aligned. The standard profile retains request-derived local
-development defaults and must not be treated as a hardened production profile.
-Set `ACRONYMICON_DICTIONARY_ACCESS=authenticated` to exercise authenticated
-dictionary access independently with non-production identity infrastructure;
-the setting requires complete OIDC credentials. The default standard profile
-uses `open` access for backward compatibility.
-
-### Structured audit output
-
-The supported audit transport is newline-delimited JSON. Application audit
-records are written to standard output. If that primary stream is unavailable,
-one bounded sink-health record is attempted on standard error. Each line is one
-versioned record with bounded actor, source, action, target, outcome, timestamp,
-and correlation fields. Records do not include acronym or definition text,
-notes, credentials, tokens, raw request URLs or queries, or free-form exception
-details.
-
-Deployment operators are responsible for routing both streams to their
-protected log collector and configuring transport protection, access control,
-retention, monitoring, and analysis there. Monitor standard error health records
-as a degraded primary audit stream. Keep audit output separate from interactive
-terminal use, and do not enrich it with protected dictionary data.
-
-Successful submissions save a bounded audit record in the same SQLite
-transaction as the new entry. The app sends pending records to standard output
-immediately and retries every five seconds, including after a restart. Delivery
-is at least once: a crash after output but before queue cleanup can repeat an
-event with the same action and correlation ID. If output remains unavailable,
-the queue holds up to 10,000 events; once full, new submissions return HTTP 503
-before saving. Monitor sink-health output and 503 responses, and restore audit
-output promptly. A successful local write does not prove collector receipt.
-
-## Verification
-
-Run the automated checks relevant to a change:
-
-```bash
-pnpm run verify
-pnpm run security:check
-pnpm test:e2e
-pnpm run test:container
-```
-
-Pull requests use Conventional Commit titles, such as `fix: correct logout
-redirect` or `feat: allow editing definitions`. CI validates the title, and
-semantic-release creates releases automatically after successful builds on
-`main`. Use squash merging so the validated pull request title is retained
-for release analysis.
-
-`pnpm run verify` runs type generation and typechecking, linting, unit and
-server tests with enforced coverage thresholds, and a production build.
+See [`.env.example`](.env.example) for configuration variables and the
+[configuration guide](docs/protected-deployment.md) for production setup,
+access controls, sessions, and logging.
 
 ## Docker
 
@@ -324,3 +166,9 @@ container first, then running the container importer:
 docker cp path/to/acronyms.json $(docker compose ps -q app):/tmp/acronyms.json
 docker compose exec app /nodejs/bin/node build/scripts/import-acronyms.mjs /tmp/acronyms.json
 ```
+
+## Contributing
+
+Report bugs and request features through [GitHub Issues](https://github.com/mayesidev/acronymicon/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and contribution guidance,
+and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
