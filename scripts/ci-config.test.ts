@@ -28,7 +28,7 @@ if (!prepareJob || !buildJob || !publishJob) {
 
 describe("CI container-build policy", () => {
   it("bounds both the quality job and GitHub Actions cache operations", () => {
-    expect(qualityJob).toContain("timeout-minutes: 10");
+    expect(qualityJob).toContain("timeout-minutes: 15");
     expect(qualityJob).toContain(
       "cache-from: type=gha,scope=ci,timeout=3m",
     );
@@ -40,11 +40,71 @@ describe("CI container-build policy", () => {
   it.each([
     "- name: Smoke test container",
     "- name: Scan final runtime image",
-    "- name: Enforce container vulnerability policy",
+    "- name: Publish Grype findings to GitHub Security",
   ])("retains the post-build check %s", (step) => {
     expect(qualityJob.indexOf(step)).toBeGreaterThan(
       qualityJob.indexOf("- name: Build container"),
     );
+  });
+});
+
+describe("Grype GitHub reporting", () => {
+  const dailyWorkflow = readFileSync(
+    ".github/workflows/container-security.yml",
+    "utf8",
+  );
+  const armJob = ciWorkflow
+    .split("\n  multi-architecture:\n", 2)[1]
+    ?.split("\n  commit:\n", 1)[0];
+
+  it.each([
+    [qualityJob, "grype-runtime-amd64", "container-vulnerability-report.sarif"],
+    [armJob, "grype-runtime-arm64", "container-vulnerability-report-arm64.sarif"],
+    [
+      dailyWorkflow,
+      "grype-published-${{ matrix.architecture }}",
+      "container-vulnerability-report.sarif",
+    ],
+  ])("uploads reports without a severity or expiry gate", (job, category, report) => {
+    expect(job).toContain("security-events: write");
+    expect(job).toContain("fail-build: false");
+    expect(job).toContain("only-fixed: false");
+    expect(job).toContain("output-format: sarif");
+    expect(job).toContain(`sarif_file: ${report}`);
+    expect(job).toContain(`category: ${category}`);
+    expect(job).toContain("wait-for-processing: true");
+    expect(job).toContain("if-no-files-found: error");
+    expect(job).not.toContain("continue-on-error");
+    expect(job).not.toContain("check-container-scan");
+    expect(job).not.toContain("container-scan-exceptions");
+  });
+
+  it("preserves signature verification alongside container reporting", () => {
+    expect(
+      qualityJob.indexOf("- name: Verify dependency signatures"),
+    ).toBeGreaterThan(
+      qualityJob.indexOf("- name: Publish Grype findings to GitHub Security"),
+    );
+    expect(qualityJob).toContain("run: pnpm run security:audit:signatures");
+  });
+
+  it("rescans both published architectures daily using an immutable image", () => {
+    expect(dailyWorkflow).toContain('cron: "17 8 * * *"');
+    expect(dailyWorkflow).toContain("workflow_dispatch:");
+    expect(dailyWorkflow).toContain("architecture: amd64");
+    expect(dailyWorkflow).toContain("architecture: arm64");
+    expect(dailyWorkflow).toContain('docker pull --platform "linux/$ARCHITECTURE"');
+    expect(dailyWorkflow).toContain("@sha256:[0-9a-f]{64}");
+    expect(dailyWorkflow).toContain("image: ${{ steps.image.outputs.image }}");
+    expect(dailyWorkflow).toContain("container-image.json");
+  });
+
+  it("allows the reusable release verification workflow to upload reports", () => {
+    const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
+    const verification = releaseWorkflow
+      .split("\n  verify:\n", 2)[1]
+      ?.split("\n  publish:\n", 1)[0];
+    expect(verification).toContain("security-events: write");
   });
 });
 
@@ -123,5 +183,41 @@ describe("Renovate configuration validation", () => {
     expect(qualityJob).toContain(
       "pnpm --package=renovate@44.39.0 dlx renovate-config-validator",
     );
+  });
+});
+
+describe("GitHub dependency security", () => {
+  const workflow = readFileSync(
+    ".github/workflows/dependency-security.yml",
+    "utf8",
+  );
+  const review = workflow
+    .split("\n  review:\n", 2)[1]
+    ?.split("\n  inventory:\n", 1)[0];
+  const inventory = workflow.split("\n  inventory:\n", 2)[1];
+
+  it("blocks newly introduced vulnerabilities across dependency scopes", () => {
+    expect(review).toContain("if: github.event_name == 'pull_request'");
+    expect(review).toContain("actions/dependency-review-action@");
+    expect(review).toContain("fail-on-severity: low");
+    expect(review).toContain("fail-on-scopes: runtime, development, unknown");
+    expect(review).not.toContain("allow-ghsas");
+    expect(review).not.toContain("warn-only");
+    expect(review).not.toContain("continue-on-error");
+    expect(ciWorkflow).not.toContain("run: pnpm run security:check");
+    expect(ciWorkflow).toContain("run: pnpm run security:audit:signatures");
+  });
+
+  it("refreshes the trusted default-branch inventory without PR write access", () => {
+    expect(workflow).toContain('cron: "43 8 * * *"');
+    expect(inventory).toContain("if: github.event_name != 'pull_request'");
+    expect(inventory).toContain("ref: main");
+    expect(inventory).toContain("contents: write");
+    expect(inventory).toContain("snapshot-ref: refs/heads/main");
+    expect(inventory).toContain("snapshot-sha: ${{ steps.source.outputs.sha }}");
+    expect(inventory).toContain("fail-on-empty: true");
+    expect(inventory).not.toContain("pnpm install");
+    expect(review).not.toContain("contents: write");
+    expect(workflow).not.toContain("pull_request_target");
   });
 });
