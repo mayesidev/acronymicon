@@ -5,21 +5,13 @@ changes focused and explain the behavior being changed.
 
 ## Pull Requests And Releases
 
-Open pull requests against `main`. The repository requires change-scope,
-quality and build, browser integration, ARM64 container, commit metadata,
-Dependency review, and CodeQL checks to complete successfully before merging.
-Checks that do not apply to a change may complete with GitHub's successful
-skipped-job result.
-Community pull requests require approval from the repository code owner before
-merge. The `main` ruleset requires an approving review and code owner review;
-the maintainer may merge their own pull requests through the ruleset's
-pull-request-only bypass after the required checks pass.
-Pull requests from configured maintenance automation, such as Renovate, may
-also be reviewed and merged through that maintainer bypass after their full
-diff and required checks have been inspected. Using the bypass does not record
-a code owner approval on the pull request.
+Open pull requests against `main`. Required checks must pass; checks outside
+the change's scope may be skipped. Community pull requests require code owner
+approval. The maintainer may use the pull-request-only review bypass for their
+own or configured maintenance automation's PRs after reviewing the full diff
+and confirming required checks pass.
 
-Use a Conventional Commit title for every pull request. Examples:
+Use a Conventional Commit PR title and squash merging. Examples:
 
 ```txt
 fix: correct logout redirect
@@ -29,17 +21,11 @@ chore(deps-runtime): update an application dependency
 build(runtime): change the shipped container
 ```
 
-CI validates the pull request title with commitlint. Use squash merging so
-that the validated title becomes the commit analyzed by semantic-release.
-After a successful `main` build, semantic-release determines the next
-version and creates the GitHub release and tag. `fix`, `perf`, `refactor`,
-`chore(deps-runtime)`, and `build(runtime)` changes produce patch releases;
-`feat` changes produce minor releases; and a `BREAKING CHANGE` produces a
-major release. Test-only, CI-only, documentation-only, generic `chore`,
-unscoped `build`, and `chore(deps)` development-tooling changes do not create
-a release. Generated notes include each change that caused the version bump;
-maintenance categories that do not trigger a release are omitted. Normal
-changes should not be tagged manually.
+After successful `main` CI, semantic-release publishes releases automatically:
+`fix`, `perf`, `refactor`, `chore(deps-runtime)`, and `build(runtime)` trigger a
+patch; `feat` triggers a minor; breaking changes trigger a major. Test, CI,
+documentation, generic `chore`, unscoped `build`, and `chore(deps)` changes do
+not trigger releases. Do not tag releases manually.
 
 ## Development
 
@@ -49,8 +35,7 @@ Use Node.js 24.x and pnpm 11.x:
 pnpm install
 ```
 
-Before opening a pull request, run the smallest checks that establish the
-changed behavior. Typical focused checks include:
+Before opening a pull request, run focused checks appropriate to the change:
 
 ```bash
 pnpm run lint
@@ -58,27 +43,12 @@ pnpm run typecheck
 pnpm test -- <test-file>
 ```
 
-Choose checks according to the files and behavior being changed rather than
-running every suite by default. Add focused automated coverage when the
-relevant behavior does not already have it. Use `pnpm test:e2e`,
-`pnpm run security:check`, or `pnpm run test:container` locally when that suite
-is the simplest way to validate the change or when diagnosing a CI failure.
-`pnpm run verify` is available as an optional complete local quality preflight.
-
-GitHub Actions is the authoritative pull-request validation environment. It
-runs the most complete applicable quality, browser, security, build, and
-container checks for application changes, and its required checks must pass
-before merging. Passing checks do not replace maintainer approval for
-community pull requests. Local results do not override a pending or failing
-required check. Documentation-only pull requests still run the scope and commit
-metadata checks, but skip application quality, browser, and container checks.
-The end-to-end suite builds the app and
-runs its production server with a local Keycloak container. It requires Docker
-when run locally.
-
-Changes to authentication, persistence, imports, or user-facing workflows
-should include focused tests. Changes to the browser workflow should include
-or update Playwright coverage where appropriate.
+Add focused coverage for changed behavior, especially authentication,
+persistence, imports, and user-facing workflows. Use Playwright for browser
+behavior. Let GitHub Actions run broad integration, security, build, and
+platform checks; run those locally when needed to validate a change or diagnose
+a failure. Browser and container tests require Docker. Available commands are
+listed in [package.json](package.json).
 
 Do not commit credentials, local database files, generated build output, or
 private operational configuration. Use `.env.example` for configuration
