@@ -40,7 +40,8 @@ ACRONYMICON_SENSITIVITY_LABEL=<approved content label>
 ACRONYMICON_READ_GROUPS=acronymicon-readers
 ACRONYMICON_SUBMIT_GROUPS=acronymicon-contributors
 
-SESSION_SECRET=<unpredictable value of at least 32 characters>
+# Optional override; omit to use the automatically generated, saved key.
+# SESSION_SECRET=<unpredictable value of at least 32 characters>
 SESSION_PREVIOUS_SECRETS=
 SESSION_COOKIE_SECURE=true
 SESSION_ABSOLUTE_TIMEOUT_MINUTES=<approved whole minutes>
