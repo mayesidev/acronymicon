@@ -6,9 +6,10 @@ changes focused and explain the behavior being changed.
 ## Pull Requests And Releases
 
 Open pull requests against `main`. The repository requires change-scope,
-quality and build, browser integration, ARM64 container, commit metadata, and
-CodeQL checks to complete successfully before merging. Checks that do not
-apply to a change may complete with GitHub's successful skipped-job result.
+quality and build, browser integration, ARM64 container, commit metadata,
+Dependency review, and CodeQL checks to complete successfully before merging.
+Checks that do not apply to a change may complete with GitHub's successful
+skipped-job result.
 Community pull requests require approval from the repository code owner before
 merge. The `main` ruleset requires an approving review and code owner review;
 the maintainer may merge their own pull requests through the ruleset's

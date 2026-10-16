@@ -79,11 +79,13 @@ describe("Grype GitHub reporting", () => {
     expect(job).not.toContain("container-scan-exceptions");
   });
 
-  it("reports container findings even when the separate dependency audit fails", () => {
-    expect(qualityJob.indexOf("- name: Security checks")).toBeGreaterThan(
+  it("preserves signature verification alongside container reporting", () => {
+    expect(
+      qualityJob.indexOf("- name: Verify dependency signatures"),
+    ).toBeGreaterThan(
       qualityJob.indexOf("- name: Publish Grype findings to GitHub Security"),
     );
-    expect(qualityJob).toContain("run: pnpm run security:check");
+    expect(qualityJob).toContain("run: pnpm run security:audit:signatures");
   });
 
   it("rescans both published architectures daily using an immutable image", () => {
@@ -181,5 +183,41 @@ describe("Renovate configuration validation", () => {
     expect(qualityJob).toContain(
       "pnpm --package=renovate@44.39.0 dlx renovate-config-validator",
     );
+  });
+});
+
+describe("GitHub dependency security", () => {
+  const workflow = readFileSync(
+    ".github/workflows/dependency-security.yml",
+    "utf8",
+  );
+  const review = workflow
+    .split("\n  review:\n", 2)[1]
+    ?.split("\n  inventory:\n", 1)[0];
+  const inventory = workflow.split("\n  inventory:\n", 2)[1];
+
+  it("blocks newly introduced vulnerabilities across dependency scopes", () => {
+    expect(review).toContain("if: github.event_name == 'pull_request'");
+    expect(review).toContain("actions/dependency-review-action@");
+    expect(review).toContain("fail-on-severity: low");
+    expect(review).toContain("fail-on-scopes: runtime, development, unknown");
+    expect(review).not.toContain("allow-ghsas");
+    expect(review).not.toContain("warn-only");
+    expect(review).not.toContain("continue-on-error");
+    expect(ciWorkflow).not.toContain("run: pnpm run security:check");
+    expect(ciWorkflow).toContain("run: pnpm run security:audit:signatures");
+  });
+
+  it("refreshes the trusted default-branch inventory without PR write access", () => {
+    expect(workflow).toContain('cron: "43 8 * * *"');
+    expect(inventory).toContain("if: github.event_name != 'pull_request'");
+    expect(inventory).toContain("ref: main");
+    expect(inventory).toContain("contents: write");
+    expect(inventory).toContain("snapshot-ref: refs/heads/main");
+    expect(inventory).toContain("snapshot-sha: ${{ steps.source.outputs.sha }}");
+    expect(inventory).toContain("fail-on-empty: true");
+    expect(inventory).not.toContain("pnpm install");
+    expect(review).not.toContain("contents: write");
+    expect(workflow).not.toContain("pull_request_target");
   });
 });

@@ -165,9 +165,9 @@ jobs:
           category: grype-runtime-amd64
           wait-for-processing: true
 
-      - name: Security checks
+      - name: Verify dependency signatures
         if: needs.scope.outputs.application == 'true'
-        run: pnpm run security:check
+        run: pnpm run security:audit:signatures
 
   browser:
     name: Browser integration tests
