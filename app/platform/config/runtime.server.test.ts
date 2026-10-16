@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it, vi } from "vitest";
 
-import { parseAppConfig, parseDatabaseConfig } from "./runtime.server";
+import {
+  getAppConfig,
+  parseAppConfig,
+  parseDatabaseConfig,
+} from "./runtime.server";
+import { createPersistentSessionSecretResolver } from "./session-secret.server";
 
 describe("application configuration", () => {
   it("applies development defaults without configuring OIDC", () => {
@@ -94,6 +102,79 @@ describe("application configuration", () => {
     );
   });
 
+  it("resolves a missing production secret only after validating other settings", () => {
+    const resolveSessionSecret = vi.fn(() => "a".repeat(64));
+    expect(() =>
+      parseAppConfig(
+        { NODE_ENV: "production", OIDC_CLIENT_ID: "partial" },
+        { resolveSessionSecret },
+      ),
+    ).toThrow("OIDC_ISSUER_URL");
+    expect(resolveSessionSecret).not.toHaveBeenCalled();
+    expect(
+      parseAppConfig(
+        { NODE_ENV: "production", DATABASE_PATH: "/data/app.sqlite" },
+        { resolveSessionSecret },
+      ).session.secret,
+    ).toBe("a".repeat(64));
+    expect(resolveSessionSecret).toHaveBeenCalledExactlyOnceWith(
+      "/data/app.sqlite",
+    );
+  });
+
+  it("keeps explicit secrets and development defaults independent of persistent storage", () => {
+    const resolveSessionSecret = vi.fn(() => {
+      throw new Error("Storage unavailable");
+    });
+    expect(
+      parseAppConfig(
+        { NODE_ENV: "production", SESSION_SECRET: "external-secret" },
+        { resolveSessionSecret },
+      ).session.secret,
+    ).toBe("external-secret");
+    expect(parseAppConfig({}, { resolveSessionSecret }).session.secret).toBe(
+      "dev-session-secret-change-me",
+    );
+    expect(resolveSessionSecret).not.toHaveBeenCalled();
+  });
+
+  it("rejects a resolved key that is also configured as a previous key", () => {
+    expect(() =>
+      parseAppConfig(
+        { NODE_ENV: "production", SESSION_PREVIOUS_SECRETS: "a".repeat(64) },
+        { resolveSessionSecret: () => "a".repeat(64) },
+      ),
+    ).toThrow("must be unique");
+  });
+
+  it("uses persistent storage in the production getter while keeping overrides off disk", () => {
+    const root = mkdtempSync(join(tmpdir(), "acronymicon-config-"));
+    const path = join(root, ".acronymicon", "session-secret");
+    try {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("DATABASE_PATH", join(root, "app.sqlite"));
+      vi.stubEnv("SESSION_SECRET", "external-secret");
+      expect(getAppConfig().session.secret).toBe("external-secret");
+      expect(existsSync(path)).toBe(false);
+      vi.stubEnv("SESSION_SECRET", "");
+      const generated = getAppConfig().session.secret;
+      expect(generated).toMatch(/^[a-f0-9]{64}$/);
+      expect(
+        createPersistentSessionSecretResolver()(join(root, "app.sqlite")),
+      ).toBe(generated);
+      vi.stubEnv("SESSION_SECRET", "rotated-external-secret");
+      vi.stubEnv("SESSION_PREVIOUS_SECRETS", generated);
+      expect(getAppConfig().session).toMatchObject({
+        secret: "rotated-external-secret",
+        previousSecrets: [generated],
+      });
+      expect(readFileSync(path, "utf8")).toBe(`${generated}\n`);
+    } finally {
+      vi.unstubAllEnvs();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("parses ordered previous session secrets", () => {
     expect(
       parseAppConfig({
@@ -165,55 +246,70 @@ describe("application configuration", () => {
     expect(() => parseAppConfig(environment)).toThrow(message);
   });
 
-  it("accepts a complete controlled deployment configuration", () => {
-    expect(
-      parseAppConfig({
-        ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
-        ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
-        ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
-        ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
-        ACRONYMICON_READ_GROUPS: "dictionary-readers, shared-users",
-        ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters,shared-users",
-        NODE_ENV: "production",
-        SESSION_SECRET: "production-session-secret-at-least-32-characters",
-        SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
-        SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
-        SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
-        OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
-        OIDC_CLIENT_ID: "acronymicon",
-        OIDC_CLIENT_SECRET: "client-secret",
-        OIDC_REDIRECT_URI: "https://app.example.test/auth/callback",
-        OIDC_POST_LOGOUT_REDIRECT_URI: "https://app.example.test/",
-      }),
-    ).toMatchObject({
-      environment: "production",
-      deployment: {
-        profile: "controlled",
-        dictionaryAccess: "authenticated",
-        publicOrigin: "https://app.example.test",
-      },
-      authorization: {
-        readGroups: ["dictionary-readers", "shared-users"],
-        submitGroups: ["dictionary-submitters", "shared-users"],
-      },
-      notices: {
-        access: "Authorized access only.",
-        sensitivityLabel: "Controlled content",
-      },
-      session: {
-        absoluteTimeoutMinutes: 480,
-        inactivityTimeoutMinutes: 30,
-        reauthenticationIntervalMinutes: 60,
-        secureCookie: true,
-      },
-      oidc: { allowInsecureHttp: false },
-    });
-  });
+  it.each(["production-session-secret-at-least-32-characters", undefined])(
+    "accepts a complete controlled deployment with an explicit or generated secret",
+    (secret) => {
+      expect(
+        parseAppConfig(
+          {
+            ACRONYMICON_DEPLOYMENT_PROFILE: "controlled",
+            ACRONYMICON_ACCESS_NOTICE: "Authorized access only.",
+            ACRONYMICON_SENSITIVITY_LABEL: "Controlled content",
+            ACRONYMICON_PUBLIC_ORIGIN: "https://app.example.test",
+            ACRONYMICON_READ_GROUPS: "dictionary-readers, shared-users",
+            ACRONYMICON_SUBMIT_GROUPS: "dictionary-submitters,shared-users",
+            NODE_ENV: "production",
+            SESSION_SECRET: secret,
+            SESSION_ABSOLUTE_TIMEOUT_MINUTES: "480",
+            SESSION_INACTIVITY_TIMEOUT_MINUTES: "30",
+            SESSION_REAUTHENTICATION_INTERVAL_MINUTES: "60",
+            OIDC_ISSUER_URL: "https://issuer.example.test/realms/acronymicon",
+            OIDC_CLIENT_ID: "acronymicon",
+            OIDC_CLIENT_SECRET: "client-secret",
+            OIDC_REDIRECT_URI: "https://app.example.test/auth/callback",
+            OIDC_POST_LOGOUT_REDIRECT_URI: "https://app.example.test/",
+          },
+          { resolveSessionSecret: () => "a".repeat(64) },
+        ),
+      ).toMatchObject({
+        environment: "production",
+        deployment: {
+          profile: "controlled",
+          dictionaryAccess: "authenticated",
+          publicOrigin: "https://app.example.test",
+        },
+        authorization: {
+          readGroups: ["dictionary-readers", "shared-users"],
+          submitGroups: ["dictionary-submitters", "shared-users"],
+        },
+        notices: {
+          access: "Authorized access only.",
+          sensitivityLabel: "Controlled content",
+        },
+        session: {
+          absoluteTimeoutMinutes: 480,
+          inactivityTimeoutMinutes: 30,
+          reauthenticationIntervalMinutes: 60,
+          secureCookie: true,
+        },
+        oidc: { allowInsecureHttp: false },
+      });
+    },
+  );
 
   it.each([
-    [{ ACRONYMICON_ACCESS_NOTICE: "   " }, "ACRONYMICON_ACCESS_NOTICE is required"],
-    [{ ACRONYMICON_SENSITIVITY_LABEL: " " }, "ACRONYMICON_SENSITIVITY_LABEL is required"],
-    [{ ACRONYMICON_SENSITIVITY_LABEL: "First\nSecond" }, "must be a single line"],
+    [
+      { ACRONYMICON_ACCESS_NOTICE: "   " },
+      "ACRONYMICON_ACCESS_NOTICE is required",
+    ],
+    [
+      { ACRONYMICON_SENSITIVITY_LABEL: " " },
+      "ACRONYMICON_SENSITIVITY_LABEL is required",
+    ],
+    [
+      { ACRONYMICON_SENSITIVITY_LABEL: "First\nSecond" },
+      "must be a single line",
+    ],
     [{ NODE_ENV: "development" }, "NODE_ENV must be production"],
     [
       { ACRONYMICON_PUBLIC_ORIGIN: "http://app.example.test" },

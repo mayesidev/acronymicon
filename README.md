@@ -24,7 +24,6 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       DATABASE_PATH: /data/acronymicon.sqlite
-      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
     volumes:
       - acronymicon-data:/data
 
@@ -32,12 +31,9 @@ volumes:
   acronymicon-data:
 ```
 
-Generate a session secret once with OpenSSL, save it in `.env` beside `compose.yaml`,
-and start the app:
+Start the app:
 
 ```bash
-umask 077
-printf 'SESSION_SECRET=%s\n' "$(openssl rand -hex 32)" > .env
 docker compose up -d --pull always
 ```
 
@@ -49,7 +45,7 @@ docker compose exec app /nodejs/bin/node build/scripts/import-acronyms.mjs seeds
 ```
 
 The app applies database migrations on startup and keeps data in the named
-volume. Keep the volume and `.env` file when replacing the container. OIDC is
+volume. Keep the volume when replacing the container. OIDC is
 optional for browsing; configure it below to enable signed-in submissions.
 
 ### Update to a new release
@@ -62,7 +58,7 @@ docker compose up -d --no-build
 ```
 
 `latest` follows the newest release. To select a specific release, change the
-image tag in `compose.yaml` to a published version such as `4.2.4` (without the
+image tag in `compose.yaml` to a published version such as `4.3.0` (without the
 `v` prefix), then run the same update commands. Back up the database before
 upgrading; the backup commands below use this same Compose service.
 
@@ -71,7 +67,13 @@ upgrading; the backup commands below use this same Compose service.
 By default, browsing is anonymous and submissions require OIDC sign-in.
 Configure `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, and `OIDC_CLIENT_SECRET` to enable
 OIDC. Keycloak is included for local development; other compatible providers
-are supported. Production requires a securely generated `SESSION_SECRET`.
+are supported.
+
+In production, the app generates a session signing key once and saves it beside
+the database in `.acronymicon/session-secret` (file mode `0600`, directory `0700`).
+Keep this file across updates and protect the volume and its backups. An explicit
+`SESSION_SECRET` overrides the saved key without being written to disk; existing
+deployments should keep their configured secret to preserve sessions.
 
 See [`.env.example`](.env.example) for configuration variables and the
 [configuration guide](docs/protected-deployment.md) for production setup,
@@ -82,15 +84,19 @@ access controls, sessions, and logging.
 The app container stores SQLite data in the `acronymicon-data` Docker volume at `/data/acronymicon.sqlite`.
 
 Keep this volume when updating the app image. For a simple backup, stop the
-app, copy the database from the stopped service container, and start the app
+app, archive the data directory (including the session key), and start the app
 again:
 
 ```bash
 docker compose stop app
+umask 077
 mkdir -p backups
-docker compose cp app:/data/acronymicon.sqlite ./backups/
+docker compose cp app:/data - > ./backups/acronymicon-data.tar
 docker compose start app
 ```
+
+The archive preserves ownership and permissions for restoration into an empty
+data volume. Treat it as sensitive: it contains both application data and the key.
 
 Import another JSON file into the running container by copying it into the
 container first, then running the container importer:

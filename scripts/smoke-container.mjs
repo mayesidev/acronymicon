@@ -13,12 +13,19 @@ try {
   await waitForApplication();
   verifyAboutPage();
   verifyRuntimeHardening();
+  const cookie = verifyPersistentSessionSecret();
   verifyStandaloneContainerImporter();
   verifyFreshContainerImporter();
 
+  execFileSync("docker", ["stop", containerName], { stdio: "pipe" });
+  const backup = execFileSync("docker", ["cp", `${containerName}:/data`, "-"], {
+    maxBuffer: 16 * 1024 * 1024,
+  });
   removeContainer();
-  startContainer();
+  execFileSync("docker", ["volume", "rm", volumeName], { stdio: "pipe" });
+  startContainer(backup);
   await waitForApplication();
+  verifyPersistentSessionSecret(cookie);
   verifyPersistedContainerImporter();
 
   console.log(`Container smoke test passed for ${image}.`);
@@ -38,24 +45,28 @@ try {
   }
 }
 
-function startContainer() {
+function startContainer(backup) {
   execFileSync(
     "docker",
     [
-      "run",
-      "--detach",
+      "create",
       "--name",
       containerName,
       "--env",
       "DATABASE_PATH=/data/acronymicon.sqlite",
-      "--env",
-      "SESSION_SECRET=container-smoke-session-secret",
       "--volume",
       `${volumeName}:/data`,
       image,
     ],
     { stdio: "pipe" },
   );
+  if (backup) {
+    execFileSync("docker", ["cp", "--archive", "-", `${containerName}:/`], {
+      input: backup,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+  }
+  execFileSync("docker", ["start", containerName], { stdio: "pipe" });
 }
 
 function removeContainer() {
@@ -66,6 +77,38 @@ function removeContainer() {
   } catch {
     // The container may have failed before Docker created it.
   }
+}
+
+function verifyPersistentSessionSecret(previousCookie) {
+  const script = `
+    import assert from "node:assert/strict";
+    import { lstatSync, readFileSync, readdirSync } from "node:fs";
+    import { createCookie } from "react-router";
+    const directory = "/data/.acronymicon";
+    const path = directory + "/session-secret";
+    assert.equal(lstatSync(directory).mode & 0o7777, 0o700);
+    assert.equal(lstatSync(path).mode & 0o7777, 0o600);
+    assert.equal(lstatSync(path).uid, process.getuid());
+    assert.deepEqual(readdirSync(directory), ["session-secret"]);
+    const secret = readFileSync(path, "utf8").trimEnd();
+    assert.equal(/^[a-f0-9]{64}$/.test(secret), true, "Invalid saved key format");
+    const cookie = createCookie("smoke-session", { secrets: [secret] });
+    const previous = ${JSON.stringify(previousCookie ?? null)};
+    if (previous !== null) assert.equal(await cookie.parse(previous), "persisted-session");
+    process.stdout.write(await cookie.serialize("persisted-session"));
+  `;
+  return execFileSync(
+    "docker",
+    [
+      "exec",
+      containerName,
+      runtimeNode,
+      "--input-type=module",
+      "--eval",
+      script,
+    ],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  );
 }
 
 function verifyRuntimeHardening() {
