@@ -65,6 +65,11 @@ describe("Grype GitHub reporting", () => {
       "grype-published-${{ matrix.architecture }}",
       "container-vulnerability-report.sarif",
     ],
+    [
+      buildJob,
+      "grype-published-${{ matrix.artifact }}",
+      "container-vulnerability-report.sarif",
+    ],
   ])("uploads reports without a severity or expiry gate", (job, category, report) => {
     expect(job).toContain("security-events: write");
     expect(job).toContain("fail-build: false");
@@ -106,6 +111,19 @@ describe("Grype GitHub reporting", () => {
       ?.split("\n  publish:\n", 1)[0];
     expect(verification).toContain("security-events: write");
   });
+
+  it.each([
+    ".github/workflows/release.yml",
+    ".github/workflows/semantic-container-publish.yml",
+  ])("allows release publication scans through caller %s", (path) => {
+    const publication = readFileSync(path, "utf8")
+      .split("\n  publish:\n", 2)[1]
+      ?.split("\n  create-release:\n", 1)[0];
+    expect(publication).toContain(
+      "uses: ./.github/workflows/publish-container.yml",
+    );
+    expect(publication).toContain("security-events: write");
+  });
 });
 
 describe("release container-publish policy", () => {
@@ -136,6 +154,40 @@ describe("release container-publish policy", () => {
     expect(buildJob).toContain(
       "ACRONYMICON_VERSION=${{ inputs.release_tag }}",
     );
+  });
+
+  it("scans the exact built digest once before making it available for tagging", () => {
+    const resolve = buildJob.indexOf("- name: Resolve release image for scanning");
+    const scan = buildJob.indexOf("- name: Scan release runtime image");
+    const report = buildJob.indexOf("- name: Upload release vulnerability report");
+    const publishReport = buildJob.indexOf(
+      "- name: Publish release Grype findings to GitHub Security",
+    );
+    const save = buildJob.indexOf("- name: Save image digest");
+    const upload = buildJob.indexOf("- name: Upload image digest");
+
+    expect(resolve).toBeGreaterThan(
+      buildJob.indexOf("- name: Build and push image by digest"),
+    );
+    expect(scan).toBeGreaterThan(resolve);
+    expect(report).toBeGreaterThan(scan);
+    expect(publishReport).toBeGreaterThan(report);
+    expect(save).toBeGreaterThan(publishReport);
+    expect(upload).toBeGreaterThan(save);
+    expect(buildJob).toContain('image="$REGISTRY_IMAGE@$IMAGE_DIGEST"');
+    expect(buildJob).toContain('docker pull --platform "$PLATFORM" "$image"');
+    expect(buildJob).toContain("image: ${{ steps.release-image.outputs.image }}");
+    expect(buildJob).toContain("container-image.json");
+    expect(buildJob.match(/uses: anchore\/scan-action@/g)).toHaveLength(1);
+    expect(publishJob).not.toContain("anchore/scan-action@");
+  });
+
+  it("keeps scan or report failures from exposing release digests or tags", () => {
+    const digestSteps = buildJob.slice(buildJob.indexOf("- name: Save image digest"));
+    expect(digestSteps).not.toContain("if:");
+    expect(buildJob).not.toContain("continue-on-error");
+    expect(publishJob).not.toContain("if:");
+    expect(publishJob).toContain("- prepare\n      - build");
   });
 
   it("applies existing tags only after both platforms build and verifies the manifest", () => {

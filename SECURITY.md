@@ -19,9 +19,12 @@ blocks newly introduced vulnerabilities at Low severity or above in all
 dependency scopes. CI also requires registry signature verification.
 
 Manage dependency findings in GitHub **Security → Dependabot alerts** and Grype
-container findings in **Security → Code scanning**. Automated daily checks cover
-the dependency inventory and both published image architectures; Renovate
-proposes updates. Scanner and reporting errors fail CI.
+container findings in **Security → Code scanning**. Every container release scans
+the exact AMD64 and ARM64 image digests and uploads their reports before applying
+the version, minor-version, and `latest` tags. Scanner or reporting errors stop
+tag publication. Automated daily checks refresh the dependency inventory and
+rescan both published image architectures for newly disclosed vulnerabilities;
+Renovate proposes updates.
 
 Review findings during maintenance and before affected releases. Keep applicable
 findings open until remediated. Existing findings block delivery when they
