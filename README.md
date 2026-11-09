@@ -110,9 +110,10 @@ The import command accepts either an array of entries or an object with an `entr
 
 ## Development from source
 
-Install dependencies:
+Install the pinned pnpm version directly with npm, then install dependencies:
 
 ```bash
+npm install --global --ignore-scripts "$(node --print "require('./package.json').packageManager.split('+')[0]")"
 pnpm install
 ```
 

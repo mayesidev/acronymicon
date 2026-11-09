@@ -122,10 +122,13 @@ function verifyRuntimeHardening() {
       "/usr/local/bin/corepack",
       "/usr/local/bin/npm",
       "/usr/local/bin/npx",
+      "/usr/local/bin/pnpm",
+      "/usr/local/bin/pnpx",
       "/usr/local/bin/yarn",
       "/usr/local/bin/yarnpkg",
       "/usr/local/lib/node_modules/corepack",
       "/usr/local/lib/node_modules/npm",
+      "/usr/local/lib/node_modules/pnpm",
     ];
 
     for (const path of forbiddenPaths) {

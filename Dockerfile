@@ -1,10 +1,10 @@
 ARG ACRONYMICON_VERSION=development
 
 FROM node:24.22.2-trixie-slim@sha256:0820eaa85e07d0490446dd01d14707e17e6108a36988cf374899cd057eb3812d AS development-dependencies-env
-RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 WORKDIR /app
-RUN pnpm install --frozen-lockfile
+RUN npm install --global --ignore-scripts "$(node --print "require('./package.json').packageManager.split('+')[0]")" \
+  && pnpm install --frozen-lockfile
 
 FROM development-dependencies-env AS build-env
 ARG ACRONYMICON_VERSION
