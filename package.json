@@ -64,7 +64,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "5.1.0",
     "conventional-changelog-conventionalcommits": "9.3.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "9.39.5",
@@ -82,7 +82,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "8.72.1",
     "vite": "^8.2.1",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   },
   "packageManager": "pnpm@11.28.11+sha512.740184d10f81f5d5b165be88560ee7ba62406c4134896abc27a580109eec2f47c1e41d91251c944c2cababcb1c22461799ebb72de2ec625af2030b0e36c735a3"
 }
