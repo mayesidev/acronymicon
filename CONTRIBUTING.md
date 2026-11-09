@@ -30,10 +30,15 @@ not trigger releases. Do not tag releases manually.
 ## Development
 
 Use Node.js 26.13 or newer within 26.x and pnpm 11.x. Install the pinned pnpm
-version directly with npm:
+version with the standalone installer on macOS or Linux:
 
 ```bash
-npm install --global --ignore-scripts "$(node --print "require('./package.json').packageManager.split('+')[0]")"
+curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="$(node --print "require('./package.json').packageManager.split('@')[1].split('+')[0]")" sh -
+```
+
+Open a new shell to pick up the installer's PATH changes, then install dependencies:
+
+```bash
 pnpm install
 ```
 

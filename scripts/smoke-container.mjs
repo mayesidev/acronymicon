@@ -123,6 +123,7 @@ function verifyRuntimeHardening() {
       "Production Node.js major must match the build toolchain");
 
     const forbiddenPaths = [
+      "/pnpm",
       "/bin/sh",
       "/bin/bash",
       "/opt/yarn-v1.22.22",
