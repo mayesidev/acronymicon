@@ -29,9 +29,10 @@ not trigger releases. Do not tag releases manually.
 
 ## Development
 
-Use Node.js 24.x and pnpm 11.x:
+Use Node.js 24.x and pnpm 11.x. Install the pinned pnpm version directly with npm:
 
 ```bash
+npm install --global --ignore-scripts "$(node --print "require('./package.json').packageManager.split('+')[0]")"
 pnpm install
 ```
 
