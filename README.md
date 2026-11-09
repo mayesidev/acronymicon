@@ -122,8 +122,8 @@ Open a new shell to pick up the installer's PATH changes, then install dependenc
 pnpm install
 ```
 
-The supported local toolchain is Node.js 24.x and pnpm 11.x. Docker is also
-required for the Keycloak-backed end-to-end suite.
+The supported local toolchain is Node.js 26.13 or newer within 26.x and pnpm 11.x.
+Docker is also required for the Keycloak-backed end-to-end suite.
 
 Run the development server:
 

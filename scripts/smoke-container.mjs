@@ -113,7 +113,14 @@ function verifyPersistentSessionSecret(previousCookie) {
 
 function verifyRuntimeHardening() {
   const script = `
-    import { lstatSync } from "node:fs";
+    import assert from "node:assert/strict";
+    import { lstatSync, readFileSync } from "node:fs";
+
+    const workspace = readFileSync("/app/pnpm-workspace.yaml", "utf8");
+    const expectedNodeMajor = workspace.match(/^nodeVersion: (\\d+)\\./m)?.[1];
+    assert.ok(expectedNodeMajor, "Missing pinned Node.js version");
+    assert.equal(process.versions.node.split(".")[0], expectedNodeMajor,
+      "Production Node.js major must match the build toolchain");
 
     const forbiddenPaths = [
       "/pnpm",

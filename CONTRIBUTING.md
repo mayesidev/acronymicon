@@ -29,8 +29,8 @@ not trigger releases. Do not tag releases manually.
 
 ## Development
 
-Use Node.js 24.x and pnpm 11.x. Install the pinned pnpm version with the standalone
-installer on macOS or Linux:
+Use Node.js 26.13 or newer within 26.x and pnpm 11.x. Install the pinned pnpm
+version with the standalone installer on macOS or Linux:
 
 ```bash
 curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="$(node --print "require('./package.json').packageManager.split('@')[1].split('+')[0]")" sh -
