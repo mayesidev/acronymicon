@@ -116,6 +116,7 @@ function verifyRuntimeHardening() {
     import { lstatSync } from "node:fs";
 
     const forbiddenPaths = [
+      "/pnpm",
       "/bin/sh",
       "/bin/bash",
       "/opt/yarn-v1.22.22",

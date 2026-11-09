@@ -1,9 +1,17 @@
 ARG ACRONYMICON_VERSION=development
 
 FROM node:24.22.2-trixie-slim@sha256:0820eaa85e07d0490446dd01d14707e17e6108a36988cf374899cd057eb3812d AS development-dependencies-env
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME/bin:$PATH"
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates curl \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 WORKDIR /app
-RUN npm install --global --ignore-scripts "$(node --print "require('./package.json').packageManager.split('+')[0]")" \
+RUN curl --fail --silent --show-error --location https://get.pnpm.io/install.sh --output /tmp/install-pnpm.sh \
+  && PNPM_VERSION="$(node --print "require('./package.json').packageManager.split('@')[1].split('+')[0]")" \
+    ENV=/tmp/pnpm-env SHELL=/bin/sh sh /tmp/install-pnpm.sh \
+  && rm -f /tmp/install-pnpm.sh /tmp/pnpm-env \
   && pnpm install --frozen-lockfile
 
 FROM development-dependencies-env AS build-env
