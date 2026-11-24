@@ -4,9 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock(import("openid-client"), async (importOriginal) => ({
   ...(await importOriginal()),
   authorizationCodeGrant: vi.fn(),
-  buildAuthorizationUrl: vi.fn(),
-  buildEndSessionUrl: vi.fn(),
-  calculatePKCECodeChallenge: vi.fn(),
   discovery: vi.fn(),
 }));
 
@@ -14,13 +11,15 @@ const issuer = "https://issuer.example.test/realms/acronymicon";
 const clientId = "acronymicon-test";
 const publicOrigin = "https://app.example.test:8443";
 const callbackUri = `${publicOrigin}/auth/callback`;
+const authorizationEndpoint = "https://issuer.example.test/authorize";
 const logoutEndpoint = "https://issuer.example.test/logout";
+const codeChallenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
 const grantInput = {
   request: new Request(
     "http://internal.example.test:3000/auth/callback?code=test-code&state=test-state",
   ),
   expectedState: "test-state",
-  codeVerifier: "test-code-verifier",
+  codeVerifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
   maxAgeSeconds: 1_800,
 };
 const authorizationInput = {
@@ -62,7 +61,11 @@ beforeEach(async () => {
     }),
   );
   providerConfig = new oidc.Configuration(
-    { issuer, end_session_endpoint: logoutEndpoint },
+    {
+      issuer,
+      authorization_endpoint: authorizationEndpoint,
+      end_session_endpoint: logoutEndpoint,
+    },
     clientId,
   );
   vi.mocked(oidc.discovery).mockResolvedValue(providerConfig);
@@ -77,28 +80,20 @@ afterEach(() => {
 
 describe("OIDC client adapter", () => {
   it("builds a sign-in URL with state, S256 PKCE and reauthentication parameters", async () => {
-    vi.mocked(oidc.calculatePKCECodeChallenge).mockResolvedValue("test-challenge");
-    vi.mocked(oidc.buildAuthorizationUrl).mockReturnValue(
-      new URL("https://issuer.example.test/authorize"),
-    );
-
     const url = await adapter.buildAuthorizationUrl(authorizationInput);
 
-    expect(oidc.calculatePKCECodeChallenge).toHaveBeenCalledExactlyOnceWith(
-      grantInput.codeVerifier,
-    );
-    expect(oidc.buildAuthorizationUrl).toHaveBeenCalledExactlyOnceWith(
-      providerConfig,
-      {
-        redirect_uri: callbackUri,
-        scope: "openid profile email",
-        state: grantInput.expectedState,
-        code_challenge: "test-challenge",
-        code_challenge_method: "S256",
-      },
-    );
-    expect(url.searchParams.get("max_age")).toBe("1800");
-    expect(url.searchParams.get("prompt")).toBe("login");
+    expect(`${url.origin}${url.pathname}`).toBe(authorizationEndpoint);
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      client_id: clientId,
+      response_type: "code",
+      redirect_uri: callbackUri,
+      scope: "openid profile email",
+      state: grantInput.expectedState,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      max_age: "1800",
+      prompt: "login",
+    });
   });
 
   it("exchanges the code with the expected checks and canonical callback URLs", async () => {
@@ -156,9 +151,7 @@ describe("OIDC client adapter", () => {
     ).rejects.toThrow(/^OIDC is not configured\.$/);
     await expect(adapter.buildOidcLogoutUrl(grantInput)).resolves.toBeNull();
     expect(oidc.discovery).not.toHaveBeenCalled();
-    expect(oidc.buildAuthorizationUrl).not.toHaveBeenCalled();
     expect(oidc.authorizationCodeGrant).not.toHaveBeenCalled();
-    expect(oidc.buildEndSessionUrl).not.toHaveBeenCalled();
   });
 
   it("fails sign-in but allows local logout when provider discovery rejects", async () => {
@@ -172,9 +165,7 @@ describe("OIDC client adapter", () => {
       adapter.completeAuthorizationCodeGrant(grantInput),
     ).rejects.toBe(discoveryError);
     await expect(adapter.buildOidcLogoutUrl(grantInput)).resolves.toBeNull();
-    expect(oidc.buildAuthorizationUrl).not.toHaveBeenCalled();
     expect(oidc.authorizationCodeGrant).not.toHaveBeenCalled();
-    expect(oidc.buildEndSessionUrl).not.toHaveBeenCalled();
   });
 
   it("allows local logout when discovery returns no end-session endpoint", async () => {
@@ -183,17 +174,16 @@ describe("OIDC client adapter", () => {
     );
 
     await expect(adapter.buildOidcLogoutUrl(grantInput)).resolves.toBeNull();
-    expect(oidc.buildEndSessionUrl).not.toHaveBeenCalled();
   });
 
-  it("passes the canonical post-logout redirect to the provider URL builder", async () => {
-    const logoutUrl = new URL(logoutEndpoint);
-    vi.mocked(oidc.buildEndSessionUrl).mockReturnValue(logoutUrl);
+  it("builds a provider logout URL with the canonical post-logout redirect", async () => {
+    const url = await adapter.buildOidcLogoutUrl(grantInput);
 
-    await expect(adapter.buildOidcLogoutUrl(grantInput)).resolves.toBe(logoutUrl);
-    expect(oidc.buildEndSessionUrl).toHaveBeenCalledExactlyOnceWith(
-      providerConfig,
-      { post_logout_redirect_uri: `${publicOrigin}/` },
+    expect(url).not.toBeNull();
+    expect(`${url?.origin}${url?.pathname}`).toBe(logoutEndpoint);
+    expect(url?.searchParams.get("post_logout_redirect_uri")).toBe(
+      `${publicOrigin}/`,
     );
+    expect(url?.searchParams.get("client_id")).toBe(clientId);
   });
 });
