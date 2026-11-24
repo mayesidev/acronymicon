@@ -50,6 +50,12 @@ pnpm run typecheck
 pnpm test -- <test-file>
 ```
 
+Run `pnpm run test:coverage` for the Vitest V8 coverage report. Open
+`coverage/index.html` to inspect coverage by area and file; `coverage/lcov.info`
+and `coverage/coverage-summary.json` are available for reporting tools. CI
+retains the same reports in the `coverage-report` artifact for 14 days,
+including reports produced before a later verification step fails.
+
 Add focused coverage for changed behavior, especially authentication,
 persistence, imports, and user-facing workflows. Use Playwright for browser
 behavior. Let GitHub Actions run broad integration, security, build, and
