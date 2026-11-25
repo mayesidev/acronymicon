@@ -16,6 +16,34 @@ const container = document.createElement("div");
 expect(container.firstChild).not.toBeNull();
 `;
 
+describe("React and accessibility lint configuration", () => {
+  it.each([
+    {
+      rule: "@eslint-react/dom-no-void-elements-with-children",
+      invalid: "export const Example = () => <hr>Separator</hr>;",
+      valid: "export const Example = () => <hr />;",
+    },
+    {
+      rule: "jsx-a11y-x/alt-text",
+      invalid: 'export const Example = () => <img src="/logo.svg" />;',
+      valid: 'export const Example = () => <img src="/logo.svg" alt="Acronymicon" />;',
+    },
+  ])(
+    "reports $rule only in the invalid example",
+    async ({ rule, invalid, valid }) => {
+      const options = { filePath: "app/ui/components/button.tsx" };
+      const [invalidResult] = await eslint.lintText(invalid, options);
+      const [validResult] = await eslint.lintText(valid, options);
+
+      expect(invalidResult.messages).toEqual([
+        expect.objectContaining({ ruleId: rule, severity: 2 }),
+      ]);
+      expect(validResult.messages).toEqual([]);
+    },
+    30_000,
+  );
+});
+
 describe("UI test lint configuration", () => {
   it(
     "initializes the TypeScript UI configuration within the cold-start budget",

@@ -39,8 +39,10 @@
     {
       "description": "Keep compatible ESLint peer tooling updates together",
       "matchPackageNames": [
+        "@eslint-react/eslint-plugin",
         "@eslint/js",
         "eslint",
+        "eslint-plugin-jsx-a11y-x",
         "eslint-plugin-react-hooks",
         "typescript-eslint"
       ],

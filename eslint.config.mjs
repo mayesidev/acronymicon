@@ -1,9 +1,10 @@
+import react from "@eslint-react/eslint-plugin";
 import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
 import globals from "globals";
 import jestDom from "eslint-plugin-jest-dom";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+import jsxA11y from "eslint-plugin-jsx-a11y-x";
 import playwright from "eslint-plugin-playwright";
-import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import testingLibrary from "eslint-plugin-testing-library";
 import tseslint from "typescript-eslint";
@@ -46,7 +47,7 @@ const clientImplementationImportPatterns = [
   },
 ];
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       "build/**",
@@ -60,29 +61,20 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   {
-    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
-    ...react.configs.flat.recommended,
+    files: ["**/*.{jsx,tsx}"],
+    extends: [react.configs.jsx, react.configs.dom],
     rules: {
-      ...react.configs.flat.recommended.rules,
-      "react/prop-types": "off",
+      "@eslint-react/no-missing-key": "error",
+      "@eslint-react/dom-no-unsafe-target-blank": "error",
     },
-    settings: {
-      react: {
-        version: "detect",
-      },
-    },
-  },
-  {
-    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
-    ...react.configs.flat["jsx-runtime"],
   },
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
     ...reactHooks.configs.flat.recommended,
   },
   {
-    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
-    ...jsxA11y.flatConfigs.recommended,
+    files: ["**/*.{jsx,tsx}"],
+    extends: [jsxA11y.configs.recommended],
   },
   {
     files: ["**/*.{ts,tsx}"],
