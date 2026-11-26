@@ -5,11 +5,16 @@ changes focused and explain the behavior being changed.
 
 ## Pull Requests And Releases
 
-Open pull requests against `main`. Required checks must pass; checks outside
+Open pull requests against `main`. Required checks must pass. Checks outside
 the change's scope may be skipped. Community pull requests require code owner
 approval. The maintainer may use the pull-request-only review bypass for their
 own or configured maintenance automation's PRs after reviewing the full diff
 and confirming required checks pass.
+
+Renovate can squash-merge ungrouped, stable npm patches and minor updates from
+1.0 onward once the PR is up to date and the required checks pass. The policy
+in `renovate.json` keeps core tooling and vulnerability-alert PRs under manual
+review.
 
 Use a Conventional Commit PR title and squash merging. Examples:
 
