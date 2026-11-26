@@ -130,33 +130,14 @@
       "automerge": false
     },
     {
-      "description": "Review package, build, migration, verification, and release tooling updates",
+      "description": "Review pnpm, Node.js, the esbuild override, and release tooling updates",
       "matchPackageNames": [
         "pnpm",
         "node",
-        "@types/node",
-        "typescript",
-        "@react-router/dev",
         "esbuild",
-        "vite",
-        "@vitejs/**",
-        "tailwindcss",
-        "@tailwindcss/vite",
-        "drizzle-kit",
-        "vitest",
-        "@vitest/**",
-        "playwright",
-        "@playwright/**",
-        "eslint",
-        "@eslint/**",
-        "eslint-plugin-*",
-        "typescript-eslint",
-        "@typescript-eslint/**",
-        "@commitlint/**",
         "semantic-release",
         "@semantic-release/**",
-        "conventional-changelog-*",
-        "renovate"
+        "conventional-changelog-conventionalcommits"
       ],
       "automerge": false
     }
