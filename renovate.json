@@ -9,8 +9,12 @@
   "automergeType": "pr",
   "automergeStrategy": "squash",
   "platformAutomerge": false,
+  "group": {
+    "automerge": false
+  },
   "lockFileMaintenance": {
-    "enabled": true
+    "enabled": true,
+    "automerge": false
   },
   "customManagers": [
     {
@@ -111,31 +115,41 @@
       "semanticCommitScope": "deps"
     },
     {
-      "description": "Automerge ungrouped stable npm patches and minors from 1.0 onward",
+      "description": "Automerge stable npm patch and minor updates",
       "matchManagers": ["npm"],
       "matchDatasources": ["npm"],
       "matchDepTypes": ["dependencies", "devDependencies", "optionalDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
-      "matchJsonata": [
-        "($not($exists(groupName)) or groupName = null) and $contains(newVersion, /^v?\\d+\\.\\d+\\.\\d+(?:\\+[0-9A-Za-z.-]+)?$/) and (updateType = 'patch' or $contains(currentVersion, /^v?[1-9]\\d*\\./))"
-      ],
+      "matchNewValue": "/^[~^]?v?[0-9]+\\.[0-9]+\\.[0-9]+(?:\\+[0-9A-Za-z.-]+)?$/",
       "automerge": true
     },
     {
-      "description": "Review package, build, verification, and release tooling updates",
+      "description": "Review minor updates to pre-1.0 packages",
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "/^v?0\\./",
+      "automerge": false
+    },
+    {
+      "description": "Review package, build, migration, verification, and release tooling updates",
       "matchPackageNames": [
         "pnpm",
         "node",
         "@types/node",
         "typescript",
+        "@react-router/dev",
+        "esbuild",
         "vite",
         "@vitejs/**",
+        "tailwindcss",
+        "@tailwindcss/vite",
+        "drizzle-kit",
         "vitest",
         "@vitest/**",
         "playwright",
         "@playwright/**",
         "eslint",
         "@eslint/**",
+        "eslint-plugin-*",
         "typescript-eslint",
         "@typescript-eslint/**",
         "@commitlint/**",
