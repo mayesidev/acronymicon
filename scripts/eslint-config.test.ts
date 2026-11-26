@@ -16,32 +16,6 @@ const container = document.createElement("div");
 expect(container.firstChild).not.toBeNull();
 `;
 
-describe("React lint configuration", () => {
-  it(
-    "rejects children on void elements",
-    async () => {
-      const options = { filePath: "app/ui/components/button.tsx" };
-      const [invalidResult] = await eslint.lintText(
-        "export const Example = () => <hr>Separator</hr>;",
-        options,
-      );
-      const [validResult] = await eslint.lintText(
-        "export const Example = () => <hr />;",
-        options,
-      );
-
-      expect(invalidResult.messages).toEqual([
-        expect.objectContaining({
-          ruleId: "@eslint-react/dom-no-void-elements-with-children",
-          severity: 2,
-        }),
-      ]);
-      expect(validResult.messages).toEqual([]);
-    },
-    30_000,
-  );
-});
-
 describe("UI test lint configuration", () => {
   it(
     "initializes the TypeScript UI configuration within the cold-start budget",

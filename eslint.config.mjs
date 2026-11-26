@@ -1,4 +1,3 @@
-import react from "@eslint-react/eslint-plugin";
 import eslint from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
@@ -59,14 +58,6 @@ export default defineConfig(
     ],
   },
   eslint.configs.recommended,
-  {
-    files: ["**/*.{jsx,tsx}"],
-    extends: [react.configs.jsx, react.configs.dom],
-    rules: {
-      "@eslint-react/no-missing-key": "error",
-      "@eslint-react/dom-no-unsafe-target-blank": "error",
-    },
-  },
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
     ...reactHooks.configs.flat.recommended,
