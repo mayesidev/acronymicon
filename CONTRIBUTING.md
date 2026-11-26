@@ -5,7 +5,7 @@ changes focused and explain the behavior being changed.
 
 ## Pull Requests And Releases
 
-Open pull requests against `main`. Required checks must pass; checks outside
+Open pull requests against `main`. Required checks must pass. Checks outside
 the change's scope may be skipped. Community pull requests require code owner
 approval. The maintainer may use the pull-request-only review bypass for their
 own or configured maintenance automation's PRs after reviewing the full diff
