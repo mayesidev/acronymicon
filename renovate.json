@@ -130,11 +130,10 @@
       "automerge": false
     },
     {
-      "description": "Review pnpm, Node.js, the esbuild override, and release tooling updates",
+      "description": "Review pnpm, Node.js, and release tooling updates",
       "matchPackageNames": [
         "pnpm",
         "node",
-        "esbuild",
         "semantic-release",
         "@semantic-release/**",
         "conventional-changelog-conventionalcommits"
