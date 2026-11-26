@@ -47,7 +47,7 @@ async function publishAuditEvent(
   sink: AuditSink,
   fallbackSink?: AuditSink,
 ): Promise<AuditPublicationResult> {
-  let recorded = false;
+  let recorded: boolean;
 
   try {
     const result = await sink.append(event);
