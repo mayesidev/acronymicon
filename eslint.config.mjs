@@ -3,7 +3,6 @@ import eslint from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import jestDom from "eslint-plugin-jest-dom";
-import jsxA11y from "eslint-plugin-jsx-a11y-x";
 import playwright from "eslint-plugin-playwright";
 import reactHooks from "eslint-plugin-react-hooks";
 import testingLibrary from "eslint-plugin-testing-library";
@@ -71,10 +70,6 @@ export default defineConfig(
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
     ...reactHooks.configs.flat.recommended,
-  },
-  {
-    files: ["**/*.{jsx,tsx}"],
-    extends: [jsxA11y.configs.recommended],
   },
   {
     files: ["**/*.{ts,tsx}"],

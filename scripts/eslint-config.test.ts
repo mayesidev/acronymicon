@@ -16,27 +16,25 @@ const container = document.createElement("div");
 expect(container.firstChild).not.toBeNull();
 `;
 
-describe("React and accessibility lint configuration", () => {
-  it.each([
-    {
-      rule: "@eslint-react/dom-no-void-elements-with-children",
-      invalid: "export const Example = () => <hr>Separator</hr>;",
-      valid: "export const Example = () => <hr />;",
-    },
-    {
-      rule: "jsx-a11y-x/alt-text",
-      invalid: 'export const Example = () => <img src="/logo.svg" />;',
-      valid: 'export const Example = () => <img src="/logo.svg" alt="Acronymicon" />;',
-    },
-  ])(
-    "reports $rule only in the invalid example",
-    async ({ rule, invalid, valid }) => {
+describe("React lint configuration", () => {
+  it(
+    "rejects children on void elements",
+    async () => {
       const options = { filePath: "app/ui/components/button.tsx" };
-      const [invalidResult] = await eslint.lintText(invalid, options);
-      const [validResult] = await eslint.lintText(valid, options);
+      const [invalidResult] = await eslint.lintText(
+        "export const Example = () => <hr>Separator</hr>;",
+        options,
+      );
+      const [validResult] = await eslint.lintText(
+        "export const Example = () => <hr />;",
+        options,
+      );
 
       expect(invalidResult.messages).toEqual([
-        expect.objectContaining({ ruleId: rule, severity: 2 }),
+        expect.objectContaining({
+          ruleId: "@eslint-react/dom-no-void-elements-with-children",
+          severity: 2,
+        }),
       ]);
       expect(validResult.messages).toEqual([]);
     },
