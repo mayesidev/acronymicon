@@ -6,6 +6,9 @@
     "security:minimumReleaseAgeNpm"
   ],
   "prHourlyLimit": 0,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "platformAutomerge": false,
   "lockFileMaintenance": {
     "enabled": true
   },
@@ -33,7 +36,8 @@
   "vulnerabilityAlerts": {
     "labels": [
       "security"
-    ]
+    ],
+    "automerge": false
   },
   "packageRules": [
     {
@@ -105,6 +109,42 @@
       "groupName": "Ubuntu runners",
       "semanticCommitType": "ci",
       "semanticCommitScope": "deps"
+    },
+    {
+      "description": "Automerge ungrouped stable npm patches and minors from 1.0 onward",
+      "matchManagers": ["npm"],
+      "matchDatasources": ["npm"],
+      "matchDepTypes": ["dependencies", "devDependencies", "optionalDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchJsonata": [
+        "($not($exists(groupName)) or groupName = null) and $contains(newVersion, /^v?\\d+\\.\\d+\\.\\d+(?:\\+[0-9A-Za-z.-]+)?$/) and (updateType = 'patch' or $contains(currentVersion, /^v?[1-9]\\d*\\./))"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Review package, build, verification, and release tooling updates",
+      "matchPackageNames": [
+        "pnpm",
+        "node",
+        "@types/node",
+        "typescript",
+        "vite",
+        "@vitejs/**",
+        "vitest",
+        "@vitest/**",
+        "playwright",
+        "@playwright/**",
+        "eslint",
+        "@eslint/**",
+        "typescript-eslint",
+        "@typescript-eslint/**",
+        "@commitlint/**",
+        "semantic-release",
+        "@semantic-release/**",
+        "conventional-changelog-*",
+        "renovate"
+      ],
+      "automerge": false
     }
   ]
 }
